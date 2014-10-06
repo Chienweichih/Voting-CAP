@@ -7,10 +7,13 @@ import java.io.StringWriter;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.xml.crypto.MarshalException;
@@ -69,7 +72,7 @@ public class SOAPMessage {
     protected javax.xml.soap.SOAPBody body;
     protected Node root;
     
-    public SOAPMessage() {
+    public SOAPMessage(String msgName) {
         try {
             message = MessageFactory.newInstance().createMessage();
             factory = SOAPFactory.newInstance();
@@ -84,6 +87,8 @@ public class SOAPMessage {
             body = soapEnvelope.getBody();
             Name bodyName = soapEnvelope.createName("id", "SOAP-SEC", "http://schemas.xmlsoap.org/soap/security/2000-12");
             body.addAttribute(bodyName, "Body");
+            
+            body.addChildElement(factory.createElement(msgName));
             
             Source source = message.getSOAPPart().getContent();
             
@@ -108,6 +113,27 @@ public class SOAPMessage {
         }
     }
     
+    public void add2Body(LinkedHashMap<String, String> map) {
+        try {
+            SOAPElement op = factory.createElement(map.get("name"));
+            
+            map.remove("name");
+            
+            for (String key : map.keySet()) {
+                SOAPElement child = factory.createElement(key);
+                
+                child.setTextContent(map.get(key));
+                
+                op.addChildElement(child);
+            }
+            
+            add2Body(op);
+        } catch (SOAPException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+    }
+    
     public void add2Body(String name, String value) {
         try {
             SOAPElement soapElement = factory.createElement(name);
@@ -121,14 +147,14 @@ public class SOAPMessage {
     
     public void add2Body(SOAPElement element) {
         try {
-            body.addChildElement(element);
+            ((SOAPElement) body.getFirstChild()).addChildElement(element);
         } catch (SOAPException ex) {
             Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
     public NodeList getBody() {
-        return body.getChildNodes();
+        return body.getFirstChild().getChildNodes();
     }
     
     public void sign(KeyPair keyPair) {
@@ -219,5 +245,34 @@ public class SOAPMessage {
         }
         
         return "[toString failed]";
+    }
+    
+    public static void main(String[] args) {
+        KeyPair keyPair = null;
+        
+        try {
+            KeyPairGenerator keyGen = KeyPairGenerator.getInstance("RSA");
+            keyGen.initialize(512, new SecureRandom());
+            keyPair = keyGen.generateKeyPair();
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        SOAPMessage soap = new SOAPMessage("Request");
+        
+        soap.add2Body("name", "scott");
+        soap.add2Body("gender", "male");
+        
+        soap.sign(keyPair);
+        
+        System.out.println(soap);
+        
+        System.out.println(soap.validate(keyPair.getPublic()));
+        
+        NodeList nl = soap.getBody();
+        
+        for (int i = 0; i < nl.getLength(); i++) {
+            System.out.println(nl.item(i).getNodeName() + " " + nl.item(i).getTextContent());
+        }
     }
 }
