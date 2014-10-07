@@ -2,8 +2,12 @@ package message;
 
 // copy from http://www.java2s.com/Code/Java/JDK-6/SignSOAPmessage.htm
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.Serializable;
 import java.io.StringWriter;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyException;
 import java.security.KeyPair;
@@ -65,7 +69,7 @@ import org.xml.sax.SAXException;
  *
  * @author Scott
  */
-public class SOAPMessage {
+public class SOAPMessage implements Serializable {
     private javax.xml.soap.SOAPFactory factory;
     private javax.xml.soap.SOAPMessage message;
     private javax.xml.soap.SOAPHeader header;
@@ -89,6 +93,40 @@ public class SOAPMessage {
             body.addAttribute(bodyName, "Body");
             
             body.addChildElement(factory.createElement(msgName));
+            
+            Source source = message.getSOAPPart().getContent();
+            
+            if (source instanceof DOMSource) {
+                root = ((DOMSource) source).getNode();
+            } else if (source instanceof SAXSource) {
+                InputSource inSource = ((SAXSource) source).getInputSource();
+                DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+                dbf.setNamespaceAware(true);
+                DocumentBuilder db = dbf.newDocumentBuilder();
+
+                root = (Node) db.parse(inSource).getDocumentElement();
+            }
+        } catch (SOAPException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SAXException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public SOAPMessage(javax.xml.soap.SOAPMessage soap) {
+        try {
+            message = soap;
+            factory = SOAPFactory.newInstance();
+            
+            SOAPPart soapPart = message.getSOAPPart();
+            SOAPEnvelope soapEnvelope = soapPart.getEnvelope();
+
+            header = soapEnvelope.getHeader();
+            body = soapEnvelope.getBody();
             
             Source source = message.getSOAPPart().getContent();
             
@@ -148,6 +186,8 @@ public class SOAPMessage {
     public void add2Body(SOAPElement element) {
         try {
             ((SOAPElement) body.getFirstChild()).addChildElement(element);
+            
+            message.saveChanges();
         } catch (SOAPException ex) {
             Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -230,8 +270,8 @@ public class SOAPMessage {
     public String toString() {
         try {
             Transformer transformer = TransformerFactory.newInstance().newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
+//            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+//            transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", "2");
             
             StreamResult result = new StreamResult(new StringWriter());
             DOMSource source = new DOMSource(root);
@@ -269,10 +309,14 @@ public class SOAPMessage {
         
         System.out.println(soap.validate(keyPair.getPublic()));
         
-        NodeList nl = soap.getBody();
+        InputStream stream = new ByteArrayInputStream(soap.toString().getBytes(StandardCharsets.UTF_8));
         
-        for (int i = 0; i < nl.getLength(); i++) {
-            System.out.println(nl.item(i).getNodeName() + " " + nl.item(i).getTextContent());
+        try {
+            soap = new SOAPMessage(MessageFactory.newInstance().createMessage(null, stream));
+        } catch (SOAPException | IOException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
         }
+        
+        System.err.println(soap.toString());
     }
 }
