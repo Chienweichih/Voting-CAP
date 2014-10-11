@@ -43,7 +43,7 @@ public class Request extends SOAPMessage {
         String msg = operation.item(2).getTextContent();
         
         String csn = body.item(1).getTextContent();
-        System.out.println("[" + csn + "]");
+//        System.out.println("[" + csn + "]");
         this.operation = new Operation(opType, path, msg);
         this.consecutiveSequenceNumber = Integer.decode(csn);
     }
