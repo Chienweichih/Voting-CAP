@@ -18,6 +18,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import service.Config;
 import service.SocketServer;
 
 public class Utils {
@@ -127,11 +128,17 @@ public class Utils {
         }
     }
     
+    public static String digest(File file) {
+        return digest(file, Config.DIGEST_ALGORITHM);
+    }
+    
     /**
      * Digest a file with a specific algorithm.
      * @return the digest value
      */
     public static String digest(File file, String algorithm) {
+        String result = null;
+        
         try (InputStream fis = new FileInputStream(file)) {
             int n;
             byte[] buffer = new byte[BUF_SIZE];
@@ -141,14 +148,36 @@ public class Utils {
                 digest.update(buffer, 0, n);
             }
             
-            return Hex2Str((digest.digest()));
+            result = Hex2Str((digest.digest()));
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NoSuchAlgorithmException | IOException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         }
 
-        return String.format("[cannot digest %s]", file.getName());
+        return result;
+    }
+    
+    public static String digest(String message) {
+        return digest(message, Config.DIGEST_ALGORITHM);
+    }
+    
+    /**
+     * Digest a string with a specific algorithm.
+     * @return the digest value
+     */
+    public static String digest(String message, String algorithm) {
+        String result = null;
+        
+        try {
+            MessageDigest digest = MessageDigest.getInstance(algorithm);
+            
+            result = Hex2Str(digest.digest(message.getBytes()));
+        } catch (NoSuchAlgorithmException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return result;
     }
     
     /**
