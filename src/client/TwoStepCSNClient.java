@@ -3,6 +3,7 @@ package client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -76,7 +77,11 @@ public class TwoStepCSNClient {
                 }
             }
             
-            System.out.println(result);
+            File attestation = new File("attestation/client/csn");
+            
+            try (FileWriter fw = new FileWriter(attestation, true)) {
+                fw.append(ack.toString() + '\n');
+            }
             
             socket.close();
         } catch (IOException ex) {

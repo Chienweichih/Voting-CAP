@@ -108,6 +108,12 @@ public class ChainHashHandler implements ConnectionHandler {
             
             HashingChain.add(Utils.digest(ack.toString()));
             
+            File attestation = new File("attestation/service-provider/chainhash");
+            
+            try (FileWriter fw = new FileWriter(attestation, true)) {
+                fw.append(ack.toString() + '\n');
+            }
+            
             socket.close();
         } catch (IOException ex) {
             Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);

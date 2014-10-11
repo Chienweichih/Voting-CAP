@@ -111,6 +111,12 @@ public class CSNHandler implements ConnectionHandler {
                 Utils.send(out, file);
             }
             
+            File attestation = new File("attestation/service-provider/csn");
+            
+            try (FileWriter fw = new FileWriter(attestation, true)) {
+                fw.append(ack.toString() + '\n');
+            }
+            
             socket.close();
         } catch (IOException ex) {
             Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);
