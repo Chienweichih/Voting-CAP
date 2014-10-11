@@ -9,6 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.PublicKey;
+import java.security.SignatureException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -42,6 +44,12 @@ public class CSNHandler implements ConnectionHandler {
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
+            
+            PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+            
+            if (!req.validate(clientPubKey)) {
+                throw new SignatureException("REQ validation failure");
+            }
             
             String result;
             
@@ -95,6 +103,8 @@ public class CSNHandler implements ConnectionHandler {
             
             Acknowledgement ack = new Acknowledgement(result, req);
             
+            ack.sign(keyPair);
+            
             Utils.send(out, ack.toString());
             
             if (sendFileAfterAck) {
@@ -103,6 +113,8 @@ public class CSNHandler implements ConnectionHandler {
             
             socket.close();
         } catch (IOException ex) {
+            Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SignatureException ex) {
             Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

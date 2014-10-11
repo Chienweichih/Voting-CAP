@@ -6,6 +6,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
+import java.security.PublicKey;
+import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import message.Operation;
@@ -40,9 +42,17 @@ public class TwoStepCSNClient {
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = new Request(op, csn);
             
+            req.sign(keyPair);
+            
             Utils.send(out, req.toString());
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+            
+            PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
+            
+            if (!ack.validate(spPubKey)) {
+                throw new SignatureException("ACK validation failure");
+            }
             
             String result = ack.getResult();
             
@@ -72,6 +82,8 @@ public class TwoStepCSNClient {
         } catch (IOException ex) {
             Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
+            Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (SignatureException ex) {
             Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
