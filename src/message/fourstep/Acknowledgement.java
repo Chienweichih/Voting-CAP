@@ -36,7 +36,7 @@ public class Acknowledgement extends SOAPMessage {
         NodeList body = getBody();
         
         this.result = body.item(0).getTextContent();
-        this.replyResponse = ReplyResponse.parse(body.item(2).getTextContent());
+        this.replyResponse = ReplyResponse.parse(body.item(1).getTextContent());
     }
     
     public String getResult() {

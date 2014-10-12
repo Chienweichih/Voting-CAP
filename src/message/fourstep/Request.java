@@ -31,7 +31,7 @@ public class Request extends SOAPMessage {
         this.localSequenceNumber = lsn;
         
         add2Body(operation.toMap());
-        add2Body("client id", clientID);
+        add2Body("client-id", clientID);
         add2Body("lsn", localSequenceNumber.toString());
     }
     
