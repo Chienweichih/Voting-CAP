@@ -15,7 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import message.Operation;
 
-import message.fourstep.*;
+import message.fourstep.chainhash_lsn.*;
 import service.Config;
 import service.handler.ConnectionHandler;
 import utility.Utils;
