@@ -277,7 +277,7 @@ public class SOAPMessage implements Serializable {
             DOMSource source = new DOMSource(root);
             transformer.transform(source, result);
             
-            return result.getWriter().toString();//.replaceAll("\n", "");
+            return result.getWriter().toString().replaceAll("\n", "");
         } catch (TransformerConfigurationException ex) {
             Logger.getLogger(XMLDocument.class.getName()).log(Level.SEVERE, null, ex);
         } catch (TransformerException ex) {
