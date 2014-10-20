@@ -12,7 +12,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import service.handler.ConnectionHandler;
+import service.handler.NonPOVHandler;
+import service.handler.fourstep.ChainHashAndLSNHandler;
+import service.handler.fourstep.DoubleChainHashHandler;
 import service.handler.twostep.CSNHandler;
+import service.handler.twostep.ChainHashHandler;
 import utility.Utils;
 
 /**
@@ -78,8 +82,10 @@ public class SocketServer extends Thread {
     }
     
     public static void main(String[] args) {
-        SocketServer service = new SocketServer(CSNHandler.class, 3000);
-        
-        new Thread(service).start();
+        new SocketServer(NonPOVHandler.class, Config.NONPOV_SERVICE_PORT).start();
+        new SocketServer(CSNHandler.class, Config.CSN_SERVICE_PORT).start();
+        new SocketServer(ChainHashHandler.class, Config.CHAINHASH_SERVICE_PORT).start();
+        new SocketServer(ChainHashAndLSNHandler.class, Config.CHAINHASH_LSN_SERVICE_PORT).start();
+        new SocketServer(DoubleChainHashHandler.class, Config.DOUBLECHAINHASH_SERVICE_PORT).start();
     }
 }

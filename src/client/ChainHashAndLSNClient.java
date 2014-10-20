@@ -27,7 +27,7 @@ public class ChainHashAndLSNClient {
     private final KeyPair keyPair;
     
     public ChainHashAndLSNClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.SERVICE_PORT, keyPair);
+        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_LSN_SERVICE_PORT, keyPair);
     }
     
     public ChainHashAndLSNClient(String hostname, int port, KeyPair keyPair) {
@@ -92,7 +92,7 @@ public class ChainHashAndLSNClient {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

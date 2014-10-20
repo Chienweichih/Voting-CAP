@@ -13,8 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import message.Operation;
 import message.OperationType;
-import message.twostep.csn.Acknowledgement;
-import message.twostep.csn.Request;
+import message.twostep.chainhash.Acknowledgement;
+import message.twostep.chainhash.Request;
 import service.Config;
 import utility.Utils;
 
@@ -22,26 +22,32 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class TwoStepCSNClient {
+public class ChainHashClient {
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
+    private String lastChainHash;
     
-    public TwoStepCSNClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.SERVICE_PORT, keyPair);
+    public ChainHashClient(KeyPair keyPair, String lastChainHash) {
+        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_SERVICE_PORT, keyPair, lastChainHash);
     }
     
-    public TwoStepCSNClient(String hostname, int port, KeyPair keyPair) {
+    public ChainHashClient(String hostname, int port, KeyPair keyPair, String lastChainHash) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
+        this.lastChainHash = lastChainHash;
     }
     
-    public void run(Operation op, int csn) {
+    public String getLastChainHash() {
+        return lastChainHash;
+    }
+    
+    public void run(Operation op) {
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            Request req = new Request(op, csn);
+            Request req = new Request(op);
             
             req.sign(keyPair);
             
@@ -55,11 +61,14 @@ public class TwoStepCSNClient {
                 throw new SignatureException("ACK validation failure");
             }
             
-            String result = ack.getResult();
+            String result = null;
+            String chainHash = ack.getChainHash();
             
-            if (result.compareTo("CSN mismatch") == 0) {
-                throw new IllegalAccessException(result);
+            if (chainHash.compareTo(lastChainHash) != 0) {
+                throw new IllegalAccessException("Chain hash mismatch");
             }
+            
+            lastChainHash = Utils.digest(ack.toString());
             
             if (op.getType() == OperationType.DOWNLOAD) {
                 String fname = op.getPath();
@@ -68,7 +77,7 @@ public class TwoStepCSNClient {
                 
                 Utils.receive(in, file);
                 
-                String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+                String digest = Utils.digest(file);
                 
                 if (ack.getResult().compareTo(digest) == 0) {
                     result = "download success";
@@ -77,29 +86,33 @@ public class TwoStepCSNClient {
                 }
             }
             
-            File attestation = new File("attestation/client/csn");
+            File attestation = new File("attestation/client/chainhash");
             
-            try (FileWriter fw = new FileWriter(attestation, true)) {
+            try (FileWriter fw = new FileWriter(attestation)) {
                 fw.append(ack.toString() + '\n');
             }
             
             socket.close();
         } catch (IOException ex) {
-            Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IllegalAccessException ex) {
-            Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         } catch (SignatureException ex) {
-            Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
     public static void main(String[] args) {
-        for (int csn = 1; csn <= 3; csn++) {
-            TwoStepCSNClient client = new TwoStepCSNClient(Utils.readKeyPair("client.key"));
+        String chainhash = Config.DEFAULT_CHAINHASH;
+        
+        for (int time = 1; time <= 3; time++) {
+            ChainHashClient client = new ChainHashClient(Utils.readKeyPair("client.key"), chainhash);
 
             Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
 
-            client.run(op, csn);
+            client.run(op);
+            
+            chainhash = client.getLastChainHash();
         }
     }
 }

@@ -28,7 +28,7 @@ public class DoubleChainHashClient {
     private String lastChainHash;
     
     public DoubleChainHashClient(KeyPair keyPair, String hash) {
-        this(Config.SERVICE_HOSTNAME, Config.SERVICE_PORT, keyPair, hash);
+        this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, keyPair, hash);
     }
     
     public DoubleChainHashClient(String hostname, int port, KeyPair keyPair, String hash) {
@@ -108,7 +108,7 @@ public class DoubleChainHashClient {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(TwoStepCSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     

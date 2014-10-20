@@ -28,7 +28,7 @@ public class NonPOVClient {
     private final KeyPair keyPair;
     
     public NonPOVClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.SERVICE_PORT, keyPair);
+        this(Config.SERVICE_HOSTNAME, Config.NONPOV_SERVICE_PORT, keyPair);
     }
     
     public NonPOVClient(String hostname, int port, KeyPair keyPair) {
