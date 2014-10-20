@@ -55,8 +55,6 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.sax.SAXSource;
 import javax.xml.transform.stream.StreamResult;
-import static org.jcp.xml.dsig.internal.dom.DOMUtils.getFirstChildElement;
-import static org.jcp.xml.dsig.internal.dom.DOMUtils.getNextSiblingElement;
 
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -285,6 +283,26 @@ public class SOAPMessage implements Serializable {
         }
         
         return "[toString failed]";
+    }
+    
+    public static Element getFirstChildElement(Node node) {
+        Node child = node.getFirstChild();
+        
+        while (child != null && child.getNodeType() != Node.ELEMENT_NODE) {
+            child = child.getNextSibling();
+        }
+        
+        return (Element) child;
+    }
+    
+    public static Element getNextSiblingElement(Node node) {
+        Node sibling = node.getNextSibling();
+        
+        while (sibling != null && sibling.getNodeType() != Node.ELEMENT_NODE) {
+            sibling = sibling.getNextSibling();
+        }
+        
+        return (Element) sibling;
     }
     
     public static void main(String[] args) {
