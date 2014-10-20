@@ -1,4 +1,4 @@
-package message.fourstep;
+package message.fourstep.doublechainhash;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,21 +16,21 @@ import org.w3c.dom.NodeList;
  * @author Scott
  */
 public class Response extends SOAPMessage {
-    private static final long serialVersionUID = 20141006L;
+    private static final long serialVersionUID = 20141013L;
     private final Request request;
-    private final String result;
-    private final String lastChainHash;
+    private final String clientDeviceLastChainHash; // ACKj
+    private final String userLastChainHash; // Ri-1
     
-    public Response(Request req, String result, String hash) {
+    public Response(Request req, String hash1, String hash2) {
         super("response");
         
         this.request = req;
-        this.result = result;
-        this.lastChainHash = hash;
+        this.clientDeviceLastChainHash = hash1;
+        this.userLastChainHash = hash2;
         
         add2Body("request", request.toString());
-        add2Body("result", result);
-        add2Body("chainhash", lastChainHash);
+        add2Body("result", clientDeviceLastChainHash);
+        add2Body("chainhash", userLastChainHash);
     }
     
     private Response(javax.xml.soap.SOAPMessage message) {
@@ -39,26 +39,20 @@ public class Response extends SOAPMessage {
         NodeList body = getBody();
         
         this.request = Request.parse(body.item(0).getTextContent());
-        this.result = body.item(1).getTextContent();
-        this.lastChainHash = body.item(2).getTextContent();
+        this.clientDeviceLastChainHash = body.item(1).getTextContent();
+        this.userLastChainHash = body.item(2).getTextContent();
     }
     
     public Request getRequest() {
         return request;
     }
     
-    // for C&L
-    public String getResult() {
-        return result;
+    public String getClientDeviceLastChainHash() {
+        return clientDeviceLastChainHash;
     }
     
-    // for DC&L
-    public String getClientLastChainHash() {
-        return result;
-    }
-    
-    public String getChainHash() {
-        return lastChainHash;
+    public String getUserLastChainHash() {
+        return userLastChainHash;
     }
     
     public static Response parse(String receive) {

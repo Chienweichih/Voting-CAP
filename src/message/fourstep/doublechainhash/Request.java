@@ -1,4 +1,4 @@
-package message.fourstep;
+package message.fourstep.doublechainhash;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -18,21 +18,18 @@ import org.w3c.dom.NodeList;
  * @author Scott
  */
 public class Request extends SOAPMessage {
-    private static final long serialVersionUID = 20141006L;
+    private static final long serialVersionUID = 20141013L;
     private final Operation operation;
     private final String clientID;
-    private final Integer localSequenceNumber;
     
-    public Request(Operation op, String id, Integer lsn) {
+    public Request(Operation op, String id) {
         super("request");
         
         this.operation = op;
         this.clientID = id;
-        this.localSequenceNumber = lsn;
         
         add2Body(operation.toMap());
         add2Body("client-id", clientID);
-        add2Body("lsn", localSequenceNumber.toString());
     }
     
     private Request(javax.xml.soap.SOAPMessage message) {
@@ -47,7 +44,6 @@ public class Request extends SOAPMessage {
         
         this.operation = new Operation(opType, path, msg);
         this.clientID = body.item(1).getTextContent();
-        this.localSequenceNumber = Integer.decode(body.item(2).getTextContent());
     }
     
     public Operation getOperation() {
@@ -56,10 +52,6 @@ public class Request extends SOAPMessage {
     
     public String getClientID() {
         return clientID;
-    }
-    
-    public Integer getLocalSequenceNumber() {
-        return localSequenceNumber;
     }
     
     public static Request parse(String receive) {

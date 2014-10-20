@@ -1,4 +1,4 @@
-package message.fourstep;
+package message.fourstep.doublechainhash;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -16,7 +16,7 @@ import org.w3c.dom.NodeList;
  * @author Scott
  */
 public class Acknowledgement extends SOAPMessage {
-    private static final long serialVersionUID = 20141006L;
+    private static final long serialVersionUID = 20141013L;
     private final String result;
     private final ReplyResponse replyResponse;
     
