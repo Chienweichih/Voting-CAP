@@ -115,9 +115,7 @@ public class ChainHashHandler implements ConnectionHandler {
             }
             
             socket.close();
-        } catch (IOException ex) {
-            Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SignatureException ex) {
+        } catch (IOException | SignatureException ex) {
             Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }

@@ -41,11 +41,11 @@ public class CSNHandler implements ConnectionHandler {
     
     @Override
     public void run() {
+        PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+        
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
-            
-            PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
             
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
@@ -71,7 +71,7 @@ public class CSNHandler implements ConnectionHandler {
                     case UPLOAD:
                         Utils.receive(in, file);
                         
-                        digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+                        digest = Utils.digest(file);
                         
                         if (op.getMessage().compareTo(digest) == 0) {
                             result = "ok";
