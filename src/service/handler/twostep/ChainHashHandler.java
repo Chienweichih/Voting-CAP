@@ -102,11 +102,11 @@ public class ChainHashHandler implements ConnectionHandler {
             
             Utils.send(out, ack.toString());
             
+            HashingChain.add(Utils.digest(ack.toString()));
+            
             if (sendFileAfterAck) {
                 Utils.send(out, file);
             }
-            
-            HashingChain.add(Utils.digest(ack.toString()));
             
             File attestation = new File("attestation/service-provider/chainhash");
             
