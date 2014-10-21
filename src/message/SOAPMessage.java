@@ -153,9 +153,11 @@ public class SOAPMessage implements Serializable {
         try {
             SOAPElement op = factory.createElement(map.get("name"));
             
-            map.remove("name");
-            
             for (String key : map.keySet()) {
+                if (key.compareTo("name") == 0) {
+                    continue;
+                }
+                
                 SOAPElement child = factory.createElement(key);
                 
                 child.setTextContent(map.get(key));

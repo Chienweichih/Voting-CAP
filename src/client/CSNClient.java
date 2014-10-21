@@ -26,18 +26,22 @@ public class CSNClient {
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
+    private int csn;
     
-    public CSNClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair);
+    public CSNClient(KeyPair keyPair, int csn) {
+        this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair, csn);
     }
     
-    public CSNClient(String hostname, int port, KeyPair keyPair) {
+    public CSNClient(String hostname, int port, KeyPair keyPair, int csn) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
+        this.csn = csn;
     }
     
-    public void run(Operation op, int csn) {
+    public void run(Operation op) {
+        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
+        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -49,8 +53,6 @@ public class CSNClient {
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
             
-            PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
-            
             if (!ack.validate(spPubKey)) {
                 throw new SignatureException("ACK validation failure");
             }
@@ -61,6 +63,8 @@ public class CSNClient {
                 throw new IllegalAccessException(result);
             }
             
+            csn += 1;
+            
             if (op.getType() == OperationType.DOWNLOAD) {
                 String fname = op.getPath();
                 
@@ -70,7 +74,7 @@ public class CSNClient {
                 
                 String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
                 
-                if (ack.getResult().compareTo(digest) == 0) {
+                if (result.compareTo(digest) == 0) {
                     result = "download success";
                 } else {
                     result = "download file digest mismatch";
@@ -84,22 +88,17 @@ public class CSNClient {
             }
             
             socket.close();
-        } catch (IOException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SignatureException ex) {
+        } catch (IOException | IllegalAccessException | SignatureException ex) {
             Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
     public static void main(String[] args) {
-        for (int csn = 1; csn <= 3; csn++) {
-            CSNClient client = new CSNClient(Utils.readKeyPair("client.key"));
+        CSNClient client = new CSNClient(Utils.readKeyPair("client.key"), 1);
+        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
 
-            Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
-
-            client.run(op, csn);
+        for (int csn = 1; csn <= 1000; csn++) {
+            client.run(op);
         }
     }
 }

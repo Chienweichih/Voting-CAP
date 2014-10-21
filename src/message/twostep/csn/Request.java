@@ -18,7 +18,7 @@ import org.w3c.dom.NodeList;
  * @author Scott
  */
 public class Request extends SOAPMessage {
-    private static final long serialVersionUID = 20141006L;
+    private static final long serialVersionUID = 20141021L;
     private final Operation operation;
     private final Integer consecutiveSequenceNumber;
     
@@ -43,9 +43,9 @@ public class Request extends SOAPMessage {
         String msg = operation.item(2).getTextContent();
         
         String csn = body.item(1).getTextContent();
-//        System.out.println("[" + csn + "]");
+        
         this.operation = new Operation(opType, path, msg);
-        this.consecutiveSequenceNumber = Integer.decode(csn);
+        this.consecutiveSequenceNumber = Integer.parseInt(csn);
     }
     
     public Operation getOperation() {

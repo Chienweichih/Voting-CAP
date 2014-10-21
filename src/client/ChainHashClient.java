@@ -44,6 +44,8 @@ public class ChainHashClient {
     }
     
     public void run(Operation op) {
+        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
+        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -55,13 +57,11 @@ public class ChainHashClient {
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
             
-            PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
-            
             if (!ack.validate(spPubKey)) {
                 throw new SignatureException("ACK validation failure");
             }
             
-            String result = null;
+            String result = ack.getResult();
             String chainHash = ack.getChainHash();
             
             if (chainHash.compareTo(lastChainHash) != 0) {
@@ -79,7 +79,7 @@ public class ChainHashClient {
                 
                 String digest = Utils.digest(file);
                 
-                if (ack.getResult().compareTo(digest) == 0) {
+                if (result.compareTo(digest) == 0) {
                     result = "download success";
                 } else {
                     result = "download file digest mismatch";
@@ -93,26 +93,17 @@ public class ChainHashClient {
             }
             
             socket.close();
-        } catch (IOException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (SignatureException ex) {
+        } catch (IOException | IllegalAccessException | SignatureException ex) {
             Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
     public static void main(String[] args) {
-        String chainhash = Config.DEFAULT_CHAINHASH;
+        ChainHashClient client = new ChainHashClient(Utils.readKeyPair("client.key"), Config.DEFAULT_CHAINHASH);
+        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
         
-        for (int time = 1; time <= 3; time++) {
-            ChainHashClient client = new ChainHashClient(Utils.readKeyPair("client.key"), chainhash);
-
-            Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
-
+        for (int time = 1; time <= 1000; time++) {
             client.run(op);
-            
-            chainhash = client.getLastChainHash();
         }
     }
 }
