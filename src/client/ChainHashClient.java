@@ -28,15 +28,15 @@ public class ChainHashClient {
     private final KeyPair keyPair;
     private String lastChainHash;
     
-    public ChainHashClient(KeyPair keyPair, String lastChainHash) {
-        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_SERVICE_PORT, keyPair, lastChainHash);
+    public ChainHashClient(KeyPair keyPair) {
+        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_SERVICE_PORT, keyPair);
     }
     
-    public ChainHashClient(String hostname, int port, KeyPair keyPair, String lastChainHash) {
+    public ChainHashClient(String hostname, int port, KeyPair keyPair) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
-        this.lastChainHash = lastChainHash;
+        this.lastChainHash = Config.DEFAULT_CHAINHASH;
     }
     
     public String getLastChainHash() {
@@ -99,10 +99,11 @@ public class ChainHashClient {
     }
     
     public static void main(String[] args) {
-        ChainHashClient client = new ChainHashClient(Utils.readKeyPair("client.key"), Config.DEFAULT_CHAINHASH);
+        KeyPair keypair = Utils.readKeyPair("client.key");
+        ChainHashClient client = new ChainHashClient(keypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
         
-        for (int time = 1; time <= 1000; time++) {
+        for (int i = 1; i <= Config.NUM_RUNS; i++) {
             client.run(op);
         }
     }

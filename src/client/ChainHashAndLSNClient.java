@@ -24,19 +24,23 @@ import utility.Utils;
 public class ChainHashAndLSNClient {
     private final String hostname;
     private final int port;
+    private final String id;
     private final KeyPair keyPair;
+    private int lsn;
     
-    public ChainHashAndLSNClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_LSN_SERVICE_PORT, keyPair);
+    public ChainHashAndLSNClient(String id, KeyPair keyPair) {
+        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_LSN_SERVICE_PORT, id, keyPair);
     }
     
-    public ChainHashAndLSNClient(String hostname, int port, KeyPair keyPair) {
+    public ChainHashAndLSNClient(String hostname, int port, String id, KeyPair keyPair) {
         this.hostname = hostname;
         this.port = port;
+        this.id = id;
         this.keyPair = keyPair;
+        this.lsn = 1;
     }
     
-    public void run(Operation op, String id, int lsn) {
+    public void run(Operation op) {
         PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
         
         try (Socket socket = new Socket(hostname, port);
@@ -68,6 +72,8 @@ public class ChainHashAndLSNClient {
             
             String result = ack.getResult();
             
+            lsn += 1;
+            
             if (op.getType() == OperationType.DOWNLOAD) {
                 String fname = op.getPath();
                 
@@ -97,12 +103,13 @@ public class ChainHashAndLSNClient {
     }
     
     public static void main(String[] args) {
-        ChainHashAndLSNClient client = new ChainHashAndLSNClient(Utils.readKeyPair("client.key"));
+        String id = "client";
+        KeyPair keypair = Utils.readKeyPair(id + ".key");
+        ChainHashAndLSNClient client = new ChainHashAndLSNClient(id, keypair);
+        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
         
-        for (int lsn = 1; lsn <= 3; lsn++) {
-            Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
-
-            client.run(op, "client01", lsn);
+        for (int i = 1; i <= Config.NUM_RUNS; i++) {
+            client.run(op);
         }
     }
 }

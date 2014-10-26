@@ -38,6 +38,8 @@ public class NonPOVClient {
     }
     
     public void run(Operation op) {
+        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
+        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -48,8 +50,6 @@ public class NonPOVClient {
             Utils.send(out, req.toString());
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-            
-            PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
             
             if (!ack.validate(spPubKey)) {
                 throw new SignatureException("ACK validation failure");
@@ -92,11 +92,11 @@ public class NonPOVClient {
     }
     
     public static void main(String[] args) {
-        for (int time = 1; time <= 3; time++) {
-            NonPOVClient client = new NonPOVClient(Utils.readKeyPair("client.key"));
-
-            Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
-
+        KeyPair keypair = Utils.readKeyPair("client.key");
+        NonPOVClient client = new NonPOVClient(keypair);
+        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
+        
+        for (int i = 1; i <= Config.NUM_RUNS; i++) {
             client.run(op);
         }
     }

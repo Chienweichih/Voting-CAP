@@ -28,15 +28,15 @@ public class CSNClient {
     private final KeyPair keyPair;
     private int csn;
     
-    public CSNClient(KeyPair keyPair, int csn) {
-        this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair, csn);
+    public CSNClient(KeyPair keyPair) {
+        this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair);
     }
     
-    public CSNClient(String hostname, int port, KeyPair keyPair, int csn) {
+    public CSNClient(String hostname, int port, KeyPair keyPair) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
-        this.csn = csn;
+        this.csn = 1;
     }
     
     public void run(Operation op) {
@@ -94,10 +94,11 @@ public class CSNClient {
     }
     
     public static void main(String[] args) {
-        CSNClient client = new CSNClient(Utils.readKeyPair("client.key"), 1);
+        KeyPair keypair = Utils.readKeyPair("client.key");
+        CSNClient client = new CSNClient(keypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
 
-        for (int csn = 1; csn <= 1000; csn++) {
+        for (int csn = 1; csn <= Config.NUM_RUNS; csn++) {
             client.run(op);
         }
     }

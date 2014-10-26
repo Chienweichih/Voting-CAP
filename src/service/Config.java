@@ -17,4 +17,6 @@ public interface Config {
     public String DATA_DIR_PATH = "data";
     
     public String DIGEST_ALGORITHM = "SHA-1";
+    
+    public int NUM_RUNS = 10;
 }

@@ -24,25 +24,27 @@ import utility.Utils;
 public class DoubleChainHashClient {
     private final String hostname;
     private final int port;
+    private final String id;
     private final KeyPair keyPair;
     private String lastChainHash;
     
-    public DoubleChainHashClient(KeyPair keyPair, String hash) {
-        this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, keyPair, hash);
+    public DoubleChainHashClient(String id, KeyPair keyPair) {
+        this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, id, keyPair);
     }
     
-    public DoubleChainHashClient(String hostname, int port, KeyPair keyPair, String hash) {
+    public DoubleChainHashClient(String hostname, int port, String id, KeyPair keyPair) {
         this.hostname = hostname;
         this.port = port;
+        this.id = id;
         this.keyPair = keyPair;
-        this.lastChainHash = hash;
+        this.lastChainHash = Config.DEFAULT_CHAINHASH;
     }
     
     public String getLastChainHash() {
         return lastChainHash;
     }
     
-    public void run(Operation op, String id) {
+    public void run(Operation op) {
         PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
         
         try (Socket socket = new Socket(hostname, port);
@@ -113,15 +115,13 @@ public class DoubleChainHashClient {
     }
     
     public static void main(String[] args) {
-        KeyPair keyPair = Utils.readKeyPair("client.key");
-        String chainhash = Config.DEFAULT_CHAINHASH;
+        String id = "client";
+        KeyPair keyPair = Utils.readKeyPair(id + ".key");
+        DoubleChainHashClient client = new DoubleChainHashClient(id, keyPair);
+        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
         
-        DoubleChainHashClient client = new DoubleChainHashClient(keyPair, chainhash);
-        
-        for (int i = 1; i <= 3; i++) {
-            Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
-
-            client.run(op, "client01");
+        for (int i = 1; i <= Config.NUM_RUNS; i++) {
+            client.run(op);
         }
     }
 }
