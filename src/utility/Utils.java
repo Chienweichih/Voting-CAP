@@ -1,11 +1,14 @@
 package utility;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -67,6 +70,8 @@ public class Utils {
             
             out.writeInt(bytes.length);
             out.write(bytes);
+            
+            out.flush();
         } catch (UnsupportedEncodingException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -87,6 +92,8 @@ public class Utils {
             while ((n = fis.read(buf)) > 0) {
                 out.write(buf, 0, n);
             }
+            
+            out.flush();
         } catch (IOException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -120,7 +127,14 @@ public class Utils {
             int n;
             
             for (long leftBytes = in.readLong(); leftBytes > 0; leftBytes -= n) {
-                n = in.read(buf);
+                if (leftBytes > BUF_SIZE) {
+                    n = in.read(buf);
+                } else {
+                    n = (int) leftBytes;
+                    
+                    in.read(buf, 0, n);
+                }
+                
                 fos.write(buf, 0, n);
             }
         } catch (IOException ex) {
@@ -178,6 +192,51 @@ public class Utils {
         }
         
         return result;
+    }
+    
+    /**
+     * Read the digest value from file $fname.digest.
+     * @return the pre-saved digest value in $fname.digest
+     */
+    public static String readDigest(String fname) {
+        String digest = null;
+        
+        try (FileReader fr = new FileReader(fname + ".digest");
+             BufferedReader br = new BufferedReader(fr)) {
+            digest = br.readLine();
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return digest;
+    }
+    
+    /**
+     * Append string to specific file.
+     */
+    public static void append(File file, String str) {
+        try (FileWriter fw = new FileWriter(file, true)) {
+            fw.append(str);
+        } catch (IOException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    /**
+     * Append string to specific file, then digest it.
+     */
+    public static void appendAndDigest(File file, String str) {
+        append(file, str);
+        
+        File digestFile = new File(file.getPath() + ".digest");
+        
+        try (FileWriter fw = new FileWriter(digestFile)) {
+            fw.append(digest(file));
+        } catch (IOException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
     
     /**
