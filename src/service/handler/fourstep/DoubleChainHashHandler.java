@@ -10,8 +10,8 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import message.Operation;
 
+import message.Operation;
 import message.fourstep.doublechainhash.*;
 import service.Config;
 import service.handler.ConnectionHandler;

@@ -1,11 +1,8 @@
 package service.handler.twostep;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -14,8 +11,8 @@ import java.security.SignatureException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import message.Operation;
 
+import message.Operation;
 import message.twostep.csn.*;
 import service.Config;
 import service.handler.ConnectionHandler;

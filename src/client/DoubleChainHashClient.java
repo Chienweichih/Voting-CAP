@@ -12,6 +12,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import message.Operation;
 import message.OperationType;
 import message.fourstep.doublechainhash.*;

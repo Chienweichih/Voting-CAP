@@ -11,8 +11,8 @@ import java.security.SignatureException;
 import java.util.LinkedList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import message.Operation;
 
+import message.Operation;
 import message.twostep.chainhash.*;
 import service.Config;
 import service.handler.ConnectionHandler;

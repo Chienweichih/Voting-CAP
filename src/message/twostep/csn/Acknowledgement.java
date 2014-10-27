@@ -1,13 +1,5 @@
 package message.twostep.csn;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.SOAPException;
 import message.SOAPMessage;
 import org.w3c.dom.NodeList;
 

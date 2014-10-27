@@ -4,7 +4,6 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
@@ -106,7 +105,7 @@ public class ChainHashAndLSNClient {
                     break;
             }
             
-            Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
+            Utils.write(ATTESTATION, ack.toString());
             
             socket.close();
         } catch (IOException | SignatureException ex) {

@@ -3,7 +3,6 @@ package service.handler;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -11,8 +10,8 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import message.Operation;
 
+import message.Operation;
 import service.Config;
 import message.nonpov.*;
 import utility.Utils;
@@ -72,10 +71,8 @@ public class NonPOVHandler implements ConnectionHandler {
                     } else {
                         result = "upload fail";
                     }
-
-                    try (FileWriter fw = new FileWriter(fname)) {
-                        fw.write(digest);
-                    }
+                    
+                    Utils.writeDigest(fname, digest);
 
                     break;
                 case DOWNLOAD:

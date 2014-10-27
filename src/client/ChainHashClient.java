@@ -98,7 +98,7 @@ public class ChainHashClient {
                     break;
             }
             
-            Utils.append(ATTESTATION, ack.toString() + '\n');
+            Utils.write(ATTESTATION, ack.toString());
             
             socket.close();
         } catch (IOException | IllegalAccessException | SignatureException ex) {

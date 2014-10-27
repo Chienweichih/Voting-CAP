@@ -4,9 +4,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -14,6 +12,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import message.Operation;
 import message.OperationType;
 import message.twostep.csn.Acknowledgement;
@@ -125,10 +124,10 @@ public class CSNClient {
                     
                     if (req1.getConsecutiveSequenceNumber().compareTo(req2.getConsecutiveSequenceNumber()) != 0) {
                         success = false;
-                    } else {
-                        success &= ack1.validate(spKey) & req1.validate(cliKey);
-                        success &= ack2.validate(spKey) & req2.validate(cliKey);
                     }
+                    
+                    success &= ack1.validate(spKey) & req1.validate(cliKey);
+                    success &= ack2.validate(spKey) & req2.validate(cliKey);
                 }
             }
         } catch (IOException ex) {

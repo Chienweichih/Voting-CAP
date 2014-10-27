@@ -28,7 +28,6 @@ public class SocketServer extends Thread {
     private int numThreads;
     private ServerSocket serverSocket;
     private ExecutorService pool;
-    private Class<? extends ConnectionHandler> handlerClass;
     private Constructor handlerCtor;
     private KeyPair keyPair;
     
@@ -39,7 +38,6 @@ public class SocketServer extends Thread {
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         this.port = port;
         this.numThreads = Runtime.getRuntime().availableProcessors();
-        this.handlerClass = handler;
         
         try {
             this.handlerCtor = handler.getDeclaredConstructor(Socket.class, KeyPair.class);

@@ -75,9 +75,6 @@ public class NonPOVClient {
                     File tmp_req_attestation = new File(NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
                     File tmp_ack_attestation = new File(NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
                     
-                    tmp_req_attestation.delete();
-                    tmp_ack_attestation.delete();
-                    
                     Utils.receive(in, tmp_req_attestation);
                     Utils.receive(in, tmp_ack_attestation);
                     
@@ -97,7 +94,7 @@ public class NonPOVClient {
                     break;
             }
             
-            if (ack.getResult().compareTo(digest) == 0) {
+            if (result.compareTo(digest) == 0) {
                 result = "download success";
             } else {
                 result = "download file digest mismatch";
@@ -168,13 +165,13 @@ public class NonPOVClient {
         
         System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
         
+        System.out.println("Auditing:");
+        
         op = new Operation(OperationType.AUDIT, "", "");
         
         client.run(op);
         
-        System.out.println("Auditing:");
-        
-        // to prevent ClassLoader's time of first call
+        // to prevent ClassLoader's init overhead
         Audit(Request.class, REQ_ATTESTATION, new File(NonPOVHandler.REQ_ATTESTATION.getAbsolutePath() + ".audit"), keypair.getPublic());
         Audit(Acknowledgement.class, ACK_ATTESTATION, new File(NonPOVHandler.ACK_ATTESTATION.getAbsolutePath() + ".audit"), spKeypair.getPublic());
         
