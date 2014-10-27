@@ -1,11 +1,8 @@
 package service.handler.fourstep;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -25,11 +22,15 @@ import utility.Utils;
  * @author Scott
  */
 public class DoubleChainHashHandler implements ConnectionHandler {
+    public static final File ATTESTATION;
+    
     private static final DoubleHashingChainTable HASHING_CHAIN_TABLE;
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
+        ATTESTATION = new File("attestation/service-provider/doublechainhash");
+        
         HASHING_CHAIN_TABLE = new DoubleHashingChainTable();
     }
     
@@ -71,41 +72,37 @@ public class DoubleChainHashHandler implements ConnectionHandler {
                 throw new SignatureException("RR validation failure");
             }
             
-            File file;
-            boolean sendFileAfterAck = false;
-            
             Operation op = req.getOperation();
 
-            file = new File(op.getPath());
-
-            String fname = Config.DATA_DIR_PATH + "/" + file.getName() + ".digest";
-
-            String digest;
+            File file = new File(op.getPath());
+            boolean sendFileAfterAck = false;
+            
+            String fname = Config.DATA_DIR_PATH + "/" + file.getName();
 
             switch (op.getType()) {
                 case UPLOAD:
                     Utils.receive(in, file);
 
-                    digest = Utils.digest(file);
+                    String digest = Utils.digest(file);
 
                     if (op.getMessage().compareTo(digest) == 0) {
                         result = "ok";
                     } else {
                         result = "upload fail";
                     }
-
-                    try (FileWriter fw = new FileWriter(fname)) {
-                        fw.write(digest);
-                    }
+                    
+                    Utils.writeDigest(fname, digest);
 
                     break;
+                case AUDIT:
+                    result = Utils.readDigest(file.getPath());
+                    
+                    sendFileAfterAck = true;
+                    
+                    break;
                 case DOWNLOAD:
-                    try (FileReader fr = new FileReader(fname);
-                         BufferedReader br = new BufferedReader(fr)) {
-                        digest = br.readLine();
-                    }
-
-                    result = digest;
+                    result = Utils.readDigest(fname);
+                    
                     sendFileAfterAck = true;
 
                     break;
@@ -117,19 +114,17 @@ public class DoubleChainHashHandler implements ConnectionHandler {
             
             ack.sign(keyPair);
             
-            Utils.send(out, ack.toString());
+            String ackStr = ack.toString();
+            
+            Utils.send(out, ackStr);
             
             if (sendFileAfterAck) {
                 Utils.send(out, file);
             }
             
-            HASHING_CHAIN_TABLE.chain(clientID, Utils.digest(ack.toString()));
+            HASHING_CHAIN_TABLE.chain(clientID, Utils.digest(ackStr));
             
-            File attestation = new File("attestation/service-provider/doublechainhash");
-            
-            try (FileWriter fw = new FileWriter(attestation, true)) {
-                fw.append(ack.toString() + '\n');
-            }
+            Utils.appendAndDigest(ATTESTATION, ackStr + '\n');
             
             socket.close();
         } catch (IOException | SignatureException ex) {
