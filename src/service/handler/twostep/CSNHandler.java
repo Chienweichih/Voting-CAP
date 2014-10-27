@@ -26,11 +26,14 @@ import utility.Utils;
  * @author Scott
  */
 public class CSNHandler implements ConnectionHandler {
+    public static final File ATTESTATION;
+    
     private static final AtomicInteger CSN;
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
+        ATTESTATION = new File("attestation/service-provider/csn");
         CSN = new AtomicInteger(0);
     }
     
@@ -63,15 +66,13 @@ public class CSNHandler implements ConnectionHandler {
                 
                 file = new File(op.getPath());
                 
-                String fname = Config.DATA_DIR_PATH + "/" + file.getName() + ".digest";
-                
-                String digest;
+                String fname = Config.DATA_DIR_PATH + "/" + file.getName();
                 
                 switch (op.getType()) {
                     case UPLOAD:
                         Utils.receive(in, file);
                         
-                        digest = Utils.digest(file);
+                        String digest = Utils.digest(file);
                         
                         if (op.getMessage().compareTo(digest) == 0) {
                             result = "ok";
@@ -79,18 +80,18 @@ public class CSNHandler implements ConnectionHandler {
                             result = "upload fail";
                         }
                         
-                        try (FileWriter fw = new FileWriter(fname)) {
-                            fw.write(digest);
-                        }
+                        Utils.writeDigest(digest);
+                        
+                        break;
+                    case AUDIT:
+                        result = Utils.readDigest(file.getPath());
+                        
+                        sendFileAfterAck = true;
                         
                         break;
                     case DOWNLOAD:
-                        try (FileReader fr = new FileReader(fname);
-                             BufferedReader br = new BufferedReader(fr)) {
-                            digest = br.readLine();
-                        }
+                        result = Utils.readDigest(fname);
                         
-                        result = digest;
                         sendFileAfterAck = true;
                         
                         break;
@@ -111,11 +112,7 @@ public class CSNHandler implements ConnectionHandler {
                 Utils.send(out, file);
             }
             
-            File attestation = new File("attestation/service-provider/csn");
-            
-            try (FileWriter fw = new FileWriter(attestation, true)) {
-                fw.append(ack.toString() + '\n');
-            }
+            Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
             
             socket.close();
         } catch (IOException | SignatureException ex) {

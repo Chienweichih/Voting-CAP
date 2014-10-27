@@ -1,8 +1,11 @@
 package client;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
@@ -16,6 +19,7 @@ import message.OperationType;
 import message.twostep.csn.Acknowledgement;
 import message.twostep.csn.Request;
 import service.Config;
+import service.handler.twostep.CSNHandler;
 import utility.Utils;
 
 /**
@@ -23,6 +27,12 @@ import utility.Utils;
  * @author Scott
  */
 public class CSNClient {
+    private static final File ATTESTATION;
+    
+    static {
+        ATTESTATION = new File("attestation/client/csn");
+    }
+    
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
@@ -65,27 +75,25 @@ public class CSNClient {
             
             csn += 1;
             
-            if (op.getType() == OperationType.DOWNLOAD) {
-                String fname = op.getPath();
-                
-                File file = new File(fname);
-                
-                Utils.receive(in, file);
-                
-                String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
-                
-                if (result.compareTo(digest) == 0) {
-                    result = "download success";
-                } else {
-                    result = "download file digest mismatch";
-                }
+            switch (op.getType()) {
+                case AUDIT:
+                case DOWNLOAD:
+                    File file = new File(op.getPath());
+
+                    Utils.receive(in, file);
+
+                    String digest = Utils.digest(file);
+
+                    if (result.compareTo(digest) == 0) {
+                        result = "download success";
+                    } else {
+                        result = "download file digest mismatch";
+                    }
+                    
+                    break;
             }
             
-            File attestation = new File("attestation/client/csn");
-            
-            try (FileWriter fw = new FileWriter(attestation, true)) {
-                fw.append(ack.toString() + '\n');
-            }
+            Utils.append(ATTESTATION, ack.toString() + '\n');
             
             socket.close();
         } catch (IOException | IllegalAccessException | SignatureException ex) {
@@ -93,13 +101,75 @@ public class CSNClient {
         }
     }
     
+    public boolean audit(File cliFile, PublicKey cliKey, File spFile, PublicKey spKey) {
+        boolean success = true;
+        
+        try (FileReader cliFr = new FileReader(cliFile);
+             BufferedReader cliBr = new BufferedReader(cliFr);
+             FileReader spFr = new FileReader(spFile);
+             BufferedReader spBr = new BufferedReader(spFr)) {
+            while (success) {
+                String s1 = cliBr.readLine();
+                String s2 = spBr.readLine();
+                
+                if (s1 == null || s2 == null) {
+                    break;
+                } else if (s1.compareTo(s2) != 0) {
+                    success = false;
+                } else {
+                    Acknowledgement ack1 = Acknowledgement.parse(s1);
+                    Request req1 = ack1.getRequest();
+                    
+                    Acknowledgement ack2 = Acknowledgement.parse(s2);
+                    Request req2 = ack2.getRequest();
+                    
+                    if (req1.getConsecutiveSequenceNumber().compareTo(req2.getConsecutiveSequenceNumber()) != 0) {
+                        success = false;
+                    } else {
+                        success &= ack1.validate(spKey) & req1.validate(cliKey);
+                        success &= ack2.validate(spKey) & req2.validate(cliKey);
+                    }
+                }
+            }
+        } catch (IOException ex) {
+            success = false;
+            
+            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return success;
+    }
+    
     public static void main(String[] args) {
         KeyPair keypair = Utils.readKeyPair("client.key");
+        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         CSNClient client = new CSNClient(keypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
 
-        for (int csn = 1; csn <= Config.NUM_RUNS; csn++) {
+        System.out.println("Running:");
+        
+        long time = System.currentTimeMillis();
+        for (int i = 1; i <= Config.NUM_RUNS; i++) {
             client.run(op);
         }
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        
+        System.out.println("Auditing:");
+        
+        op = new Operation(OperationType.AUDIT, CSNHandler.ATTESTATION.getPath(), "");
+        
+        client.run(op);
+        
+        // to prevent ClassLoader's init overhead
+        client.audit(ATTESTATION, keypair.getPublic(), CSNHandler.ATTESTATION, spKeypair.getPublic());
+        
+        time = System.currentTimeMillis();
+        boolean audit = client.audit(ATTESTATION, keypair.getPublic(),
+                        CSNHandler.ATTESTATION, spKeypair.getPublic());
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 }

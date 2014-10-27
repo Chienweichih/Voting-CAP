@@ -214,6 +214,24 @@ public class Utils {
     }
     
     /**
+     * Digest the file and write its digest value to corresponding file.
+     */
+    public static void writeDigest(String fname) {
+        writeDigest(fname, digest(fname));
+    }
+    
+    /**
+     * Write the digest value to specific file.
+     */
+    public static void writeDigest(String fname, String digest) {
+        try (FileWriter fw = new FileWriter(fname + ".digest")) {
+            fw.append(digest);
+        } catch (IOException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    /**
      * Append string to specific file.
      */
     public static void append(File file, String str) {
@@ -230,13 +248,7 @@ public class Utils {
     public static void appendAndDigest(File file, String str) {
         append(file, str);
         
-        File digestFile = new File(file.getPath() + ".digest");
-        
-        try (FileWriter fw = new FileWriter(digestFile)) {
-            fw.append(digest(file));
-        } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-        }
+        writeDigest(file.getPath());
     }
     
     /**
