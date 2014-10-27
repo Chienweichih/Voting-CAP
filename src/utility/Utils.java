@@ -224,8 +224,15 @@ public class Utils {
      * Write the digest value to specific file.
      */
     public static void writeDigest(String fname, String digest) {
-        try (FileWriter fw = new FileWriter(fname + ".digest")) {
-            fw.append(digest);
+        write(new File(fname + ".digest"), digest);
+    }
+    
+    /**
+     * Write string to specific file.
+     */
+    public static void write(File file, String str) {
+        try (FileWriter fw = new FileWriter(file)) {
+            fw.append(str);
         } catch (IOException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         }

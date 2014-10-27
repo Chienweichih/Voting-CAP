@@ -1,11 +1,8 @@
 package service.handler.twostep;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -26,11 +23,15 @@ import utility.Utils;
  * @author Scott
  */
 public class ChainHashHandler implements ConnectionHandler {
+    public static final File ATTESTATION;
+    
     private static final LinkedList<String> HashingChain;
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
+        ATTESTATION = new File("attestation/service-provider/chainhash");
+        
         HashingChain = new LinkedList<>();
         HashingChain.add(Config.DEFAULT_CHAINHASH);
     }
@@ -54,41 +55,37 @@ public class ChainHashHandler implements ConnectionHandler {
             
             String result;
             
-            File file;
-            boolean sendFileAfterAck = false;
-            
             Operation op = req.getOperation();
 
-            file = new File(op.getPath());
-
-            String fname = Config.DATA_DIR_PATH + "/" + file.getName() + ".digest";
-
-            String digest;
+            File file = new File(op.getPath());
+            boolean sendFileAfterAck = false;
+            
+            String fname = Config.DATA_DIR_PATH + "/" + file.getName();
 
             switch (op.getType()) {
                 case UPLOAD:
                     Utils.receive(in, file);
 
-                    digest = Utils.digest(file);
+                    String digest = Utils.digest(file);
 
                     if (op.getMessage().compareTo(digest) == 0) {
                         result = "ok";
                     } else {
                         result = "upload fail";
                     }
-
-                    try (FileWriter fw = new FileWriter(fname)) {
-                        fw.write(digest);
-                    }
+                    
+                    Utils.writeDigest(fname, digest);
 
                     break;
+                case AUDIT:
+                    result = Utils.readDigest(file.getPath());
+                    
+                    sendFileAfterAck = true;
+                    
+                    break;
                 case DOWNLOAD:
-                    try (FileReader fr = new FileReader(fname);
-                         BufferedReader br = new BufferedReader(fr)) {
-                        digest = br.readLine();
-                    }
-
-                    result = digest;
+                    result = Utils.readDigest(fname);
+                    
                     sendFileAfterAck = true;
 
                     break;
@@ -108,11 +105,7 @@ public class ChainHashHandler implements ConnectionHandler {
                 Utils.send(out, file);
             }
             
-            File attestation = new File("attestation/service-provider/chainhash");
-            
-            try (FileWriter fw = new FileWriter(attestation, true)) {
-                fw.append(ack.toString() + '\n');
-            }
+            Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
             
             socket.close();
         } catch (IOException | SignatureException ex) {
