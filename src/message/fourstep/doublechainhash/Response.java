@@ -56,16 +56,6 @@ public class Response extends SOAPMessage {
     }
     
     public static Response parse(String receive) {
-        InputStream stream;
-        javax.xml.soap.SOAPMessage message = null;
-        
-        try {
-            stream = new ByteArrayInputStream(receive.getBytes(StandardCharsets.UTF_8));
-            message = MessageFactory.newInstance().createMessage(null, stream);
-        } catch (SOAPException | IOException ex) {
-            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return new Response(message);
+        return new Response(SOAPMessage.parseSOAP(receive));
     }
 }

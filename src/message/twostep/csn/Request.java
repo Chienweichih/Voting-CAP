@@ -57,16 +57,6 @@ public class Request extends SOAPMessage {
     }
     
     public static Request parse(String receive) {
-        InputStream stream;
-        javax.xml.soap.SOAPMessage message = null;
-        
-        try {
-            stream = new ByteArrayInputStream(receive.getBytes(StandardCharsets.UTF_8));
-            message = MessageFactory.newInstance().createMessage(null, stream);
-        } catch (SOAPException | IOException ex) {
-            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return new Request(message);
+        return new Request(SOAPMessage.parseSOAP(receive));
     }
 }

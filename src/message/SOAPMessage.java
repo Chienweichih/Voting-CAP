@@ -68,6 +68,16 @@ import org.xml.sax.SAXException;
  * @author Scott
  */
 public class SOAPMessage implements Serializable {
+    public static MessageFactory MESSAGE_FACTORY;
+    
+    static {
+        try {
+            MESSAGE_FACTORY = MessageFactory.newInstance();
+        } catch (SOAPException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     private javax.xml.soap.SOAPFactory factory;
     private javax.xml.soap.SOAPMessage message;
     private javax.xml.soap.SOAPHeader header;
@@ -285,6 +295,21 @@ public class SOAPMessage implements Serializable {
         }
         
         return "[toString failed]";
+    }
+    
+    public static javax.xml.soap.SOAPMessage parseSOAP(String string) {
+        javax.xml.soap.SOAPMessage message = null;
+        
+        try {
+            byte[] bytes = string.getBytes(StandardCharsets.UTF_8);
+            InputStream stream = new ByteArrayInputStream(bytes);
+            
+            message = MESSAGE_FACTORY.createMessage(null, stream);
+        } catch (IOException | SOAPException ex) {
+            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return message;
     }
     
     public static Element getFirstChildElement(Node node) {

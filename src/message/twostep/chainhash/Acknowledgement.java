@@ -56,16 +56,6 @@ public class Acknowledgement extends SOAPMessage {
     }
     
     public static Acknowledgement parse(String receive) {
-        InputStream stream;
-        javax.xml.soap.SOAPMessage message = null;
-        
-        try {
-            stream = new ByteArrayInputStream(receive.getBytes(StandardCharsets.UTF_8));
-            message = MessageFactory.newInstance().createMessage(null, stream);
-        } catch (SOAPException | IOException ex) {
-            Logger.getLogger(SOAPMessage.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        
-        return new Acknowledgement(message);
+        return new Acknowledgement(SOAPMessage.parseSOAP(receive));
     }
 }
