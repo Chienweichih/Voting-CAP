@@ -1,10 +1,8 @@
 package service.handler;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.Socket;
@@ -24,6 +22,14 @@ import utility.Utils;
  * @author Scott
  */
 public class NonPOVHandler implements ConnectionHandler {
+    public static final File REQ_ATTESTATION;
+    public static final File ACK_ATTESTATION;
+    
+    static {
+        REQ_ATTESTATION = new File("attestation/service-provider/nonpov.req");
+        ACK_ATTESTATION = new File("attestation/service-provider/nonpov.ack");
+    }
+    
     private final Socket socket;
     private final KeyPair keyPair;
     
@@ -34,11 +40,11 @@ public class NonPOVHandler implements ConnectionHandler {
     
     @Override
     public void run() {
+        PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+        
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
-            
-            PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
             
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
@@ -46,23 +52,20 @@ public class NonPOVHandler implements ConnectionHandler {
             
             String result;
             
-            File file = null;
+            File file;
             boolean sendFileAfterAck = false;
             
-               
             Operation op = req.getOperation();
 
             file = new File(op.getPath());
 
-            String fname = Config.DATA_DIR_PATH + "/" + file.getName() + ".digest";
-
-            String digest;
+            String fname = Config.DATA_DIR_PATH + "/" + file.getName();
 
             switch (op.getType()) {
                 case UPLOAD:
                     Utils.receive(in, file);
 
-                    digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+                    String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
 
                     if (op.getMessage().compareTo(digest) == 0) {
                         result = "ok";
@@ -76,14 +79,17 @@ public class NonPOVHandler implements ConnectionHandler {
 
                     break;
                 case DOWNLOAD:
-                    try (FileReader fr = new FileReader(fname);
-                         BufferedReader br = new BufferedReader(fr)) {
-                        digest = br.readLine();
-                    }
-
-                    result = digest;
+                    result = Utils.readDigest(fname);
+                    
                     sendFileAfterAck = true;
-
+                    
+                    break;
+                case AUDIT:
+                    result = Utils.readDigest(REQ_ATTESTATION.getPath());
+                    result += Utils.readDigest(ACK_ATTESTATION.getPath());
+                    
+                    sendFileAfterAck = true;
+                    
                     break;
                 default:
                     result = "operation type mismatch";
@@ -96,20 +102,21 @@ public class NonPOVHandler implements ConnectionHandler {
             Utils.send(out, ack.toString());
             
             if (sendFileAfterAck) {
-                Utils.send(out, file);
+                switch (op.getType()) {
+                    case DOWNLOAD:
+                        Utils.send(out, file);
+                        
+                        break;
+                    case AUDIT:
+                        Utils.send(out, REQ_ATTESTATION);
+                        Utils.send(out, ACK_ATTESTATION);
+                        
+                        break;
+                }
             }
             
-            File ack_attestation = new File("attestation/service-provider/nonpov.ack");
-            
-            try (FileWriter fw = new FileWriter(ack_attestation, true)) {
-                fw.append(ack.toString() + '\n');
-            }
-            
-            File req_attestation = new File("attestation/service-provider/nonpov.req");
-            
-            try (FileWriter fw = new FileWriter(req_attestation, true)) {
-                fw.append(req.toString() + '\n');
-            }
+            Utils.appendAndDigest(REQ_ATTESTATION, req.toString() + '\n');
+            Utils.appendAndDigest(ACK_ATTESTATION, ack.toString() + '\n');
             
             socket.close();
         } catch (IOException | SignatureException ex) {

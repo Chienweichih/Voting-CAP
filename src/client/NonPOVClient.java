@@ -1,10 +1,13 @@
 package client;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -16,6 +19,7 @@ import message.Operation;
 import message.OperationType;
 import message.nonpov.*;
 import service.Config;
+import service.handler.NonPOVHandler;
 import utility.Utils;
 
 /**
@@ -23,6 +27,14 @@ import utility.Utils;
  * @author Scott
  */
 public class NonPOVClient {
+    private static final File REQ_ATTESTATION;
+    private static final File ACK_ATTESTATION;
+    
+    static {
+        REQ_ATTESTATION = new File("attestation/client/nonpov.req");
+        ACK_ATTESTATION = new File("attestation/client/nonpov.ack");
+    }
+    
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
@@ -56,34 +68,43 @@ public class NonPOVClient {
             }
             
             String result = ack.getResult();
+            String digest = "";
             
-            if (op.getType() == OperationType.DOWNLOAD) {
-                String fname = op.getPath();
-                
-                File file = new File(fname);
-                
-                Utils.receive(in, file);
-                
-                String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
-                
-                if (ack.getResult().compareTo(digest) == 0) {
-                    result = "download success";
-                } else {
-                    result = "download file digest mismatch";
-                }
+            switch (op.getType()) {
+                case AUDIT:
+                    File tmp_req_attestation = new File(NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
+                    File tmp_ack_attestation = new File(NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
+                    
+                    tmp_req_attestation.delete();
+                    tmp_ack_attestation.delete();
+                    
+                    Utils.receive(in, tmp_req_attestation);
+                    Utils.receive(in, tmp_ack_attestation);
+                    
+                    digest = Utils.digest(tmp_req_attestation);
+                    digest += Utils.digest(tmp_ack_attestation);
+                    
+                    break;
+                case DOWNLOAD:
+                    String fname = op.getPath();
+
+                    File file = new File(fname);
+
+                    Utils.receive(in, file);
+
+                    digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+
+                    break;
             }
             
-            File ack_attestation = new File("attestation/client/nonpov.ack");
-            
-            try (FileWriter fw = new FileWriter(ack_attestation, true)) {
-                fw.append(ack.toString() + '\n');
+            if (ack.getResult().compareTo(digest) == 0) {
+                result = "download success";
+            } else {
+                result = "download file digest mismatch";
             }
             
-            File req_attestation = new File("attestation/client/nonpov.req");
-            
-            try (FileWriter fw = new FileWriter(req_attestation, true)) {
-                fw.append(req.toString() + '\n');
-            }
+            Utils.append(REQ_ATTESTATION, req.toString() + '\n');
+            Utils.append(ACK_ATTESTATION, ack.toString() + '\n');
             
             socket.close();
         } catch (IOException | SignatureException ex) {
@@ -91,13 +112,89 @@ public class NonPOVClient {
         }
     }
     
+    public static boolean Audit(Class c, File cliFile, File spFile, PublicKey key) {
+        boolean success = true;
+        
+        try (FileReader fr = new FileReader(cliFile);
+             BufferedReader br = new BufferedReader(fr);
+             FileReader frAudit = new FileReader(spFile);
+             BufferedReader brAudit = new BufferedReader(frAudit)) {
+            String s1, s2;
+            
+            Method parse = c.getMethod("parse", String.class);
+            Method validate = c.getMethod("validate", PublicKey.class);
+            
+            while (success) {
+                s1 = br.readLine();
+                s2 = brAudit.readLine();
+                
+                // client side will have one more record about audit operation
+                if (s1 == null || s2 == null) {
+                    break;
+                } else if (s1.compareTo(s2) != 0) {
+                    success = false;
+                } else {                
+                    Object o1 = parse.invoke(null, s1);
+                    Object o2 = parse.invoke(null, s2);
+
+                    success &= (boolean) validate.invoke(o1, key);
+                    success &= (boolean) validate.invoke(o2, key);
+                }
+            }
+        } catch (IOException | NoSuchMethodException | SecurityException
+               | IllegalAccessException | IllegalArgumentException
+               | InvocationTargetException ex) {
+            success = false;
+            
+            Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return success;
+    }
+    
     public static void main(String[] args) {
         KeyPair keypair = Utils.readKeyPair("client.key");
+        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         NonPOVClient client = new NonPOVClient(keypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
         
+        System.out.println("Running:");
+        
+        long time = System.currentTimeMillis();
         for (int i = 1; i <= Config.NUM_RUNS; i++) {
             client.run(op);
         }
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        
+        op = new Operation(OperationType.AUDIT, "", "");
+        
+        client.run(op);
+        
+        System.out.println("Auditing:");
+        
+        // to prevent ClassLoader's time of first call
+        Audit(Request.class, REQ_ATTESTATION, new File(NonPOVHandler.REQ_ATTESTATION.getAbsolutePath() + ".audit"), keypair.getPublic());
+        Audit(Acknowledgement.class, ACK_ATTESTATION, new File(NonPOVHandler.ACK_ATTESTATION.getAbsolutePath() + ".audit"), spKeypair.getPublic());
+        
+        time = System.currentTimeMillis();
+        boolean reqAudit = Audit(Request.class,
+                                 REQ_ATTESTATION,
+                                 new File(NonPOVHandler.REQ_ATTESTATION.getAbsolutePath() + ".audit"),
+                                 keypair.getPublic());
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Request: " + reqAudit + ", cost " + time + "ms");
+        
+        time = System.currentTimeMillis();
+        boolean ackAudit = Audit(Acknowledgement.class,
+                                 ACK_ATTESTATION,
+                                 new File(NonPOVHandler.ACK_ATTESTATION.getAbsolutePath() + ".audit"),
+                                 spKeypair.getPublic());
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Ack: " + ackAudit + ", cost " + time + "ms");
+        
     }
 }
