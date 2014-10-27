@@ -82,6 +82,8 @@ public class SocketServer extends Thread {
     }
     
     public static void main(String[] args) {
+        Utils.cleanAllAttestations();
+        
         new SocketServer(NonPOVHandler.class, Config.NONPOV_SERVICE_PORT).start();
         new SocketServer(CSNHandler.class, Config.CSN_SERVICE_PORT).start();
         new SocketServer(ChainHashHandler.class, Config.CHAINHASH_SERVICE_PORT).start();

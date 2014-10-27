@@ -274,6 +274,19 @@ public class Utils {
         return null;
     }
     
+    /**
+     * Delete all of attestation files.
+     */
+    public static void cleanAllAttestations() {
+        File dir = new File("attestation");
+        
+        for (File subDir : dir.listFiles()) {
+            for (File file : subDir.listFiles()) {
+                file.delete();
+            }
+        }
+    }
+    
     public static void main(String[] args) {
         String[] keyFileNames = {"keypair/client.key", "keypair/service_provider.key"};
         
