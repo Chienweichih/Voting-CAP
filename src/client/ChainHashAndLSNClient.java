@@ -1,9 +1,11 @@
 package client;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileWriter;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -11,10 +13,14 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import message.Operation;
 import message.OperationType;
 import message.fourstep.chainhash_lsn.*;
 import service.Config;
+import service.handler.fourstep.ChainHashAndLSNHandler;
+import service.handler.fourstep.HashingChainTable;
+import service.handler.fourstep.LSNTable;
 import utility.Utils;
 
 /**
@@ -22,6 +28,12 @@ import utility.Utils;
  * @author Scott
  */
 public class ChainHashAndLSNClient {
+    private static final File ATTESTATION;
+    
+    static {
+        ATTESTATION = new File("attestation/client/chainhash-lsn");
+    }
+    
     private final String hostname;
     private final int port;
     private final String id;
@@ -74,27 +86,27 @@ public class ChainHashAndLSNClient {
             
             lsn += 1;
             
-            if (op.getType() == OperationType.DOWNLOAD) {
-                String fname = op.getPath();
+            switch (op.getType()) {
+                case AUDIT:
+                case DOWNLOAD:
+                    String fname = op.getPath();
+
+                    File file = new File(fname);
+
+                    Utils.receive(in, file);
+
+                    String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+
+                    if (result.compareTo(digest) == 0) {
+                        result = "download success";
+                    } else {
+                        result = "download file digest mismatch";
+                    }
                 
-                File file = new File(fname);
-                
-                Utils.receive(in, file);
-                
-                String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
-                
-                if (ack.getResult().compareTo(digest) == 0) {
-                    result = "download success";
-                } else {
-                    result = "download file digest mismatch";
-                }
+                    break;
             }
             
-            File attestation = new File("attestation/client/chainhash-lsn");
-            
-            try (FileWriter fw = new FileWriter(attestation, true)) {
-                fw.append(ack.toString() + '\n');
-            }
+            Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
             
             socket.close();
         } catch (IOException | SignatureException ex) {
@@ -102,14 +114,83 @@ public class ChainHashAndLSNClient {
         }
     }
     
+    public boolean audit(File attestation, PublicKey cliKey, PublicKey spKey) {
+        boolean success = true;
+        
+        LSNTable lsnTab = new LSNTable();
+        HashingChainTable hashingChainTab = new HashingChainTable();
+        
+        try (FileReader fr = new FileReader(attestation);
+             BufferedReader br = new BufferedReader(fr)) {
+            do {
+                String s = br.readLine();
+                
+                if (s == null) {
+                    break;
+                }
+                
+                Acknowledgement ack = Acknowledgement.parse(s);
+                ReplyResponse rr = ack.getReplyResponse();
+                Response res = rr.getResponse();
+                Request req = res.getRequest();
+                
+                String clientID = req.getClientID();
+                
+                if (lsnTab.isMatched(clientID, req.getLocalSequenceNumber())) {
+                    lsnTab.increment(clientID);
+                } else {
+                    success = false;
+                }
+                
+                if (hashingChainTab.getLastChainHash(clientID).compareTo(res.getChainHash()) == 0) {
+                    hashingChainTab.chain(clientID, Utils.digest(ack.toString()));
+                } else {
+                    success = false;
+                }
+                
+                success &= ack.validate(spKey) & rr.validate(cliKey);
+                success &= res.validate(spKey) & req.validate(cliKey);
+            } while (success);
+        } catch (IOException ex) {
+            success = false;
+            
+            Logger.getLogger(ChainHashAndLSNClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return success;
+    }
+    
     public static void main(String[] args) {
         String id = "client";
         KeyPair keypair = Utils.readKeyPair(id + ".key");
+        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         ChainHashAndLSNClient client = new ChainHashAndLSNClient(id, keypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
         
+        System.out.println("Running:");
+        
+        long time = System.currentTimeMillis();
         for (int i = 1; i <= Config.NUM_RUNS; i++) {
             client.run(op);
         }
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        
+        System.out.println("Auditing:");
+        
+        op = new Operation(OperationType.AUDIT, ChainHashAndLSNHandler.ATTESTATION.getPath(), "");
+        
+        client.run(op);
+        
+        // to prevent ClassLoader's init overhead
+        client.audit(ChainHashAndLSNHandler.ATTESTATION, keypair.getPublic(), spKeypair.getPublic());
+        
+        time = System.currentTimeMillis();
+        boolean audit = client.audit(ChainHashAndLSNHandler.ATTESTATION,
+                                     keypair.getPublic(), spKeypair.getPublic());
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 }
