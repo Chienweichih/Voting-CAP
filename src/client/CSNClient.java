@@ -77,7 +77,9 @@ public class CSNClient {
             switch (op.getType()) {
                 case AUDIT:
                 case DOWNLOAD:
-                    File file = new File(op.getPath());
+                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                    
+                    File file = new File(fname);
 
                     Utils.receive(in, file);
 
@@ -143,7 +145,7 @@ public class CSNClient {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         CSNClient client = new CSNClient(keypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
 
         System.out.println("Running:");
         
@@ -161,12 +163,14 @@ public class CSNClient {
         
         client.run(op);
         
+        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + CSNHandler.ATTESTATION.getPath());
+        
         // to prevent ClassLoader's init overhead
-        client.audit(ATTESTATION, keypair.getPublic(), CSNHandler.ATTESTATION, spKeypair.getPublic());
+        client.audit(ATTESTATION, keypair.getPublic(), auditFile, spKeypair.getPublic());
         
         time = System.currentTimeMillis();
         boolean audit = client.audit(ATTESTATION, keypair.getPublic(),
-                        CSNHandler.ATTESTATION, spKeypair.getPublic());
+                                     auditFile, spKeypair.getPublic());
         time = System.currentTimeMillis() - time;
         
         System.out.println("Audit: " + audit + ", cost " + time + "ms");

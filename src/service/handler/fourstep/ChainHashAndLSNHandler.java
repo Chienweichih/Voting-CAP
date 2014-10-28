@@ -82,11 +82,9 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
             
             Operation op = req.getOperation();
 
-            File file = new File(op.getPath());
+            File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
             boolean sendFileAfterAck = false;
             
-            String fname = Config.DATA_DIR_PATH + "/" + file.getName();
-
             switch (op.getType()) {
                 case UPLOAD:
                     Utils.receive(in, file);
@@ -99,17 +97,19 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
                         result = "upload fail";
                     }
                     
-                    Utils.writeDigest(fname, digest);
+                    Utils.writeDigest(file.getPath(), digest);
 
                     break;
                 case AUDIT:
+                    file = new File(op.getPath());
+                    
                     result = Utils.readDigest(file.getPath());
                     
                     sendFileAfterAck = true;
                     
                     break;
                 case DOWNLOAD:
-                    result = Utils.readDigest(fname);
+                    result = Utils.readDigest(file.getPath());
                     
                     sendFileAfterAck = true;
 

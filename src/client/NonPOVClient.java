@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -72,8 +73,8 @@ public class NonPOVClient {
             
             switch (op.getType()) {
                 case AUDIT:
-                    File tmp_req_attestation = new File(NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
-                    File tmp_ack_attestation = new File(NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
+                    File tmp_req_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
+                    File tmp_ack_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
                     
                     Utils.receive(in, tmp_req_attestation);
                     Utils.receive(in, tmp_ack_attestation);
@@ -153,7 +154,7 @@ public class NonPOVClient {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         NonPOVClient client = new NonPOVClient(keypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");
         
@@ -171,14 +172,17 @@ public class NonPOVClient {
         
         client.run(op);
         
+        File reqAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
+        File ackAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
+        
         // to prevent ClassLoader's init overhead
-        Audit(Request.class, REQ_ATTESTATION, new File(NonPOVHandler.REQ_ATTESTATION.getAbsolutePath() + ".audit"), keypair.getPublic());
-        Audit(Acknowledgement.class, ACK_ATTESTATION, new File(NonPOVHandler.ACK_ATTESTATION.getAbsolutePath() + ".audit"), spKeypair.getPublic());
+        Audit(Request.class, REQ_ATTESTATION, reqAuditFile, keypair.getPublic());
+        Audit(Acknowledgement.class, ACK_ATTESTATION, ackAuditFile, spKeypair.getPublic());
         
         time = System.currentTimeMillis();
         boolean reqAudit = Audit(Request.class,
                                  REQ_ATTESTATION,
-                                 new File(NonPOVHandler.REQ_ATTESTATION.getAbsolutePath() + ".audit"),
+                                 reqAuditFile,
                                  keypair.getPublic());
         time = System.currentTimeMillis() - time;
         
@@ -187,7 +191,7 @@ public class NonPOVClient {
         time = System.currentTimeMillis();
         boolean ackAudit = Audit(Acknowledgement.class,
                                  ACK_ATTESTATION,
-                                 new File(NonPOVHandler.ACK_ATTESTATION.getAbsolutePath() + ".audit"),
+                                 ackAuditFile,
                                  spKeypair.getPublic());
         time = System.currentTimeMillis() - time;
         

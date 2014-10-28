@@ -51,14 +51,11 @@ public class NonPOVHandler implements ConnectionHandler {
             
             String result;
             
-            File file;
             boolean sendFileAfterAck = false;
             
             Operation op = req.getOperation();
 
-            file = new File(op.getPath());
-
-            String fname = Config.DATA_DIR_PATH + "/" + file.getName();
+            File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
 
             switch (op.getType()) {
                 case UPLOAD:
@@ -72,11 +69,11 @@ public class NonPOVHandler implements ConnectionHandler {
                         result = "upload fail";
                     }
                     
-                    Utils.writeDigest(fname, digest);
+                    Utils.writeDigest(file.getPath(), digest);
 
                     break;
                 case DOWNLOAD:
-                    result = Utils.readDigest(fname);
+                    result = Utils.readDigest(file.getPath());
                     
                     sendFileAfterAck = true;
                     

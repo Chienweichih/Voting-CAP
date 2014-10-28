@@ -53,15 +53,13 @@ public class CSNHandler implements ConnectionHandler {
             
             String result;
             
-            File file = null;
+            Operation op = req.getOperation();
+            
+            File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
             boolean sendFileAfterAck = false;
             
             if (req.getConsecutiveSequenceNumber() == CSN.get() + 1) {
                 CSN.incrementAndGet();
-                
-                Operation op = req.getOperation();
-                
-                file = new File(op.getPath());
                 
                 String fname = Config.DATA_DIR_PATH + "/" + file.getName();
                 
@@ -77,17 +75,19 @@ public class CSNHandler implements ConnectionHandler {
                             result = "upload fail";
                         }
                         
-                        Utils.writeDigest(digest);
+                        Utils.writeDigest(file.getPath(), digest);
                         
                         break;
                     case AUDIT:
+                        file = new File(op.getPath());
+                        
                         result = Utils.readDigest(file.getPath());
                         
                         sendFileAfterAck = true;
                         
                         break;
                     case DOWNLOAD:
-                        result = Utils.readDigest(fname);
+                        result = Utils.readDigest(file.getPath());
                         
                         sendFileAfterAck = true;
                         

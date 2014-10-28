@@ -81,8 +81,8 @@ public class ChainHashClient {
             switch (op.getType()) {
                 case AUDIT:
                 case DOWNLOAD:
-                    String fname = op.getPath();
-
+                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                    
                     File file = new File(fname);
 
                     Utils.receive(in, file);
@@ -142,7 +142,7 @@ public class ChainHashClient {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         ChainHashClient client = new ChainHashClient(keypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");
         
@@ -163,11 +163,13 @@ public class ChainHashClient {
         
         client.run(op);
         
+        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + ChainHashHandler.ATTESTATION.getPath());
+        
         // to prevent ClassLoader's init overhead
-        client.audit(chainhash, ChainHashHandler.ATTESTATION, keypair.getPublic(), spKeypair.getPublic());
+        client.audit(chainhash, auditFile, keypair.getPublic(), spKeypair.getPublic());
         
         time = System.currentTimeMillis();
-        boolean audit = client.audit(chainhash, ChainHashHandler.ATTESTATION,
+        boolean audit = client.audit(chainhash, auditFile,
                                      keypair.getPublic(), spKeypair.getPublic());
         time = System.currentTimeMillis() - time;
         

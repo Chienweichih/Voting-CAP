@@ -88,13 +88,13 @@ public class ChainHashAndLSNClient {
             switch (op.getType()) {
                 case AUDIT:
                 case DOWNLOAD:
-                    String fname = op.getPath();
+                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
 
                     File file = new File(fname);
-
+                    
                     Utils.receive(in, file);
 
-                    String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+                    String digest = Utils.digest(file);
 
                     if (result.compareTo(digest) == 0) {
                         result = "download success";
@@ -164,7 +164,7 @@ public class ChainHashAndLSNClient {
         KeyPair keypair = Utils.readKeyPair(id + ".key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         ChainHashAndLSNClient client = new ChainHashAndLSNClient(id, keypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");
         
@@ -182,11 +182,13 @@ public class ChainHashAndLSNClient {
         
         client.run(op);
         
+        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + ChainHashAndLSNHandler.ATTESTATION.getPath());
+        
         // to prevent ClassLoader's init overhead
-        client.audit(ChainHashAndLSNHandler.ATTESTATION, keypair.getPublic(), spKeypair.getPublic());
+        client.audit(auditFile, keypair.getPublic(), spKeypair.getPublic());
         
         time = System.currentTimeMillis();
-        boolean audit = client.audit(ChainHashAndLSNHandler.ATTESTATION,
+        boolean audit = client.audit(auditFile,
                                      keypair.getPublic(), spKeypair.getPublic());
         time = System.currentTimeMillis() - time;
         

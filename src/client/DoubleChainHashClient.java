@@ -10,6 +10,7 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -97,7 +98,7 @@ public class DoubleChainHashClient {
             switch (op.getType()) {
                 case AUDIT:
                 case DOWNLOAD:
-                    String fname = op.getPath();
+                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
 
                     File file = new File(fname);
 
@@ -174,7 +175,7 @@ public class DoubleChainHashClient {
         KeyPair keyPair = Utils.readKeyPair(id + ".key");
         KeyPair spKeyPair = Utils.readKeyPair("service_provider.key");
         DoubleChainHashClient client = new DoubleChainHashClient(id, keyPair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "data/1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");
         
@@ -192,11 +193,13 @@ public class DoubleChainHashClient {
         
         client.run(op);
         
+        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + DoubleChainHashHandler.ATTESTATION.getPath());
+        
         // to prevent ClassLoader's init overhead
-        client.audit(DoubleChainHashHandler.ATTESTATION, keyPair.getPublic(), spKeyPair.getPublic());
+        client.audit(auditFile, keyPair.getPublic(), spKeyPair.getPublic());
         
         time = System.currentTimeMillis();
-        boolean audit = client.audit(DoubleChainHashHandler.ATTESTATION,
+        boolean audit = client.audit(auditFile,
                                      keyPair.getPublic(), spKeyPair.getPublic());
         time = System.currentTimeMillis() - time;
         
