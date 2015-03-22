@@ -12,7 +12,6 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -39,20 +38,23 @@ public class NonPOVClient {
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
+    private final KeyPair spKeyPair;
     
-    public NonPOVClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.NONPOV_SERVICE_PORT, keyPair);
+    public NonPOVClient(KeyPair keyPair, KeyPair spKeyPair) {
+        this(Config.SERVICE_HOSTNAME,
+             Config.NONPOV_SERVICE_PORT,
+             keyPair,
+             spKeyPair);
     }
     
-    public NonPOVClient(String hostname, int port, KeyPair keyPair) {
+    public NonPOVClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
+        this.spKeyPair = spKeyPair;
     }
     
     public void run(Operation op) {
-        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
-        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -64,7 +66,7 @@ public class NonPOVClient {
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
             
-            if (!ack.validate(spPubKey)) {
+            if (!ack.validate(spKeyPair.getPublic())) {
                 throw new SignatureException("ACK validation failure");
             }
             
@@ -79,19 +81,18 @@ public class NonPOVClient {
                     Utils.receive(in, tmp_req_attestation);
                     Utils.receive(in, tmp_ack_attestation);
                     
-                    digest = Utils.digest(tmp_req_attestation);
-                    digest += Utils.digest(tmp_ack_attestation);
+                    digest = Utils.digest(tmp_req_attestation) + Utils.digest(tmp_ack_attestation);
                     
                     break;
                 case DOWNLOAD:
                     String fname = op.getPath();
-
+                    
                     File file = new File(fname);
-
+                    
                     Utils.receive(in, file);
-
+                    
                     digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
-
+                    
                     break;
             }
             
@@ -153,7 +154,7 @@ public class NonPOVClient {
     public static void main(String[] args) {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
-        NonPOVClient client = new NonPOVClient(keypair);
+        NonPOVClient client = new NonPOVClient(keypair, spKeypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");
@@ -168,9 +169,7 @@ public class NonPOVClient {
         
         System.out.println("Auditing:");
         
-        op = new Operation(OperationType.AUDIT, "", "");
-        
-        client.run(op);
+        client.run(new Operation(OperationType.AUDIT, "", ""));
         
         File reqAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
         File ackAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");

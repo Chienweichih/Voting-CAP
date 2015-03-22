@@ -10,7 +10,6 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,17 +36,23 @@ public class DoubleChainHashClient {
     private final int port;
     private final String id;
     private final KeyPair keyPair;
+    private final KeyPair spKeyPair;
     private String lastChainHash;
     
-    public DoubleChainHashClient(String id, KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, id, keyPair);
+    public DoubleChainHashClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
+        this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, id, keyPair, spKeyPair);
     }
     
-    public DoubleChainHashClient(String hostname, int port, String id, KeyPair keyPair) {
+    public DoubleChainHashClient(String hostname,
+                                 int port,
+                                 String id,
+                                 KeyPair keyPair,
+                                 KeyPair spKeyPair) {
         this.hostname = hostname;
         this.port = port;
         this.id = id;
         this.keyPair = keyPair;
+        this.spKeyPair = spKeyPair;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
     }
     
@@ -56,8 +61,6 @@ public class DoubleChainHashClient {
     }
     
     public void run(Operation op) {
-        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
-        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -69,7 +72,7 @@ public class DoubleChainHashClient {
             
             Response res = Response.parse(Utils.receive(in));
             
-            if (!res.validate(spPubKey)) {
+            if (!res.validate(spKeyPair.getPublic())) {
                 throw new SignatureException("RES validation failure");
             }
             
@@ -87,7 +90,7 @@ public class DoubleChainHashClient {
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
             
-            if (!ack.validate(spPubKey)) {
+            if (!ack.validate(spKeyPair.getPublic())) {
                 throw new SignatureException("ACK validation failure");
             }
             
@@ -174,7 +177,7 @@ public class DoubleChainHashClient {
         String id = "client";
         KeyPair keyPair = Utils.readKeyPair(id + ".key");
         KeyPair spKeyPair = Utils.readKeyPair("service_provider.key");
-        DoubleChainHashClient client = new DoubleChainHashClient(id, keyPair);
+        DoubleChainHashClient client = new DoubleChainHashClient(id, keyPair, spKeyPair);
         Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");

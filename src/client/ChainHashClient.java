@@ -34,16 +34,21 @@ public class ChainHashClient {
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
+    private final KeyPair spKeyPair;
     private String lastChainHash;
     
-    public ChainHashClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_SERVICE_PORT, keyPair);
+    public ChainHashClient(KeyPair keyPair, KeyPair spKeyPair) {
+        this(Config.SERVICE_HOSTNAME,
+             Config.CHAINHASH_SERVICE_PORT,
+             keyPair,
+             spKeyPair);
     }
     
-    public ChainHashClient(String hostname, int port, KeyPair keyPair) {
+    public ChainHashClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
+        this.spKeyPair = spKeyPair;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
     }
     
@@ -52,8 +57,6 @@ public class ChainHashClient {
     }
     
     public void run(Operation op) {
-        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
-        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -65,7 +68,7 @@ public class ChainHashClient {
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
             
-            if (!ack.validate(spPubKey)) {
+            if (!ack.validate(spKeyPair.getPublic())) {
                 throw new SignatureException("ACK validation failure");
             }
             
@@ -102,7 +105,7 @@ public class ChainHashClient {
             
             socket.close();
         } catch (IOException | IllegalAccessException | SignatureException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -141,7 +144,7 @@ public class ChainHashClient {
     public static void main(String[] args) {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
-        ChainHashClient client = new ChainHashClient(keypair);
+        ChainHashClient client = new ChainHashClient(keypair, spKeypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
         
         System.out.println("Running:");
@@ -150,7 +153,6 @@ public class ChainHashClient {
         for (int i = 1; i <= Config.NUM_RUNS; i++) {
             client.run(op);
         }
-        
         String chainhash = client.getLastChainHash();
         
         time = System.currentTimeMillis() - time;
@@ -159,9 +161,9 @@ public class ChainHashClient {
         
         System.out.println("Auditing:");
         
-        op = new Operation(OperationType.AUDIT, ChainHashHandler.ATTESTATION.getPath(), "");
-        
-        client.run(op);
+        client.run(new Operation(OperationType.AUDIT,
+                                 ChainHashHandler.ATTESTATION.getPath(),
+                                 ""));
         
         File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + ChainHashHandler.ATTESTATION.getPath());
         
@@ -169,8 +171,10 @@ public class ChainHashClient {
         client.audit(chainhash, auditFile, keypair.getPublic(), spKeypair.getPublic());
         
         time = System.currentTimeMillis();
-        boolean audit = client.audit(chainhash, auditFile,
-                                     keypair.getPublic(), spKeypair.getPublic());
+        boolean audit = client.audit(chainhash,
+                                     auditFile,
+                                     keypair.getPublic(),
+                                     spKeypair.getPublic());
         time = System.currentTimeMillis() - time;
         
         System.out.println("Audit: " + audit + ", cost " + time + "ms");

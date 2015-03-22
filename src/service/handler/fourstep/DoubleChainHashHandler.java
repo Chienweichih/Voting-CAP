@@ -128,7 +128,7 @@ public class DoubleChainHashHandler implements ConnectionHandler {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(ChainHashAndLSNHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DoubleChainHashHandler.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

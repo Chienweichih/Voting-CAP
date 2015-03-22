@@ -35,22 +35,22 @@ public class CSNClient {
     private final String hostname;
     private final int port;
     private final KeyPair keyPair;
+    private final KeyPair spKeyPair;
     private int csn;
     
-    public CSNClient(KeyPair keyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair);
+    public CSNClient(KeyPair keyPair, KeyPair spKeyPair) {
+        this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair, spKeyPair);
     }
     
-    public CSNClient(String hostname, int port, KeyPair keyPair) {
+    public CSNClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
+        this.spKeyPair = spKeyPair;
         this.csn = 1;
     }
     
     public void run(Operation op) {
-        PublicKey spPubKey = Utils.readKeyPair("service_provider.key").getPublic();
-        
         try (Socket socket = new Socket(hostname, port);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -62,7 +62,7 @@ public class CSNClient {
             
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
             
-            if (!ack.validate(spPubKey)) {
+            if (!ack.validate(spKeyPair.getPublic())) {
                 throw new SignatureException("ACK validation failure");
             }
             
@@ -144,7 +144,7 @@ public class CSNClient {
     public static void main(String[] args) {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
-        CSNClient client = new CSNClient(keypair);
+        CSNClient client = new CSNClient(keypair, spKeypair);
         Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
 
         System.out.println("Running:");
