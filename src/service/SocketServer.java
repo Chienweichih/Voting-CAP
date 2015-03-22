@@ -37,7 +37,7 @@ public class SocketServer extends Thread {
     
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         this.port = port;
-        this.numThreads = Runtime.getRuntime().availableProcessors();
+        this.numThreads = 1; // Runtime.getRuntime().availableProcessors();
         
         try {
             this.handlerCtor = handler.getDeclaredConstructor(Socket.class, KeyPair.class);
