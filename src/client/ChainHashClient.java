@@ -145,7 +145,7 @@ public class ChainHashClient {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         ChainHashClient client = new ChainHashClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
         
         System.out.println("Running:");
         

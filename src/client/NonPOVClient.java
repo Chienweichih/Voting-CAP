@@ -155,7 +155,7 @@ public class NonPOVClient {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         NonPOVClient client = new NonPOVClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
         
         System.out.println("Running:");
         

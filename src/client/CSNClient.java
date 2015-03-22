@@ -145,7 +145,7 @@ public class CSNClient {
         KeyPair keypair = Utils.readKeyPair("client.key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         CSNClient client = new CSNClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
 
         System.out.println("Running:");
         

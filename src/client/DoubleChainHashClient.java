@@ -124,7 +124,7 @@ public class DoubleChainHashClient {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DoubleChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -167,7 +167,7 @@ public class DoubleChainHashClient {
         } catch (IOException ex) {
             success = false;
             
-            Logger.getLogger(ChainHashAndLSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DoubleChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
         }
         
         return success;
@@ -178,7 +178,7 @@ public class DoubleChainHashClient {
         KeyPair keyPair = Utils.readKeyPair(id + ".key");
         KeyPair spKeyPair = Utils.readKeyPair("service_provider.key");
         DoubleChainHashClient client = new DoubleChainHashClient(id, keyPair, spKeyPair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
         
         System.out.println("Running:");
         

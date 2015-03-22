@@ -20,5 +20,6 @@ public interface Config {
     
     public String DIGEST_ALGORITHM = "SHA-1";
     
+    public String FNAME = "1M.txt";
     public int NUM_RUNS = 100;
 }

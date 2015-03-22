@@ -113,7 +113,7 @@ public class ChainHashAndLSNClient {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ChainHashAndLSNClient.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
@@ -168,7 +168,7 @@ public class ChainHashAndLSNClient {
         KeyPair keypair = Utils.readKeyPair(id + ".key");
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         ChainHashAndLSNClient client = new ChainHashAndLSNClient(id, keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, "1M.txt", "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
         
         System.out.println("Running:");
         
