@@ -1,26 +1,25 @@
 package service.handler.fourstep;
 
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  *
  * @author Scott
  */
 public class LSNTable {
-    private final ConcurrentHashMap<String, AtomicInteger> table;
+    private final ConcurrentHashMap<String, Integer> table;
     
     public LSNTable() {
         table = new ConcurrentHashMap<>();
     }
     
-    private AtomicInteger getLSNorAdd(String id) {
-        AtomicInteger lsn;
+    private Integer getLSNorAdd(String id) {
+        Integer lsn;
         
         if (table.containsKey(id)) {
             lsn = table.get(id);
         } else {
-            lsn = new AtomicInteger(1);
+            lsn = 1;
             
             table.put(id, lsn);
         }
@@ -29,10 +28,10 @@ public class LSNTable {
     }
     
     public boolean isMatched(String id, Integer lsn) {
-        return getLSNorAdd(id).get() == lsn;
+        return getLSNorAdd(id) == lsn;
     }
     
     public void increment(String id) {
-        getLSNorAdd(id).incrementAndGet();
+        table.put(id, getLSNorAdd(id) + 1);
     }
 }

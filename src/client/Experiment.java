@@ -1,5 +1,7 @@
 package client;
 
+import utility.Utils;
+
 /**
  *
  * @author Scott
@@ -9,6 +11,7 @@ public class Experiment {
         System.out.println("Testing...");
         
         NonPOVClient.main(args);
+        Utils.cleanAllAttestations();
         
         System.out.println("\nStart...");
         
