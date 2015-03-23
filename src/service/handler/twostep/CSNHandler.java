@@ -25,13 +25,13 @@ import utility.Utils;
 public class CSNHandler implements ConnectionHandler {
     public static final File ATTESTATION;
     
-    private static final AtomicInteger CSN;
+    private static int CSN;
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
         ATTESTATION = new File("attestation/service-provider/csn");
-        CSN = new AtomicInteger(0);
+        CSN = 0;
     }
     
     public CSNHandler(Socket socket, KeyPair keyPair) {
@@ -58,8 +58,8 @@ public class CSNHandler implements ConnectionHandler {
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
             boolean sendFileAfterAck = false;
             
-            if (req.getConsecutiveSequenceNumber() == CSN.get() + 1) {
-                CSN.incrementAndGet();
+            if (req.getConsecutiveSequenceNumber() == CSN + 1) {
+                CSN += 1;
                 
                 String fname = Config.DATA_DIR_PATH + "/" + file.getName();
                 
