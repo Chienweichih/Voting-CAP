@@ -1,5 +1,6 @@
 package service.handler.fourstep;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -28,7 +29,7 @@ public class LSNTable {
     }
     
     public boolean isMatched(String id, Integer lsn) {
-        return getLSNorAdd(id) == lsn;
+        return Objects.equals(getLSNorAdd(id), lsn);
     }
     
     public void increment(String id) {
