@@ -37,6 +37,7 @@ public class CSNClient {
     private final KeyPair keyPair;
     private final KeyPair spKeyPair;
     private int csn;
+    private long attestationCollectTime;
     
     public CSNClient(KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair, spKeyPair);
@@ -48,6 +49,7 @@ public class CSNClient {
         this.keyPair = keyPair;
         this.spKeyPair = spKeyPair;
         this.csn = 1;
+        this.attestationCollectTime = 0;
     }
     
     public void run(Operation op) {
@@ -94,7 +96,9 @@ public class CSNClient {
                     break;
             }
             
+            long start = System.currentTimeMillis();
             Utils.append(ATTESTATION, ack.toString() + '\n');
+            this.attestationCollectTime += System.currentTimeMillis() - start;
             
             socket.close();
         } catch (IOException | IllegalAccessException | SignatureException ex) {
@@ -155,7 +159,8 @@ public class CSNClient {
         }
         time = System.currentTimeMillis() - time;
         
-        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
+        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
         
         System.out.println("Auditing:");
         

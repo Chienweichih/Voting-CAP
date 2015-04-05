@@ -36,6 +36,7 @@ public class ChainHashClient {
     private final KeyPair keyPair;
     private final KeyPair spKeyPair;
     private String lastChainHash;
+    private long attestationCollectTime;
     
     public ChainHashClient(KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME,
@@ -50,6 +51,7 @@ public class ChainHashClient {
         this.keyPair = keyPair;
         this.spKeyPair = spKeyPair;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
+        this.attestationCollectTime = 0;
     }
     
     public String getLastChainHash() {
@@ -101,7 +103,9 @@ public class ChainHashClient {
                     break;
             }
             
+            long start = System.currentTimeMillis();
             Utils.write(ATTESTATION, ack.toString());
+            this.attestationCollectTime += System.currentTimeMillis() - start;
             
             socket.close();
         } catch (IOException | IllegalAccessException | SignatureException ex) {
@@ -157,7 +161,8 @@ public class ChainHashClient {
         
         time = System.currentTimeMillis() - time;
         
-        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
+        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
         
         System.out.println("Auditing:");
         

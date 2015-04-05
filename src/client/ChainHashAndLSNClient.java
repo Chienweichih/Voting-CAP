@@ -39,6 +39,7 @@ public class ChainHashAndLSNClient {
     private final KeyPair keyPair;
     private final KeyPair spKeyPair;
     private int lsn;
+    private long attestationCollectTime;
     
     public ChainHashAndLSNClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_LSN_SERVICE_PORT, id, keyPair, spKeyPair);
@@ -55,6 +56,7 @@ public class ChainHashAndLSNClient {
         this.keyPair = keyPair;
         this.spKeyPair = spKeyPair;
         this.lsn = 1;
+        this.attestationCollectTime = 0;
     }
     
     public void run(Operation op) {
@@ -109,7 +111,9 @@ public class ChainHashAndLSNClient {
                     break;
             }
             
+            long start = System.currentTimeMillis();
             Utils.write(ATTESTATION, ack.toString());
+            this.attestationCollectTime += System.currentTimeMillis() - start;
             
             socket.close();
         } catch (IOException | SignatureException ex) {
@@ -178,7 +182,8 @@ public class ChainHashAndLSNClient {
         }
         time = System.currentTimeMillis() - time;
         
-        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
+        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
         
         System.out.println("Auditing:");
         

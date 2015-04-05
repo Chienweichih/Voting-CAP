@@ -38,6 +38,7 @@ public class DoubleChainHashClient {
     private final KeyPair keyPair;
     private final KeyPair spKeyPair;
     private String lastChainHash;
+    private long attestationCollectTime;
     
     public DoubleChainHashClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, id, keyPair, spKeyPair);
@@ -54,6 +55,7 @@ public class DoubleChainHashClient {
         this.keyPair = keyPair;
         this.spKeyPair = spKeyPair;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
+        this.attestationCollectTime = 0;
     }
     
     public String getLastChainHash() {
@@ -120,7 +122,9 @@ public class DoubleChainHashClient {
             
             lastChainHash = Utils.digest(ack.toString());
             
+            long start = System.currentTimeMillis();
             Utils.write(ATTESTATION, ack.toString());
+            this.attestationCollectTime += System.currentTimeMillis() - start;
             
             socket.close();
         } catch (IOException | SignatureException ex) {
@@ -188,7 +192,8 @@ public class DoubleChainHashClient {
         }
         time = System.currentTimeMillis() - time;
         
-        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
+        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
+        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
         
         System.out.println("Auditing:");
         
