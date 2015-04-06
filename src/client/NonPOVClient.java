@@ -26,7 +26,7 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class NonPOVClient {
+public class NonPOVClient extends Client {
     private static final File REQ_ATTESTATION;
     private static final File ACK_ATTESTATION;
     
@@ -35,80 +35,64 @@ public class NonPOVClient {
         ACK_ATTESTATION = new File("attestation/client/nonpov.ack");
     }
     
-    private final String hostname;
-    private final int port;
-    private final KeyPair keyPair;
-    private final KeyPair spKeyPair;
-    
     public NonPOVClient(KeyPair keyPair, KeyPair spKeyPair) {
-        this(Config.SERVICE_HOSTNAME,
+        super(Config.SERVICE_HOSTNAME,
              Config.NONPOV_SERVICE_PORT,
              keyPair,
              spKeyPair);
     }
     
-    public NonPOVClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
-        this.hostname = hostname;
-        this.port = port;
-        this.keyPair = keyPair;
-        this.spKeyPair = spKeyPair;
-    }
-    
-    public void run(Operation op) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            Request req = new Request(op);
-            
-            req.sign(keyPair);
-            
-            Utils.send(out, req.toString());
-            
-            Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-            
-            if (!ack.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("ACK validation failure");
-            }
-            
-            String result = ack.getResult();
-            String digest = "";
-            
-            switch (op.getType()) {
-                case AUDIT:
-                    File tmp_req_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
-                    File tmp_ack_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
-                    
-                    Utils.receive(in, tmp_req_attestation);
-                    Utils.receive(in, tmp_ack_attestation);
-                    
-                    digest = Utils.digest(tmp_req_attestation) + Utils.digest(tmp_ack_attestation);
-                    
-                    break;
-                case DOWNLOAD:
-                    String fname = op.getPath();
-                    
-                    File file = new File(fname);
-                    
-                    Utils.receive(in, file);
-                    
-                    digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
-                    
-                    break;
-            }
-            
-            if (result.compareTo(digest) == 0) {
-                result = "download success";
-            } else {
-                result = "download file digest mismatch";
-            }
-            
-            Utils.append(REQ_ATTESTATION, req.toString() + '\n');
-            Utils.append(ACK_ATTESTATION, ack.toString() + '\n');
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
+    @Override
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        Request req = new Request(op);
+
+        req.sign(keyPair);
+
+        Utils.send(out, req.toString());
+
+        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+
+        if (!ack.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
         }
+
+        String result = ack.getResult();
+        String digest = "";
+
+        switch (op.getType()) {
+            case AUDIT:
+                File tmp_req_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
+                File tmp_ack_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
+
+                Utils.receive(in, tmp_req_attestation);
+                Utils.receive(in, tmp_ack_attestation);
+
+                digest = Utils.digest(tmp_req_attestation) + Utils.digest(tmp_ack_attestation);
+
+                break;
+            case DOWNLOAD:
+                String fname = op.getPath();
+
+                File file = new File(fname);
+
+                Utils.receive(in, file);
+
+                digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+
+                break;
+        }
+
+        if (result.compareTo(digest) == 0) {
+            result = "download success";
+        } else {
+            result = "download file digest mismatch";
+        }
+
+        long start = System.currentTimeMillis();
+        Utils.append(REQ_ATTESTATION, req.toString() + '\n');
+        Utils.append(ACK_ATTESTATION, ack.toString() + '\n');
+        this.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
     public static boolean Audit(Class c, File cliFile, File spFile, PublicKey key) {

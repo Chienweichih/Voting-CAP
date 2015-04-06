@@ -24,93 +24,77 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class ChainHashClient {
+public class ChainHashClient extends Client {
     private static final File ATTESTATION;
     
     static {
         ATTESTATION = new File("attestation/client/chainhash");
     }
     
-    private final String hostname;
-    private final int port;
-    private final KeyPair keyPair;
-    private final KeyPair spKeyPair;
     private String lastChainHash;
-    private long attestationCollectTime;
     
     public ChainHashClient(KeyPair keyPair, KeyPair spKeyPair) {
-        this(Config.SERVICE_HOSTNAME,
-             Config.CHAINHASH_SERVICE_PORT,
-             keyPair,
-             spKeyPair);
+        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_SERVICE_PORT, keyPair, spKeyPair);
     }
     
     public ChainHashClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
-        this.hostname = hostname;
-        this.port = port;
-        this.keyPair = keyPair;
-        this.spKeyPair = spKeyPair;
+        super(hostname, port, keyPair, spKeyPair);
+        
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
-        this.attestationCollectTime = 0;
     }
     
     public String getLastChainHash() {
         return lastChainHash;
     }
     
-    public void run(Operation op) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            Request req = new Request(op);
-            
-            req.sign(keyPair);
-            
-            Utils.send(out, req.toString());
-            
-            Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-            
-            if (!ack.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("ACK validation failure");
-            }
-            
-            String result = ack.getResult();
-            String chainHash = ack.getChainHash();
-            
-            if (chainHash.compareTo(lastChainHash) != 0) {
-                throw new IllegalAccessException("Chain hash mismatch");
-            }
-            
-            lastChainHash = Utils.digest(ack.toString());
-            
-            switch (op.getType()) {
-                case AUDIT:
-                case DOWNLOAD:
-                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
-                    
-                    File file = new File(fname);
+    
+    @Override
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
+            throws SignatureException, IllegalAccessException {
+        Request req = new Request(op);
 
-                    Utils.receive(in, file);
+        req.sign(keyPair);
 
-                    String digest = Utils.digest(file);
+        Utils.send(out, req.toString());
 
-                    if (result.compareTo(digest) == 0) {
-                        result = "download success";
-                    } else {
-                        result = "download file digest mismatch";
-                    }
-                    
-                    break;
-            }
-            
-            long start = System.currentTimeMillis();
-            Utils.write(ATTESTATION, ack.toString());
-            this.attestationCollectTime += System.currentTimeMillis() - start;
-            
-            socket.close();
-        } catch (IOException | IllegalAccessException | SignatureException ex) {
-            Logger.getLogger(ChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
+        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+
+        if (!ack.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
         }
+
+        String result = ack.getResult();
+        String chainHash = ack.getChainHash();
+
+        if (chainHash.compareTo(lastChainHash) != 0) {
+            throw new IllegalAccessException("Chain hash mismatch");
+        }
+
+        lastChainHash = Utils.digest(ack.toString());
+
+        switch (op.getType()) {
+            case AUDIT:
+            case DOWNLOAD:
+                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+
+                File file = new File(fname);
+
+                Utils.receive(in, file);
+
+                String digest = Utils.digest(file);
+
+                if (result.compareTo(digest) == 0) {
+                    result = "download success";
+                } else {
+                    result = "download file digest mismatch";
+                }
+
+                break;
+        }
+
+        long start = System.currentTimeMillis();
+        Utils.write(ATTESTATION, ack.toString());
+        this.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
     public boolean audit(String lastChainHash, File attestation, PublicKey cliKey, PublicKey spKey) {

@@ -26,20 +26,15 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class ChainHashAndLSNClient {
+public class ChainHashAndLSNClient extends Client {
     private static final File ATTESTATION;
     
     static {
         ATTESTATION = new File("attestation/client/chainhash-lsn");
     }
     
-    private final String hostname;
-    private final int port;
     private final String id;
-    private final KeyPair keyPair;
-    private final KeyPair spKeyPair;
     private int lsn;
-    private long attestationCollectTime;
     
     public ChainHashAndLSNClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_LSN_SERVICE_PORT, id, keyPair, spKeyPair);
@@ -50,75 +45,66 @@ public class ChainHashAndLSNClient {
                                  String id,
                                  KeyPair keyPair,
                                  KeyPair spKeyPair) {
-        this.hostname = hostname;
-        this.port = port;
+        super(hostname, port, keyPair, spKeyPair);
+        
         this.id = id;
-        this.keyPair = keyPair;
-        this.spKeyPair = spKeyPair;
         this.lsn = 1;
-        this.attestationCollectTime = 0;
     }
     
-    public void run(Operation op) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            Request req = new Request(op, id, lsn);
-            
-            req.sign(keyPair);
-            
-            Utils.send(out, req.toString());
-            
-            Response res = Response.parse(Utils.receive(in));
-            
-            if (!res.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("RES validation failure");
-            }
-            
-            ReplyResponse rr = new ReplyResponse(res);
-            
-            rr.sign(keyPair);
-            
-            Utils.send(out, rr.toString());
-            
-            Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-            
-            if (!ack.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("ACK validation failure");
-            }
-            
-            String result = ack.getResult();
-            
-            lsn += 1;
-            
-            switch (op.getType()) {
-                case AUDIT:
-                case DOWNLOAD:
-                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+    @Override
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        Request req = new Request(op, id, lsn);
 
-                    File file = new File(fname);
-                    
-                    Utils.receive(in, file);
+        req.sign(keyPair);
 
-                    String digest = Utils.digest(file);
+        Utils.send(out, req.toString());
 
-                    if (result.compareTo(digest) == 0) {
-                        result = "download success";
-                    } else {
-                        result = "download file digest mismatch";
-                    }
-                
-                    break;
-            }
-            
-            long start = System.currentTimeMillis();
-            Utils.write(ATTESTATION, ack.toString());
-            this.attestationCollectTime += System.currentTimeMillis() - start;
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(ChainHashAndLSNClient.class.getName()).log(Level.SEVERE, null, ex);
+        Response res = Response.parse(Utils.receive(in));
+
+        if (!res.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("RES validation failure");
         }
+
+        ReplyResponse rr = new ReplyResponse(res);
+
+        rr.sign(keyPair);
+
+        Utils.send(out, rr.toString());
+
+        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+
+        if (!ack.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
+        }
+
+        String result = ack.getResult();
+
+        lsn += 1;
+
+        switch (op.getType()) {
+            case AUDIT:
+            case DOWNLOAD:
+                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+
+                File file = new File(fname);
+
+                Utils.receive(in, file);
+
+                String digest = Utils.digest(file);
+
+                if (result.compareTo(digest) == 0) {
+                    result = "download success";
+                } else {
+                    result = "download file digest mismatch";
+                }
+
+                break;
+        }
+
+        long start = System.currentTimeMillis();
+        Utils.write(ATTESTATION, ack.toString());
+        this.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
     public boolean audit(File attestation, PublicKey cliKey, PublicKey spKey) {

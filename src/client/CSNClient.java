@@ -25,85 +25,71 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class CSNClient {
+public class CSNClient extends Client {
     private static final File ATTESTATION;
     
     static {
         ATTESTATION = new File("attestation/client/csn");
     }
     
-    private final String hostname;
-    private final int port;
-    private final KeyPair keyPair;
-    private final KeyPair spKeyPair;
     private int csn;
-    private long attestationCollectTime;
     
     public CSNClient(KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME, Config.CSN_SERVICE_PORT, keyPair, spKeyPair);
     }
     
     public CSNClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
-        this.hostname = hostname;
-        this.port = port;
-        this.keyPair = keyPair;
-        this.spKeyPair = spKeyPair;
+        super(hostname, port, keyPair, spKeyPair);
+        
         this.csn = 1;
-        this.attestationCollectTime = 0;
     }
     
-    public void run(Operation op) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            Request req = new Request(op, csn);
-            
-            req.sign(keyPair);
-            
-            Utils.send(out, req.toString());
-            
-            Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-            
-            if (!ack.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("ACK validation failure");
-            }
-            
-            String result = ack.getResult();
-            
-            if (result.compareTo("CSN mismatch") == 0) {
-                throw new IllegalAccessException(result);
-            }
-            
-            csn += 1;
-            
-            switch (op.getType()) {
-                case AUDIT:
-                case DOWNLOAD:
-                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
-                    
-                    File file = new File(fname);
-
-                    Utils.receive(in, file);
-
-                    String digest = Utils.digest(file);
-
-                    if (result.compareTo(digest) == 0) {
-                        result = "download success";
-                    } else {
-                        result = "download file digest mismatch";
-                    }
-                    
-                    break;
-            }
-            
-            long start = System.currentTimeMillis();
-            Utils.append(ATTESTATION, ack.toString() + '\n');
-            this.attestationCollectTime += System.currentTimeMillis() - start;
-            
-            socket.close();
-        } catch (IOException | IllegalAccessException | SignatureException ex) {
-            Logger.getLogger(CSNClient.class.getName()).log(Level.SEVERE, null, ex);
+    @Override
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        Request req = new Request(op, csn);
+        
+        req.sign(keyPair);
+        
+        Utils.send(out, req.toString());
+        
+        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+        
+        if (!ack.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
         }
+        
+        String result = ack.getResult();
+        
+        if (result.compareTo("CSN mismatch") == 0) {
+            throw new IllegalAccessException(result);
+        }
+        
+        csn += 1;
+        
+        switch (op.getType()) {
+            case AUDIT:
+            case DOWNLOAD:
+                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                
+                File file = new File(fname);
+                
+                Utils.receive(in, file);
+                
+                String digest = Utils.digest(file);
+                
+                if (result.compareTo(digest) == 0) {
+                    result = "download success";
+                } else {
+                    result = "download file digest mismatch";
+                }
+                
+                break;
+        }
+        
+        long start = System.currentTimeMillis();
+        Utils.append(ATTESTATION, ack.toString() + '\n');
+        super.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
     public boolean audit(File cliFile, PublicKey cliKey, File spFile, PublicKey spKey) {
@@ -150,7 +136,7 @@ public class CSNClient {
         KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
         CSNClient client = new CSNClient(keypair, spKeypair);
         Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
-
+        
         System.out.println("Running:");
         
         long time = System.currentTimeMillis();

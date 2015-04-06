@@ -25,20 +25,15 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class DoubleChainHashClient {
+public class DoubleChainHashClient extends Client {
     private static final File ATTESTATION;
     
     static {
         ATTESTATION = new File("attestation/client/doublechainhash");
     }
     
-    private final String hostname;
-    private final int port;
     private final String id;
-    private final KeyPair keyPair;
-    private final KeyPair spKeyPair;
     private String lastChainHash;
-    private long attestationCollectTime;
     
     public DoubleChainHashClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
         this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, id, keyPair, spKeyPair);
@@ -49,87 +44,78 @@ public class DoubleChainHashClient {
                                  String id,
                                  KeyPair keyPair,
                                  KeyPair spKeyPair) {
-        this.hostname = hostname;
-        this.port = port;
+        super(hostname, port, keyPair, spKeyPair);
+        
         this.id = id;
-        this.keyPair = keyPair;
-        this.spKeyPair = spKeyPair;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
-        this.attestationCollectTime = 0;
     }
     
     public String getLastChainHash() {
         return lastChainHash;
     }
     
-    public void run(Operation op) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            Request req = new Request(op, id);
-            
-            req.sign(keyPair);
-            
-            Utils.send(out, req.toString());
-            
-            Response res = Response.parse(Utils.receive(in));
-            
-            if (!res.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("RES validation failure");
-            }
-            
-            String result = null;
-            
-            if (lastChainHash.compareTo(res.getClientDeviceLastChainHash()) != 0) {
-                result = "chain hash mismatch";
-            }
-            
-            ReplyResponse rr = new ReplyResponse(res);
-            
-            rr.sign(keyPair);
-            
-            Utils.send(out, rr.toString());
-            
-            Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-            
-            if (!ack.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("ACK validation failure");
-            }
-            
-            if (result == null) {
-                result = ack.getResult();
-            }
-            
-            switch (op.getType()) {
-                case AUDIT:
-                case DOWNLOAD:
-                    String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+    @Override
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        Request req = new Request(op, id);
 
-                    File file = new File(fname);
+        req.sign(keyPair);
 
-                    Utils.receive(in, file);
+        Utils.send(out, req.toString());
 
-                    String digest = Utils.digest(file);
+        Response res = Response.parse(Utils.receive(in));
 
-                    if (ack.getResult().compareTo(digest) == 0) {
-                        result = "download success";
-                    } else {
-                        result = "download file digest mismatch";
-                    }
-                    
-                    break;
-            }
-            
-            lastChainHash = Utils.digest(ack.toString());
-            
-            long start = System.currentTimeMillis();
-            Utils.write(ATTESTATION, ack.toString());
-            this.attestationCollectTime += System.currentTimeMillis() - start;
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(DoubleChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
+        if (!res.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("RES validation failure");
         }
+
+        String result = null;
+
+        if (lastChainHash.compareTo(res.getClientDeviceLastChainHash()) != 0) {
+            result = "chain hash mismatch";
+        }
+
+        ReplyResponse rr = new ReplyResponse(res);
+
+        rr.sign(keyPair);
+
+        Utils.send(out, rr.toString());
+
+        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+
+        if (!ack.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
+        }
+
+        if (result == null) {
+            result = ack.getResult();
+        }
+
+        switch (op.getType()) {
+            case AUDIT:
+            case DOWNLOAD:
+                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+
+                File file = new File(fname);
+
+                Utils.receive(in, file);
+
+                String digest = Utils.digest(file);
+
+                if (ack.getResult().compareTo(digest) == 0) {
+                    result = "download success";
+                } else {
+                    result = "download file digest mismatch";
+                }
+
+                break;
+        }
+
+        lastChainHash = Utils.digest(ack.toString());
+
+        long start = System.currentTimeMillis();
+        Utils.write(ATTESTATION, ack.toString());
+        this.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
     public boolean audit(File attestation, PublicKey cliKey, PublicKey spKey) {
