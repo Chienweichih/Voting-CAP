@@ -217,7 +217,7 @@ public class Utils {
      * Digest the file and write its digest value to corresponding file.
      */
     public static void writeDigest(String fname) {
-        writeDigest(fname, digest(fname));
+        writeDigest(fname, digest(new File(fname)));
     }
     
     /**
