@@ -25,8 +25,8 @@ public class NonPOVHandler implements ConnectionHandler {
     public static final File ACK_ATTESTATION;
     
     static {
-        REQ_ATTESTATION = new File("attestation/service-provider/nonpov.req");
-        ACK_ATTESTATION = new File("attestation/service-provider/nonpov.ack");
+        REQ_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/nonpov.req");
+        ACK_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/nonpov.ack");
     }
     
     private final Socket socket;
@@ -39,7 +39,7 @@ public class NonPOVHandler implements ConnectionHandler {
     
     @Override
     public void run() {
-        PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+        PublicKey clientPubKey = Config.KeyPair.CLIENT.getKeypair().getPublic();
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {

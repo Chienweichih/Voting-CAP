@@ -37,7 +37,8 @@ public class SocketServer extends Thread {
     
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         this.port = port;
-        this.numThreads = 1; // Runtime.getRuntime().availableProcessors();
+        this.numThreads = Runtime.getRuntime().availableProcessors();
+        System.out.println(numThreads);
         
         try {
             this.handlerCtor = handler.getDeclaredConstructor(Socket.class, KeyPair.class);
@@ -45,7 +46,7 @@ public class SocketServer extends Thread {
             Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        keyPair = Utils.readKeyPair("service_provider.key");
+        keyPair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
     }
     
     @Override
@@ -80,6 +81,7 @@ public class SocketServer extends Thread {
     }
     
     public static void main(String[] args) {
+        Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
         new SocketServer(NonPOVHandler.class, Config.NONPOV_SERVICE_PORT).start();

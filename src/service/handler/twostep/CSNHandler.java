@@ -30,7 +30,7 @@ public class CSNHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        ATTESTATION = new File("attestation/service-provider/csn");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/csn");
         CSN = 0;
     }
     
@@ -41,7 +41,7 @@ public class CSNHandler implements ConnectionHandler {
     
     @Override
     public void run() {
-        PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+        PublicKey clientPubKey = Config.KeyPair.CLIENT.getKeypair().getPublic();
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {

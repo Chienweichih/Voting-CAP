@@ -31,8 +31,8 @@ public class NonPOVClient extends Client {
     private static final File ACK_ATTESTATION;
     
     static {
-        REQ_ATTESTATION = new File("attestation/client/nonpov.req");
-        ACK_ATTESTATION = new File("attestation/client/nonpov.ack");
+        REQ_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/nonpov.req");
+        ACK_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/nonpov.ack");
     }
     
     public NonPOVClient(KeyPair keyPair, KeyPair spKeyPair) {
@@ -72,7 +72,7 @@ public class NonPOVClient extends Client {
 
                 break;
             case DOWNLOAD:
-                String fname = op.getPath();
+                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
 
                 File file = new File(fname);
 
@@ -136,10 +136,10 @@ public class NonPOVClient extends Client {
     }
     
     public static void main(String[] args) {
-        KeyPair keypair = Utils.readKeyPair("client.key");
-        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
+        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
+        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
         NonPOVClient client = new NonPOVClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
         
         System.out.println("Running:");
         

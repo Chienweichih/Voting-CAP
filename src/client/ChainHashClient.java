@@ -28,7 +28,7 @@ public class ChainHashClient extends Client {
     private static final File ATTESTATION;
     
     static {
-        ATTESTATION = new File("attestation/client/chainhash");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/chainhash");
     }
     
     private String lastChainHash;
@@ -130,10 +130,10 @@ public class ChainHashClient extends Client {
     }
     
     public static void main(String[] args) {
-        KeyPair keypair = Utils.readKeyPair("client.key");
-        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
+        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
+        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
         ChainHashClient client = new ChainHashClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
         
         System.out.println("Running:");
         

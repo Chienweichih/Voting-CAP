@@ -29,7 +29,7 @@ public class DoubleChainHashClient extends Client {
     private static final File ATTESTATION;
     
     static {
-        ATTESTATION = new File("attestation/client/doublechainhash");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/doublechainhash");
     }
     
     private final String id;
@@ -164,11 +164,10 @@ public class DoubleChainHashClient extends Client {
     }
     
     public static void main(String[] args) {
-        String id = "client";
-        KeyPair keyPair = Utils.readKeyPair(id + ".key");
-        KeyPair spKeyPair = Utils.readKeyPair("service_provider.key");
-        DoubleChainHashClient client = new DoubleChainHashClient(id, keyPair, spKeyPair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
+        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
+        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
+        DoubleChainHashClient client = new DoubleChainHashClient("client", keypair, spKeypair);
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
         
         System.out.println("Running:");
         
@@ -190,11 +189,11 @@ public class DoubleChainHashClient extends Client {
         File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + DoubleChainHashHandler.ATTESTATION.getPath());
         
         // to prevent ClassLoader's init overhead
-        client.audit(auditFile, keyPair.getPublic(), spKeyPair.getPublic());
+        client.audit(auditFile, keypair.getPublic(), spKeypair.getPublic());
         
         time = System.currentTimeMillis();
         boolean audit = client.audit(auditFile,
-                                     keyPair.getPublic(), spKeyPair.getPublic());
+                                     keypair.getPublic(), spKeypair.getPublic());
         time = System.currentTimeMillis() - time;
         
         System.out.println("Audit: " + audit + ", cost " + time + "ms");

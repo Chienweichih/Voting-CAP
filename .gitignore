@@ -3,6 +3,10 @@
 #ant specific
 dist/
 build/
+data/
+downloads/
+attestations/
+keypairs/
  
 #netbeans specific
 core

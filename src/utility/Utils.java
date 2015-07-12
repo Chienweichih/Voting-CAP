@@ -5,7 +5,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -19,14 +18,16 @@ import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import service.Config;
-import service.SocketServer;
+import service.Config.FileSize;
 
 public class Utils {
     private static final int BUF_SIZE = 8192;
     private static final String HEX = "0123456789ABCDEF";
+    private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
     
     /**
      * Converts byte array into hexadecimal string.
@@ -73,9 +74,9 @@ public class Utils {
             
             out.flush();
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
     
@@ -95,7 +96,7 @@ public class Utils {
             
             out.flush();
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
     
@@ -112,7 +113,7 @@ public class Utils {
             
             data = new String(bytes, "UTF-8");
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return data;
@@ -122,6 +123,10 @@ public class Utils {
      * Receives a file from DataInputStream.
      */
     public static void receive(DataInputStream in, File file) {
+        if (!file.getParentFile().exists()) {
+            file.getParentFile().mkdirs();
+        }
+        
         try (FileOutputStream fos = new FileOutputStream(file)) {
             byte[] buf = new byte[BUF_SIZE];
             int n;
@@ -138,7 +143,7 @@ public class Utils {
                 fos.write(buf, 0, n);
             }
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
     
@@ -163,10 +168,8 @@ public class Utils {
             }
             
             result = Hex2Str((digest.digest()));
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (NoSuchAlgorithmException | IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
 
         return result;
@@ -188,7 +191,7 @@ public class Utils {
             
             result = Hex2Str(digest.digest(message.getBytes()));
         } catch (NoSuchAlgorithmException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return result;
@@ -204,10 +207,8 @@ public class Utils {
         try (FileReader fr = new FileReader(fname + ".digest");
              BufferedReader br = new BufferedReader(fr)) {
             digest = br.readLine();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return digest;
@@ -234,7 +235,7 @@ public class Utils {
         try (FileWriter fw = new FileWriter(file)) {
             fw.append(str);
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
     
@@ -245,7 +246,7 @@ public class Utils {
         try (FileWriter fw = new FileWriter(file, true)) {
             fw.append(str);
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
     
@@ -269,7 +270,7 @@ public class Utils {
             keyGen.initialize(512, new SecureRandom());
             keyPair = keyGen.generateKeyPair();
         } catch (SecurityException | NoSuchAlgorithmException ex) {
-            Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return keyPair;
@@ -279,15 +280,13 @@ public class Utils {
      * Reads KeyPair from specific file.
      */
     public static KeyPair readKeyPair(String fname) {
-        File file = new File("keypair/" + fname);
+        File file = new File(fname);
         
         try (FileInputStream fis = new FileInputStream(file);
              ObjectInputStream in = new ObjectInputStream(fis)) {
             return (KeyPair) in.readObject();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException | ClassNotFoundException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return null;
@@ -299,34 +298,81 @@ public class Utils {
     public static void cleanAllAttestations() {
         File dir = new File("attestation");
         
-        for (File subDir : dir.listFiles()) {
-            for (File file : subDir.listFiles()) {
-                file.delete();
+        try {
+            for (File subDir : dir.listFiles()) {
+                for (File file : subDir.listFiles()) {
+                    file.delete();
+                }
             }
+        } catch (NullPointerException ex) {
         }
     }
     
-    public static void main(String[] args) {
-        String[] keyFileNames = {"keypair/client.key", "keypair/service_provider.key"};
+    public static void createRequiredFiles() {
+        File dir;
+        for (String path : new String[] { Config.DOWNLOADS_DIR_PATH,
+                                          Config.ATTESTATION_DIR_PATH,
+                                          Config.ATTESTATION_DIR_PATH + "/client",
+                                          Config.ATTESTATION_DIR_PATH + "/service-provider",
+                                          Config.DATA_DIR_PATH,
+                                          Config.KEYPAIR_DIR_PATH }) {
+            dir = new File(path);
+            
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+        }
         
-        for (String fname : keyFileNames) {
-            File keyFile = new File(fname);
+        dir = new File(String.format("%s/client", Config.ATTESTATION_DIR_PATH));
+        dir.mkdirs();
+        
+        
+        Random r = new Random();
+        
+        for (FileSize fs : FileSize.values()) {
+            File file = new File(fs.getPath());
+            
+            if (!file.exists()) {
+                try {
+                    file.createNewFile();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+                
+                byte[] buf = new byte[1024];
+                long size = 0;
+                
+                try (FileOutputStream fos = new FileOutputStream(file)) {
+                    do {
+                        r.nextBytes(buf);
+                        fos.write(buf);
+                        
+                        size += buf.length;
+                    } while (size < fs.getSize());
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            }
+            
+            writeDigest(fs.getPath());
+        }
+        
+        for (Config.KeyPair kp : Config.KeyPair.values()) {
+            File keyFile = new File(kp.getPath());
             
             if (!keyFile.exists()) {
                 try {
                     keyFile.createNewFile();
                 } catch (IOException ex) {
-                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                    LOGGER.log(Level.SEVERE, null, ex);
                 }
             }
             
-            try (FileOutputStream fos = new FileOutputStream(fname);
+            try (FileOutputStream fos = new FileOutputStream(keyFile);
                  ObjectOutputStream out = new ObjectOutputStream(fos)) {
                 out.writeObject(randomGenerateKeyPair());
-            } catch (FileNotFoundException ex) {
-                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
-                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                LOGGER.log(Level.SEVERE, null, ex);
             }
         }
     }

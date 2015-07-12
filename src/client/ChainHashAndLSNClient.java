@@ -30,7 +30,7 @@ public class ChainHashAndLSNClient extends Client {
     private static final File ATTESTATION;
     
     static {
-        ATTESTATION = new File("attestation/client/chainhash-lsn");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/chainhash-lsn");
     }
     
     private final String id;
@@ -154,11 +154,10 @@ public class ChainHashAndLSNClient extends Client {
     }
     
     public static void main(String[] args) {
-        String id = "client";
-        KeyPair keypair = Utils.readKeyPair(id + ".key");
-        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
-        ChainHashAndLSNClient client = new ChainHashAndLSNClient(id, keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
+        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
+        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
+        ChainHashAndLSNClient client = new ChainHashAndLSNClient("client", keypair, spKeypair);
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
         
         System.out.println("Running:");
         

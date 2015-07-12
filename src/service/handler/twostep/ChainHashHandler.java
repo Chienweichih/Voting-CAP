@@ -30,7 +30,7 @@ public class ChainHashHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        ATTESTATION = new File("attestation/service-provider/chainhash");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/chainhash");
         
         HashingChain = new LinkedList<>();
         HashingChain.add(Config.DEFAULT_CHAINHASH);
@@ -43,7 +43,7 @@ public class ChainHashHandler implements ConnectionHandler {
     
     @Override
     public void run() {
-        PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+        PublicKey clientPubKey = Config.KeyPair.CLIENT.getKeypair().getPublic();
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {

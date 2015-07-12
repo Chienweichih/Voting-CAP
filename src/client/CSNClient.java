@@ -29,7 +29,7 @@ public class CSNClient extends Client {
     private static final File ATTESTATION;
     
     static {
-        ATTESTATION = new File("attestation/client/csn");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/csn");
     }
     
     private int csn;
@@ -132,10 +132,10 @@ public class CSNClient extends Client {
     }
     
     public static void main(String[] args) {
-        KeyPair keypair = Utils.readKeyPair("client.key");
-        KeyPair spKeypair = Utils.readKeyPair("service_provider.key");
+        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
+        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
         CSNClient client = new CSNClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FNAME, "");
+        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
         
         System.out.println("Running:");
         

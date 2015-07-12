@@ -29,7 +29,7 @@ public class DoubleChainHashHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        ATTESTATION = new File("attestation/service-provider/doublechainhash");
+        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/doublechainhash");
         
         HASHING_CHAIN_TABLE = new DoubleHashingChainTable();
     }
@@ -41,7 +41,7 @@ public class DoubleChainHashHandler implements ConnectionHandler {
     
     @Override
     public void run() {
-        PublicKey clientPubKey = Utils.readKeyPair("client.key").getPublic();
+        PublicKey clientPubKey = Config.KeyPair.CLIENT.getKeypair().getPublic();
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
