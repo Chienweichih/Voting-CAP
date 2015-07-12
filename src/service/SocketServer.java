@@ -38,7 +38,6 @@ public class SocketServer extends Thread {
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         this.port = port;
         this.numThreads = Runtime.getRuntime().availableProcessors();
-        System.out.println(numThreads);
         
         try {
             this.handlerCtor = handler.getDeclaredConstructor(Socket.class, KeyPair.class);
@@ -53,7 +52,7 @@ public class SocketServer extends Thread {
     public void run() {
         try {
             serverSocket = new ServerSocket(port);
-            pool = Executors.newFixedThreadPool(numThreads);
+            pool = Executors.newFixedThreadPool(Config.NUM_PROCESSORS);
             
             do {
                 Socket socket = serverSocket.accept();

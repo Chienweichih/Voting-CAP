@@ -6,9 +6,12 @@ import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.SignatureException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import message.Operation;
+import service.Config;
 
 /**
  *
@@ -17,6 +20,7 @@ import message.Operation;
 public abstract class Client {
     protected final String hostname;
     protected final int port;
+    protected ExecutorService pool;
     protected final KeyPair keyPair;
     protected final KeyPair spKeyPair;
     protected long attestationCollectTime;
@@ -24,6 +28,7 @@ public abstract class Client {
     public Client(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
         this.hostname = hostname;
         this.port = port;
+        this.pool = Executors.newFixedThreadPool(Config.NUM_PROCESSORS);
         this.keyPair = keyPair;
         this.spKeyPair = spKeyPair;
         this.attestationCollectTime = 0;
@@ -35,14 +40,16 @@ public abstract class Client {
                                  DataInputStream in) throws SignatureException, IllegalAccessException;
     
     public final void run(Operation op) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            hook(op, socket, out, in);
-            
-            socket.close();
-        } catch (IOException | SignatureException | IllegalAccessException ex) {
-            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-        }
+//        pool.submit(() -> {
+            try (Socket socket = new Socket(hostname, port);
+                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                    DataInputStream in = new DataInputStream(socket.getInputStream())) {
+                hook(op, socket, out, in);
+                
+                socket.close();
+            } catch (IOException | SignatureException | IllegalAccessException ex) {
+                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+            }
+//        });
     }
 }

@@ -71,6 +71,7 @@ public interface Config {
         }
     }
     
+    public int NUM_PROCESSORS = 1; // Runtime.getRuntime().availableProcessors();
     public FileSize FILE = FileSize.ONE_MB;
     public int NUM_RUNS = 100;
 }
