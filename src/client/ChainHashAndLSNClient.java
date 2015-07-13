@@ -72,6 +72,10 @@ public class ChainHashAndLSNClient extends Client {
 
         Utils.send(out, rr.toString());
 
+        if (op.getType() == OperationType.UPLOAD) {
+            Utils.send(out, new File(Config.DATA_DIR_PATH + '/' + op.getPath()));
+        }
+
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
 
         if (!ack.validate(spKeyPair.getPublic())) {
@@ -158,6 +162,7 @@ public class ChainHashAndLSNClient extends Client {
         KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
         ChainHashAndLSNClient client = new ChainHashAndLSNClient("client", keypair, spKeypair);
         Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
+//        Operation op = new Operation(OperationType.UPLOAD, Config.FILE.getName(), Utils.readDigest(Config.FILE.getPath()));
         
         System.out.println("Running:");
         

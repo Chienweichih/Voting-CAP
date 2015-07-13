@@ -51,6 +51,10 @@ public class NonPOVClient extends Client {
 
         Utils.send(out, req.toString());
 
+        if (op.getType() == OperationType.UPLOAD) {
+            Utils.send(out, new File(Config.DATA_DIR_PATH + '/' + op.getPath()));
+        }
+
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
 
         if (!ack.validate(spKeyPair.getPublic())) {
@@ -140,6 +144,7 @@ public class NonPOVClient extends Client {
         KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
         NonPOVClient client = new NonPOVClient(keypair, spKeypair);
         Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
+//        Operation op = new Operation(OperationType.UPLOAD, Config.FILE.getName(), Utils.readDigest(Config.FILE.getPath()));
         
         System.out.println("Running:");
         

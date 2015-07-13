@@ -88,5 +88,7 @@ public class SocketServer extends Thread {
         new SocketServer(ChainHashHandler.class, Config.CHAINHASH_SERVICE_PORT).start();
         new SocketServer(ChainHashAndLSNHandler.class, Config.CHAINHASH_LSN_SERVICE_PORT).start();
         new SocketServer(DoubleChainHashHandler.class, Config.DOUBLECHAINHASH_SERVICE_PORT).start();
+        
+        System.out.println("Ready to go!");
     }
 }

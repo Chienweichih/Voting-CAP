@@ -79,6 +79,8 @@ public class DoubleChainHashHandler implements ConnectionHandler {
             
             switch (op.getType()) {
                 case UPLOAD:
+                    file = new File(Config.DOWNLOADS_DIR_PATH + '/' + op.getPath());
+                    
                     Utils.receive(in, file);
 
                     String digest = Utils.digest(file);
