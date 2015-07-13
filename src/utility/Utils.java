@@ -296,15 +296,24 @@ public class Utils {
      * Delete all of attestation files.
      */
     public static void cleanAllAttestations() {
-        File dir = new File("attestation");
-        
-        try {
-            for (File subDir : dir.listFiles()) {
-                for (File file : subDir.listFiles()) {
-                    file.delete();
+        for (String path : new String[] { Config.ATTESTATION_DIR_PATH,
+                                          Config.DOWNLOADS_DIR_PATH }) {
+            File dir = new File(path);
+
+            clearDirectory(dir);
+        }
+    }
+    
+    public static void clearDirectory(File folder) {
+        if (folder.isFile()) {
+            folder.delete();
+        } else {
+            try {
+                for (File file : folder.listFiles()) {
+                    clearDirectory(file);
                 }
+            } catch (NullPointerException e) {
             }
-        } catch (NullPointerException ex) {
         }
     }
     
