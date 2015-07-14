@@ -35,14 +35,14 @@ public abstract class Client {
                                  DataInputStream in) throws SignatureException, IllegalAccessException;
     
     public final void run(Operation op) {
-            try (Socket socket = new Socket(hostname, port);
-                    DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                    DataInputStream in = new DataInputStream(socket.getInputStream())) {
-                hook(op, socket, out, in);
-                
-                socket.close();
-            } catch (IOException | SignatureException | IllegalAccessException ex) {
-                Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
-            }
+        try (Socket socket = new Socket(hostname, port);
+                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                DataInputStream in = new DataInputStream(socket.getInputStream())) {
+            hook(op, socket, out, in);
+
+            socket.close();
+        } catch (IOException | SignatureException | IllegalAccessException ex) {
+            Logger.getLogger(Client.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

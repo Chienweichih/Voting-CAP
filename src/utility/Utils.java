@@ -335,7 +335,6 @@ public class Utils {
         dir = new File(String.format("%s/client", Config.ATTESTATION_DIR_PATH));
         dir.mkdirs();
         
-        
         Random r = new Random();
         
         for (FileSize fs : FileSize.values()) {
@@ -375,13 +374,13 @@ public class Utils {
                 } catch (IOException ex) {
                     LOGGER.log(Level.SEVERE, null, ex);
                 }
-            }
             
-            try (FileOutputStream fos = new FileOutputStream(keyFile);
-                 ObjectOutputStream out = new ObjectOutputStream(fos)) {
-                out.writeObject(randomGenerateKeyPair());
-            } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
+                try (FileOutputStream fos = new FileOutputStream(keyFile);
+                     ObjectOutputStream out = new ObjectOutputStream(fos)) {
+                    out.writeObject(randomGenerateKeyPair());
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
             }
         }
     }
