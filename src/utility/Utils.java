@@ -137,7 +137,7 @@ public class Utils {
                 } else {
                     n = (int) leftBytes;
                     
-                    in.read(buf, 0, n);
+                    in.readFully(buf, 0, n);
                 }
                 
                 fos.write(buf, 0, n);
