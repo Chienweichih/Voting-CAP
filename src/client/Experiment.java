@@ -7,10 +7,17 @@ import utility.Utils;
  * @author Scott
  */
 public class Experiment {
-    public static void main(String[] args) {
-        System.out.println("Testing...");
+    public static void main(String[] args) throws ClassNotFoundException {
+        System.out.println("Loading...");
         
-        NonPOVClient.main(args);
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        
+        classLoader.loadClass(NonPOVClient.class.getName());
+        classLoader.loadClass(CSNClient.class.getName());
+        classLoader.loadClass(ChainHashClient.class.getName());
+        classLoader.loadClass(ChainHashAndLSNClient.class.getName());
+        classLoader.loadClass(DoubleChainHashClient.class.getName());
+        
         Utils.cleanAllAttestations();
         
         System.out.println("\nStart...");

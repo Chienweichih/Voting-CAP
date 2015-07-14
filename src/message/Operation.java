@@ -14,7 +14,7 @@ public class Operation {
     
     public Operation(OperationType type, String path, String msg) {
         this.type = type;
-        this.path = path;
+        this.path = path.indexOf('\\') != -1 ? path.replace('\\', '/') : path;
         this.message = msg;
         
         map = new LinkedHashMap<>();
