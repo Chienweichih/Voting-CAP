@@ -27,24 +27,21 @@ import utility.Utils;
  */
 public class DoubleChainHashClient extends Client {
     private static final File ATTESTATION;
+    private static final Logger LOGGER;
     
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/doublechainhash");
+        LOGGER = Logger.getLogger(DoubleChainHashClient.class.getName());
     }
     
     private final String id;
     private String lastChainHash;
     
     public DoubleChainHashClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.DOUBLECHAINHASH_SERVICE_PORT, id, keyPair, spKeyPair);
-    }
-    
-    public DoubleChainHashClient(String hostname,
-                                 int port,
-                                 String id,
-                                 KeyPair keyPair,
-                                 KeyPair spKeyPair) {
-        super(hostname, port, keyPair, spKeyPair);
+        super(Config.SERVICE_HOSTNAME,
+              Config.DOUBLECHAINHASH_SERVICE_PORT,
+              keyPair,
+              spKeyPair);
         
         this.id = id;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
@@ -58,7 +55,7 @@ public class DoubleChainHashClient extends Client {
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException, IllegalAccessException {
         Request req = new Request(op, id);
-
+        
         req.sign(keyPair);
 
         Utils.send(out, req.toString());
@@ -122,12 +119,20 @@ public class DoubleChainHashClient extends Client {
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
-    public boolean audit(File attestation, PublicKey cliKey, PublicKey spKey) {
+    @Override
+    public String getHandlerAttestationPath() {
+        return DoubleChainHashHandler.ATTESTATION.getPath();
+    }
+
+    @Override
+    public boolean audit(File spFile) {
         boolean success = true;
+        PublicKey spKey = spKeyPair.getPublic();
+        PublicKey cliKey = keyPair.getPublic();
         
         DoubleHashingChainTable hashingChainTab = new DoubleHashingChainTable();
         
-        try (FileReader fr = new FileReader(attestation);
+        try (FileReader fr = new FileReader(spFile);
              BufferedReader br = new BufferedReader(fr)) {
             do {
                 String s = br.readLine();
@@ -143,13 +148,15 @@ public class DoubleChainHashClient extends Client {
                 
                 String clientID = req.getClientID();
                 
-                if (hashingChainTab.getLastChainHashOfAll().compareTo(res.getUserLastChainHash()) == 0) {
+                if (hashingChainTab.getLastChainHashOfAll().compareTo(
+                    res.getUserLastChainHash()) == 0) {
                     hashingChainTab.chain(Utils.digest(res.toString()));
                 } else {
                     success = false;
                 }
                 
-                if (hashingChainTab.getLastChainHash(clientID).compareTo(res.getClientDeviceLastChainHash()) == 0) {
+                if (hashingChainTab.getLastChainHash(clientID).compareTo(
+                    res.getClientDeviceLastChainHash()) == 0) {
                     hashingChainTab.chain(clientID, Utils.digest(ack.toString()));
                 } else {
                     success = false;
@@ -161,46 +168,9 @@ public class DoubleChainHashClient extends Client {
         } catch (IOException ex) {
             success = false;
             
-            Logger.getLogger(DoubleChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return success;
-    }
-    
-    public static void main(String[] args) {
-        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
-        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
-        DoubleChainHashClient client = new DoubleChainHashClient("client", keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
-//        Operation op = new Operation(OperationType.UPLOAD, Config.FILE.getName(), Utils.readDigest(Config.FILE.getPath()));
-        
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= Config.NUM_RUNS; i++) {
-            client.run(op);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
-        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
-        
-        System.out.println("Auditing:");
-        
-        op = new Operation(OperationType.AUDIT, DoubleChainHashHandler.ATTESTATION.getPath(), "");
-        
-        client.run(op);
-        
-        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + DoubleChainHashHandler.ATTESTATION.getPath());
-        
-        // to prevent ClassLoader's init overhead
-        client.audit(auditFile, keypair.getPublic(), spKeypair.getPublic());
-        
-        time = System.currentTimeMillis();
-        boolean audit = client.audit(auditFile,
-                                     keypair.getPublic(), spKeypair.getPublic());
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 }

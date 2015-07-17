@@ -12,6 +12,7 @@ import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+
 import message.Operation;
 import message.OperationType;
 import message.twostep.chainhash.Acknowledgement;
@@ -26,19 +27,20 @@ import utility.Utils;
  */
 public class ChainHashClient extends Client {
     private static final File ATTESTATION;
+    private static final Logger LOGGER;
     
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/chainhash");
+        LOGGER = Logger.getLogger(ChainHashClient.class.getName());
     }
     
     private String lastChainHash;
     
     public ChainHashClient(KeyPair keyPair, KeyPair spKeyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_SERVICE_PORT, keyPair, spKeyPair);
-    }
-    
-    public ChainHashClient(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
-        super(hostname, port, keyPair, spKeyPair);
+        super(Config.SERVICE_HOSTNAME,
+              Config.CHAINHASH_SERVICE_PORT,
+              keyPair,
+              spKeyPair);
         
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
     }
@@ -46,7 +48,6 @@ public class ChainHashClient extends Client {
     public String getLastChainHash() {
         return lastChainHash;
     }
-    
     
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
@@ -74,8 +75,10 @@ public class ChainHashClient extends Client {
             throw new IllegalAccessException("Chain hash mismatch");
         }
 
-        lastChainHash = Utils.digest(ack.toString());
-
+        if (op.getType() != OperationType.AUDIT) { // dirty fix
+            lastChainHash = Utils.digest(ack.toString());
+        }
+        
         switch (op.getType()) {
             case AUDIT:
             case DOWNLOAD:
@@ -100,11 +103,19 @@ public class ChainHashClient extends Client {
         Utils.write(ATTESTATION, ack.toString());
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
-    
-    public boolean audit(String lastChainHash, File attestation, PublicKey cliKey, PublicKey spKey) {
+
+    @Override
+    public String getHandlerAttestationPath() {
+        return ChainHashHandler.ATTESTATION.getPath();
+    }
+
+    @Override
+    public boolean audit(File spFile) {
         boolean success = true;
+        PublicKey spKey = spKeyPair.getPublic();
+        PublicKey cliKey = keyPair.getPublic();
         
-        try (FileReader fr = new FileReader(attestation);
+        try (FileReader fr = new FileReader(spFile);
              BufferedReader br = new BufferedReader(fr)) {
             String chainhash = Config.DEFAULT_CHAINHASH;
             
@@ -122,55 +133,12 @@ public class ChainHashClient extends Client {
                 
                 success &= ack.validate(spKey) & req.validate(cliKey);
             } while (success && chainhash.compareTo(lastChainHash) != 0);
-        } catch (NullPointerException ex) {
-            success = false;
-        } catch (IOException ex) {
+        } catch (NullPointerException | IOException ex) {
             success = false;
             
-            Logger.getLogger(ChainHashClient.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return success;
-    }
-    
-    public static void main(String[] args) {
-        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
-        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
-        ChainHashClient client = new ChainHashClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
-//        Operation op = new Operation(OperationType.UPLOAD, Config.FILE.getName(), Utils.readDigest(Config.FILE.getPath()));
-        
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= Config.NUM_RUNS; i++) {
-            client.run(op);
-        }
-        String chainhash = client.getLastChainHash();
-        
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
-        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
-        
-        System.out.println("Auditing:");
-        
-        client.run(new Operation(OperationType.AUDIT,
-                                 ChainHashHandler.ATTESTATION.getPath(),
-                                 ""));
-        
-        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + ChainHashHandler.ATTESTATION.getPath());
-        
-        // to prevent ClassLoader's init overhead
-        client.audit(chainhash, auditFile, keypair.getPublic(), spKeypair.getPublic());
-        
-        time = System.currentTimeMillis();
-        boolean audit = client.audit(chainhash,
-                                     auditFile,
-                                     keypair.getPublic(),
-                                     spKeypair.getPublic());
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 }

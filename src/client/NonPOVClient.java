@@ -29,17 +29,19 @@ import utility.Utils;
 public class NonPOVClient extends Client {
     private static final File REQ_ATTESTATION;
     private static final File ACK_ATTESTATION;
+    private static final Logger LOGGER;
     
     static {
         REQ_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/nonpov.req");
         ACK_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/nonpov.ack");
+        LOGGER = Logger.getLogger(NonPOVClient.class.getName());
     }
     
     public NonPOVClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
-             Config.NONPOV_SERVICE_PORT,
-             keyPair,
-             spKeyPair);
+              Config.NONPOV_SERVICE_PORT,
+              keyPair,
+              spKeyPair);
     }
     
     @Override
@@ -66,14 +68,18 @@ public class NonPOVClient extends Client {
 
         switch (op.getType()) {
             case AUDIT:
-                File tmp_req_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
-                File tmp_ack_attestation = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
+                File tmp_req_attestation = new File(Config.DOWNLOADS_DIR_PATH
+                    + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
+                File tmp_ack_attestation = new File(Config.DOWNLOADS_DIR_PATH
+                    + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
 
                 Utils.receive(in, tmp_req_attestation);
                 Utils.receive(in, tmp_ack_attestation);
 
-                digest = Utils.digest(tmp_req_attestation) + Utils.digest(tmp_ack_attestation);
-
+                digest = String.format("%s%s",
+                    Utils.digest(tmp_req_attestation),
+                    Utils.digest(tmp_ack_attestation));
+                
                 break;
             case DOWNLOAD:
                 String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
@@ -99,7 +105,57 @@ public class NonPOVClient extends Client {
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
     
-    public static boolean Audit(Class c, File cliFile, File spFile, PublicKey key) {
+    @Override
+    public void run(Operation op, int runTimes) {
+        System.out.println("Running:");
+        
+        long time = System.currentTimeMillis();
+        for (int i = 1; i <= runTimes; i++) {
+            run(op);
+        }
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println(runTimes + " times cost " + time + "ms");
+        
+        System.out.println("Auditing:");
+        
+        run(new Operation(OperationType.AUDIT, "", ""));
+        
+        File reqAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/'
+            + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
+        File ackAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/'
+            + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
+        
+        time = System.currentTimeMillis();
+        boolean reqAudit = audit(Request.class,
+                                 REQ_ATTESTATION,
+                                 reqAuditFile,
+                                 keyPair.getPublic());
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Request: " + reqAudit + ", cost " + time + "ms");
+        
+        time = System.currentTimeMillis();
+        boolean ackAudit = audit(Acknowledgement.class,
+                                 ACK_ATTESTATION,
+                                 ackAuditFile,
+                                 spKeyPair.getPublic());
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Ack: " + ackAudit + ", cost " + time + "ms");
+    }
+    
+    @Override
+    public String getHandlerAttestationPath() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public boolean audit(File spFile) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    
+    public boolean audit(Class c, File cliFile, File spFile, PublicKey key) {
         boolean success = true;
         
         try (FileReader fr = new FileReader(cliFile);
@@ -133,57 +189,9 @@ public class NonPOVClient extends Client {
                | InvocationTargetException ex) {
             success = false;
             
-            Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return success;
-    }
-    
-    public static void main(String[] args) {
-        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
-        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
-        NonPOVClient client = new NonPOVClient(keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
-//        Operation op = new Operation(OperationType.UPLOAD, Config.FILE.getName(), Utils.readDigest(Config.FILE.getPath()));
-        
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= Config.NUM_RUNS; i++) {
-            client.run(op);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(Config.NUM_RUNS + " times cost " + time + "ms");
-        
-        System.out.println("Auditing:");
-        
-        client.run(new Operation(OperationType.AUDIT, "", ""));
-        
-        File reqAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");
-        File ackAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + NonPOVHandler.ACK_ATTESTATION.getPath() + ".audit");
-        
-        // to prevent ClassLoader's init overhead
-        Audit(Request.class, REQ_ATTESTATION, reqAuditFile, keypair.getPublic());
-        Audit(Acknowledgement.class, ACK_ATTESTATION, ackAuditFile, spKeypair.getPublic());
-        
-        time = System.currentTimeMillis();
-        boolean reqAudit = Audit(Request.class,
-                                 REQ_ATTESTATION,
-                                 reqAuditFile,
-                                 keypair.getPublic());
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Request: " + reqAudit + ", cost " + time + "ms");
-        
-        time = System.currentTimeMillis();
-        boolean ackAudit = Audit(Acknowledgement.class,
-                                 ACK_ATTESTATION,
-                                 ackAuditFile,
-                                 spKeypair.getPublic());
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Ack: " + ackAudit + ", cost " + time + "ms");
-        
     }
 }

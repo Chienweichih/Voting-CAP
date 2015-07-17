@@ -22,7 +22,6 @@ import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import service.Config;
-import service.Config.FileSize;
 
 public class Utils {
     private static final int BUF_SIZE = 8192;
@@ -337,7 +336,7 @@ public class Utils {
         
         Random r = new Random();
         
-        for (FileSize fs : FileSize.values()) {
+        for (service.File fs : service.File.values()) {
             File file = new File(fs.getPath());
             
             if (!file.exists()) {
@@ -365,7 +364,7 @@ public class Utils {
             writeDigest(fs.getPath());
         }
         
-        for (Config.KeyPair kp : Config.KeyPair.values()) {
+        for (service.KeyPair kp : service.KeyPair.values()) {
             File keyFile = new File(kp.getPath());
             
             if (!keyFile.exists()) {

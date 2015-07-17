@@ -1,5 +1,10 @@
 package client;
 
+import java.security.KeyPair;
+import java.util.HashMap;
+import java.util.Map;
+import message.Operation;
+import message.OperationType;
 import utility.Utils;
 
 /**
@@ -8,38 +13,32 @@ import utility.Utils;
  */
 public class Experiment {
     public static void main(String[] args) throws ClassNotFoundException {
-        System.out.println("Loading...");
-        
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        
-        classLoader.loadClass(NonPOVClient.class.getName());
-        classLoader.loadClass(CSNClient.class.getName());
-        classLoader.loadClass(ChainHashClient.class.getName());
-        classLoader.loadClass(ChainHashAndLSNClient.class.getName());
-        classLoader.loadClass(DoubleChainHashClient.class.getName());
+        KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
+        KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
         
         Utils.cleanAllAttestations();
         
-        System.out.println("\nStart...");
+        Map<String, Client> clients = new HashMap<>();
         
-        System.out.println("\nnon-POV scheme");
+        clients.put("non-POV", new NonPOVClient(clientKeyPair, spKeyPair));
+        clients.put("CSN", new CSNClient(clientKeyPair, spKeyPair));
+        clients.put("ChainHash", new ChainHashClient(clientKeyPair, spKeyPair));
+        clients.put("C&L", new ChainHashAndLSNClient("id", clientKeyPair, spKeyPair));
+        clients.put("DoubleHash", new DoubleChainHashClient("id", clientKeyPair, spKeyPair));
         
-        NonPOVClient.main(args);
+        service.File file = service.File.ONE_MB;
+        int runTimes = 10;
         
-        System.out.println("\nCSN scheme");
+        Operation op = new Operation(OperationType.DOWNLOAD, file.getName(), "");
+//        Operation op = new Operation(OperationType.UPLOAD, file.getName(), Utils.readDigest(file.getPath()));
         
-        CSNClient.main(args);
-        
-        System.out.println("\nChainHash scheme");
-        
-        ChainHashClient.main(args);
-        
-        System.out.println("\nC&L scheme");
-        
-        ChainHashAndLSNClient.main(args);
-        
-        System.out.println("\nDoubleHash scheme");
-        
-        DoubleChainHashClient.main(args);
+        for (Map.Entry<String, Client> client : clients.entrySet()) {
+            classLoader.loadClass(client.getValue().getClass().getName());
+            
+            System.out.println("\n" + client.getKey());
+            
+            client.getValue().run(op, runTimes);
+        }
     }
 }

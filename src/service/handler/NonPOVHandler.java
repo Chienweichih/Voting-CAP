@@ -39,7 +39,7 @@ public class NonPOVHandler implements ConnectionHandler {
     
     @Override
     public void run() {
-        PublicKey clientPubKey = Config.KeyPair.CLIENT.getKeypair().getPublic();
+        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {

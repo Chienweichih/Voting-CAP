@@ -45,7 +45,7 @@ public class SocketServer extends Thread {
             Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        keyPair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
+        keyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
     }
     
     @Override

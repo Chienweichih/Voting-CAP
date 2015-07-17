@@ -28,24 +28,21 @@ import utility.Utils;
  */
 public class ChainHashAndLSNClient extends Client {
     private static final File ATTESTATION;
+    private static final Logger LOGGER;
     
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/client/chainhash-lsn");
+        LOGGER = Logger.getLogger(ChainHashAndLSNClient.class.getName());
     }
     
     private final String id;
     private int lsn;
     
     public ChainHashAndLSNClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
-        this(Config.SERVICE_HOSTNAME, Config.CHAINHASH_LSN_SERVICE_PORT, id, keyPair, spKeyPair);
-    }
-    
-    public ChainHashAndLSNClient(String hostname,
-                                 int port,
-                                 String id,
-                                 KeyPair keyPair,
-                                 KeyPair spKeyPair) {
-        super(hostname, port, keyPair, spKeyPair);
+        super(Config.SERVICE_HOSTNAME,
+              Config.CHAINHASH_LSN_SERVICE_PORT,
+              keyPair,
+              spKeyPair);
         
         this.id = id;
         this.lsn = 1;
@@ -110,14 +107,22 @@ public class ChainHashAndLSNClient extends Client {
         Utils.write(ATTESTATION, ack.toString());
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
-    
-    public boolean audit(File attestation, PublicKey cliKey, PublicKey spKey) {
+
+    @Override
+    public String getHandlerAttestationPath() {
+        return ChainHashAndLSNHandler.ATTESTATION.getPath();
+    }
+
+    @Override
+    public boolean audit(File spFile) {
         boolean success = true;
+        PublicKey spKey = spKeyPair.getPublic();
+        PublicKey cliKey = keyPair.getPublic();
         
         LSNTable lsnTab = new LSNTable();
         HashingChainTable hashingChainTab = new HashingChainTable();
         
-        try (FileReader fr = new FileReader(attestation);
+        try (FileReader fr = new FileReader(spFile);
              BufferedReader br = new BufferedReader(fr)) {
             do {
                 String s = br.readLine();
@@ -139,7 +144,8 @@ public class ChainHashAndLSNClient extends Client {
                     success = false;
                 }
                 
-                if (hashingChainTab.getLastChainHash(clientID).compareTo(res.getChainHash()) == 0) {
+                if (hashingChainTab.getLastChainHash(clientID).compareTo(
+                    res.getChainHash()) == 0) {
                     hashingChainTab.chain(clientID, Utils.digest(ack.toString()));
                 } else {
                     success = false;
@@ -151,46 +157,9 @@ public class ChainHashAndLSNClient extends Client {
         } catch (IOException ex) {
             success = false;
             
-            Logger.getLogger(ChainHashAndLSNClient.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         
         return success;
-    }
-    
-    public static void main(String[] args) {
-        KeyPair keypair = Config.KeyPair.CLIENT.getKeypair();
-        KeyPair spKeypair = Config.KeyPair.SERVICE_PROVIDER.getKeypair();
-        ChainHashAndLSNClient client = new ChainHashAndLSNClient("client", keypair, spKeypair);
-        Operation op = new Operation(OperationType.DOWNLOAD, Config.FILE.getName(), "");
-//        Operation op = new Operation(OperationType.UPLOAD, Config.FILE.getName(), Utils.readDigest(Config.FILE.getPath()));
-        
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= Config.NUM_RUNS; i++) {
-            client.run(op);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(Config.NUM_RUNS + " times cost " + (time - client.attestationCollectTime) + "ms (without collect attestations)");
-        System.out.println("Collect attestations cost " + client.attestationCollectTime + "ms");
-        
-        System.out.println("Auditing:");
-        
-        op = new Operation(OperationType.AUDIT, ChainHashAndLSNHandler.ATTESTATION.getPath(), "");
-        
-        client.run(op);
-        
-        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + ChainHashAndLSNHandler.ATTESTATION.getPath());
-        
-        // to prevent ClassLoader's init overhead
-        client.audit(auditFile, keypair.getPublic(), spKeypair.getPublic());
-        
-        time = System.currentTimeMillis();
-        boolean audit = client.audit(auditFile,
-                                     keypair.getPublic(), spKeypair.getPublic());
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 }

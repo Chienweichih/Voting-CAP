@@ -8,7 +8,6 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,7 +40,7 @@ public class CSNHandler implements ConnectionHandler {
     
     @Override
     public void run() {
-        PublicKey clientPubKey = Config.KeyPair.CLIENT.getKeypair().getPublic();
+        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
