@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,29 +44,31 @@ public class DoubleChainHashHandler implements ConnectionHandler {
     @Override
     public void run() {
         PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+        Lock lock = null;
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
+            String result, clientID;
             
-            if (!req.validate(clientPubKey)) {
-                throw new SignatureException("REQ validation failure");
+            synchronized (DoubleChainHashHandler.class) {
+                if (!req.validate(clientPubKey)) {
+                    throw new SignatureException("REQ validation failure");
+                }
+
+                clientID = req.getClientID();
+
+                String lastChainHash = HASHING_CHAIN_TABLE.getLastChainHash(clientID);
+                String lastChainHashOfAll = HASHING_CHAIN_TABLE.getLastChainHashOfAll();
+
+                Response res = new Response(req, lastChainHash, lastChainHashOfAll);
+
+                res.sign(keyPair);
+
+                Utils.send(out, res.toString());
+
+                HASHING_CHAIN_TABLE.chain(Utils.digest(res.toString()));
             }
-            
-            String clientID = req.getClientID();
-            
-            String result;
-            
-            String lastChainHash = HASHING_CHAIN_TABLE.getLastChainHash(clientID);
-            String lastChainHashOfAll = HASHING_CHAIN_TABLE.getLastChainHashOfAll();
-            
-            Response res = new Response(req, lastChainHash, lastChainHashOfAll);
-            
-            res.sign(keyPair);
-            
-            Utils.send(out, res.toString());
-            
-            HASHING_CHAIN_TABLE.chain(Utils.digest(res.toString()));
             
             ReplyResponse rr = ReplyResponse.parse(Utils.receive(in));
             
@@ -75,6 +79,22 @@ public class DoubleChainHashHandler implements ConnectionHandler {
             Operation op = req.getOperation();
 
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
+            ReentrantReadWriteLock rwl = service.File.valueOf(op.getPath()).getLock();
+            
+            switch (op.getType()) {
+                case UPLOAD:
+                case AUDIT:
+                    lock = rwl.writeLock();
+                    lock.lock();
+                    
+                    break;
+                case DOWNLOAD:
+                    lock = rwl.readLock();
+                    lock.lock();
+                    
+                    break;
+            }
+            
             boolean sendFileAfterAck = false;
             
             switch (op.getType()) {
@@ -131,6 +151,10 @@ public class DoubleChainHashHandler implements ConnectionHandler {
             socket.close();
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(DoubleChainHashHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+            }
         }
     }
 }

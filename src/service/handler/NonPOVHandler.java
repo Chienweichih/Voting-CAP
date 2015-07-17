@@ -8,6 +8,8 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -40,6 +42,7 @@ public class NonPOVHandler implements ConnectionHandler {
     @Override
     public void run() {
         PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+        Lock lock = null;
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -51,11 +54,26 @@ public class NonPOVHandler implements ConnectionHandler {
             
             String result;
             
-            boolean sendFileAfterAck = false;
-            
             Operation op = req.getOperation();
-
+            
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
+            ReentrantReadWriteLock rwl = service.File.valueOf(op.getPath()).getLock();
+            
+            switch (op.getType()) {
+                case UPLOAD:
+                case AUDIT:
+                    lock = rwl.writeLock();
+                    lock.lock();
+                    
+                    break;
+                case DOWNLOAD:
+                    lock = rwl.readLock();
+                    lock.lock();
+                    
+                    break;
+            }
+            
+            boolean sendFileAfterAck = false;
 
             switch (op.getType()) {
                 case UPLOAD:
@@ -117,6 +135,10 @@ public class NonPOVHandler implements ConnectionHandler {
             socket.close();
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(NonPOVHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (lock != null) {
+                lock.unlock();
+            }
         }
     }
 }

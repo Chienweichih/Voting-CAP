@@ -1,5 +1,7 @@
 package service;
 
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import static service.Config.DATA_DIR_PATH;
 
 /**
@@ -15,10 +17,12 @@ public enum File {
 
     private final String path;
     private final long size;
+    private final ReentrantReadWriteLock lock;
 
     private File(String fname, long fsize) {
         this.path = fname;
         this.size = fsize;
+        this.lock = new ReentrantReadWriteLock();
     }
 
     public String getName() {
@@ -31,5 +35,17 @@ public enum File {
 
     public long getSize() {
         return size;
+    }
+    
+    public ReentrantReadWriteLock getLock() {
+        return lock;
+    }
+    
+    public Lock getReadLock() {
+        return lock.readLock();
+    }
+    
+    public Lock getWriteLock() {
+        return lock.writeLock();
     }
 }
