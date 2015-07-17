@@ -13,7 +13,8 @@ public enum File {
     HUNDRED_KB ("100KB", 100 * 1024),
     ONE_MB ("1MB", 1024 * 1024),
     TEN_MB ("10MB", 10 * 1024 * 1024),
-    HUNDRED_MB ("100MB", 100 * 1024 * 1024);
+    HUNDRED_MB ("100MB", 100 * 1024 * 1024),
+    UNKNOWN ("UNKNOWN", 0);
 
     private final String path;
     private final long size;
@@ -47,5 +48,15 @@ public enum File {
     
     public Lock getWriteLock() {
         return lock.writeLock();
+    }
+    
+    public static File parse(String s) {
+        for (File f : File.values()) {
+            if (f.getName().compareTo(s) == 0) {
+                return f;
+            }
+        }
+        
+        return UNKNOWN;
     }
 }

@@ -58,7 +58,7 @@ public class CSNHandler implements ConnectionHandler {
             Operation op = req.getOperation();
             
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-            ReentrantReadWriteLock rwl = service.File.valueOf(op.getPath()).getLock();
+            ReentrantReadWriteLock rwl = service.File.parse(op.getPath()).getLock();
             
             switch (op.getType()) {
                 case UPLOAD:
@@ -78,8 +78,6 @@ public class CSNHandler implements ConnectionHandler {
             
             if (req.getConsecutiveSequenceNumber() == CSN + 1) {
                 CSN += 1;
-                
-                String fname = Config.DATA_DIR_PATH + "/" + file.getName();
                 
                 switch (op.getType()) {
                     case UPLOAD:

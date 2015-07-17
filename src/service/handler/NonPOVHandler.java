@@ -57,7 +57,7 @@ public class NonPOVHandler implements ConnectionHandler {
             Operation op = req.getOperation();
             
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-            ReentrantReadWriteLock rwl = service.File.valueOf(op.getPath()).getLock();
+            ReentrantReadWriteLock rwl = service.File.parse(op.getPath()).getLock();
             
             switch (op.getType()) {
                 case UPLOAD:
