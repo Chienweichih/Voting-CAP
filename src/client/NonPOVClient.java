@@ -12,6 +12,7 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -106,12 +107,12 @@ public class NonPOVClient extends Client {
     }
     
     @Override
-    public void run(Operation op, int runTimes) {
+    public void run(List<Operation> operations, int runTimes) {
         System.out.println("Running:");
         
         long time = System.currentTimeMillis();
         for (int i = 1; i <= runTimes; i++) {
-            run(op);
+            run(operations.get(i % operations.size()));
         }
         time = System.currentTimeMillis() - time;
         

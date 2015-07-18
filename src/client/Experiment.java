@@ -1,7 +1,9 @@
 package client;
 
 import java.security.KeyPair;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import message.Operation;
 import message.OperationType;
@@ -27,18 +29,28 @@ public class Experiment {
         clients.put("C&L", new ChainHashAndLSNClient("id", clientKeyPair, spKeyPair));
         clients.put("DoubleHash", new DoubleChainHashClient("id", clientKeyPair, spKeyPair));
         
-        service.File file = service.File.ONE_MB;
         int runTimes = 10;
         
-        Operation op = new Operation(OperationType.DOWNLOAD, file.getName(), "");
-//        Operation op = new Operation(OperationType.UPLOAD, file.getName(), Utils.readDigest(file.getPath()));
+        List<Operation> ops = new ArrayList<>();
+        
+        service.File[] files = new service.File[] { service.File.TEN_MB,
+                                                    service.File.TEN_MB_2,
+                                                    service.File.TEN_MB_3,
+                                                    service.File.TEN_MB_4 };
+        
+        for (service.File file : files) {
+//            ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), ""));
+            ops.add(new Operation(OperationType.UPLOAD,
+                    file.getName(),
+                    Utils.readDigest(file.getPath())));
+        }
         
         for (Map.Entry<String, Client> client : clients.entrySet()) {
             classLoader.loadClass(client.getValue().getClass().getName());
             
             System.out.println("\n" + client.getKey());
             
-            client.getValue().run(op, runTimes);
+            client.getValue().run(ops, runTimes);
         }
     }
 }
