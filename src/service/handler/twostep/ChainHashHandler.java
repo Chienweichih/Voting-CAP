@@ -9,8 +9,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.LinkedList;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,6 +27,8 @@ public class ChainHashHandler implements ConnectionHandler {
     public static final File ATTESTATION;
     
     private static final LinkedList<String> HashingChain;
+    private static final ReentrantLock LOCK;
+    
     private final Socket socket;
     private final KeyPair keyPair;
     
@@ -36,6 +37,8 @@ public class ChainHashHandler implements ConnectionHandler {
         
         HashingChain = new LinkedList<>();
         HashingChain.add(Config.DEFAULT_CHAINHASH);
+        
+        LOCK = new ReentrantLock();
     }
     
     public ChainHashHandler(Socket socket, KeyPair keyPair) {
@@ -46,11 +49,12 @@ public class ChainHashHandler implements ConnectionHandler {
     @Override
     public void run() {
         PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
-        Lock lock = null;
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
+            
+            LOCK.lock();
             
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
@@ -61,22 +65,6 @@ public class ChainHashHandler implements ConnectionHandler {
             Operation op = req.getOperation();
             
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-            ReentrantReadWriteLock rwl = service.File.parse(op.getPath()).getLock();
-            
-            switch (op.getType()) {
-                case UPLOAD:
-                case AUDIT:
-                    lock = rwl.writeLock();
-                    lock.lock();
-                    
-                    break;
-                case DOWNLOAD:
-                    lock = rwl.readLock();
-                    lock.lock();
-                    
-                    break;
-            }
-            
             boolean sendFileAfterAck = false;
             
             switch (op.getType()) {
@@ -132,8 +120,8 @@ public class ChainHashHandler implements ConnectionHandler {
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(ChainHashHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            if (lock != null) {
-                lock.unlock();
+            if (LOCK != null) {
+                LOCK.unlock();
             }
         }
     }

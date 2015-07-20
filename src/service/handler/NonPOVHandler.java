@@ -8,8 +8,7 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -26,9 +25,13 @@ public class NonPOVHandler implements ConnectionHandler {
     public static final File REQ_ATTESTATION;
     public static final File ACK_ATTESTATION;
     
+    private static final ReentrantLock LOCK;
+    
     static {
         REQ_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/nonpov.req");
         ACK_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/nonpov.ack");
+        
+        LOCK = new ReentrantLock();
     }
     
     private final Socket socket;
@@ -42,11 +45,12 @@ public class NonPOVHandler implements ConnectionHandler {
     @Override
     public void run() {
         PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
-        Lock lock = null;
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
+            
+            LOCK.lock();
             
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
@@ -57,22 +61,6 @@ public class NonPOVHandler implements ConnectionHandler {
             Operation op = req.getOperation();
             
             File file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-            ReentrantReadWriteLock rwl = service.File.parse(op.getPath()).getLock();
-            
-            switch (op.getType()) {
-                case UPLOAD:
-                case AUDIT:
-                    lock = rwl.writeLock();
-                    lock.lock();
-                    
-                    break;
-                case DOWNLOAD:
-                    lock = rwl.readLock();
-                    lock.lock();
-                    
-                    break;
-            }
-            
             boolean sendFileAfterAck = false;
 
             switch (op.getType()) {
@@ -136,8 +124,8 @@ public class NonPOVHandler implements ConnectionHandler {
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(NonPOVHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
-            if (lock != null) {
-                lock.unlock();
+            if (LOCK != null) {
+                LOCK.unlock();
             }
         }
     }
