@@ -9,6 +9,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -27,6 +28,8 @@ public class DoubleChainHashHandler implements ConnectionHandler {
     public static final File ATTESTATION;
     
     private static final DoubleHashingChainTable HASHING_CHAIN_TABLE;
+    private static final ReentrantLock LOCK;
+    
     private final Socket socket;
     private final KeyPair keyPair;
     
@@ -34,6 +37,7 @@ public class DoubleChainHashHandler implements ConnectionHandler {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/doublechainhash");
         
         HASHING_CHAIN_TABLE = new DoubleHashingChainTable();
+        LOCK = new ReentrantLock();
     }
     
     public DoubleChainHashHandler(Socket socket, KeyPair keyPair) {
@@ -51,7 +55,8 @@ public class DoubleChainHashHandler implements ConnectionHandler {
             Request req = Request.parse(Utils.receive(in));
             String result, clientID;
             
-            synchronized (DoubleChainHashHandler.class) {
+            LOCK.lock();
+            try {
                 if (!req.validate(clientPubKey)) {
                     throw new SignatureException("REQ validation failure");
                 }
@@ -68,6 +73,8 @@ public class DoubleChainHashHandler implements ConnectionHandler {
                 Utils.send(out, res.toString());
 
                 HASHING_CHAIN_TABLE.chain(Utils.digest(res.toString()));
+            } finally {
+                LOCK.unlock();
             }
             
             ReplyResponse rr = ReplyResponse.parse(Utils.receive(in));

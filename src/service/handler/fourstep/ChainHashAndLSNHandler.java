@@ -9,6 +9,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -28,6 +29,8 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
     
     private static final HashingChainTable HASHING_CHAIN_TABLE;
     private static final LSNTable LSN_TABLE;
+    private static final ReentrantLock LOCK;
+    
     private final Socket socket;
     private final KeyPair keyPair;
     
@@ -36,6 +39,7 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
         
         HASHING_CHAIN_TABLE = new HashingChainTable();
         LSN_TABLE = new LSNTable();
+        LOCK = new ReentrantLock();
     }
     
     public ChainHashAndLSNHandler(Socket socket, KeyPair keyPair) {
@@ -53,7 +57,8 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
             Request req = Request.parse(Utils.receive(in));
             String result, clientID;
             
-            synchronized (ChainHashAndLSNHandler.class) {
+            LOCK.lock();
+            try {
                 if (!req.validate(clientPubKey)) {
                     throw new SignatureException("REQ validation failure");
                 }
@@ -74,6 +79,8 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
                 res.sign(keyPair);
 
                 Utils.send(out, res.toString());
+            } finally {
+                LOCK.unlock();
             }
             
             ReplyResponse rr = ReplyResponse.parse(Utils.receive(in));
