@@ -25,7 +25,6 @@ import utility.Utils;
  */
 public class SocketServer extends Thread {
     private int port;
-    private int numThreads;
     private ServerSocket serverSocket;
     private ExecutorService pool;
     private Constructor handlerCtor;
@@ -37,7 +36,6 @@ public class SocketServer extends Thread {
     
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         this.port = port;
-        this.numThreads = Runtime.getRuntime().availableProcessors();
         
         try {
             this.handlerCtor = handler.getDeclaredConstructor(Socket.class, KeyPair.class);
