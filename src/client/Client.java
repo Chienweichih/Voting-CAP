@@ -8,6 +8,9 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import message.Operation;
@@ -31,12 +34,21 @@ public abstract class Client {
     protected final KeyPair spKeyPair;
     protected long attestationCollectTime;
     
-    public Client(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair) {
+    protected ExecutorService pool;
+    
+    public Client(String hostname, int port, KeyPair keyPair, KeyPair spKeyPair,
+                 int poolSize) {
         this.hostname = hostname;
         this.port = port;
         this.keyPair = keyPair;
         this.spKeyPair = spKeyPair;
         this.attestationCollectTime = 0;
+        
+        if (poolSize == 1) {
+            this.pool = Executors.newSingleThreadExecutor();
+        } else {
+            this.pool = Executors.newFixedThreadPool(poolSize);
+        }
     }
     
     protected abstract void hook(Operation op,
@@ -44,7 +56,7 @@ public abstract class Client {
                                  DataOutputStream out,
                                  DataInputStream in) throws SignatureException, IllegalAccessException;
     
-    public final void run(Operation op) {
+    public final void execute(Operation op) {
         try (Socket socket = new Socket(hostname, port);
                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -60,12 +72,22 @@ public abstract class Client {
     
     public abstract boolean audit(File spFile);
     
-    public void run(List<Operation> operations, int runTimes) {
+    public void run(final List<Operation> operations, int runTimes) {
         System.out.println("Running:");
         
         long time = System.currentTimeMillis();
         for (int i = 1; i <= runTimes; i++) {
-            run(operations.get(i % operations.size()));
+            final int x = i;
+            pool.execute(() -> {
+                execute(operations.get(x % operations.size()));
+            });
+        }
+        
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         time = System.currentTimeMillis() - time;
         
@@ -75,7 +97,7 @@ public abstract class Client {
         
         String handlerAttestationPath = getHandlerAttestationPath();
         
-        run(new Operation(OperationType.AUDIT, handlerAttestationPath, ""));
+        execute(new Operation(OperationType.AUDIT, handlerAttestationPath, ""));
         
         File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + handlerAttestationPath);
         

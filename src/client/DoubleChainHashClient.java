@@ -41,7 +41,8 @@ public class DoubleChainHashClient extends Client {
         super(Config.SERVICE_HOSTNAME,
               Config.DOUBLECHAINHASH_SERVICE_PORT,
               keyPair,
-              spKeyPair);
+              spKeyPair,
+              Config.NUM_PROCESSORS);
         
         this.id = id;
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
@@ -54,7 +55,7 @@ public class DoubleChainHashClient extends Client {
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException, IllegalAccessException {
-        Request req = new Request(op, id);
+        Request req = new Request(op, op.getClientID());
         
         req.sign(keyPair);
 
@@ -91,11 +92,17 @@ public class DoubleChainHashClient extends Client {
         if (result == null) {
             result = ack.getResult();
         }
+        
+        String fname = "";
 
         switch (op.getType()) {
-            case AUDIT:
             case DOWNLOAD:
-                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                fname = "-" + System.currentTimeMillis();
+            case AUDIT:
+                fname = String.format("%s/%s%s",
+                            Config.DOWNLOADS_DIR_PATH,
+                            op.getPath(),
+                            fname);
 
                 File file = new File(fname);
 

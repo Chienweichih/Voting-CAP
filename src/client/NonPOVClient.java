@@ -13,6 +13,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -42,7 +43,8 @@ public class NonPOVClient extends Client {
         super(Config.SERVICE_HOSTNAME,
               Config.NONPOV_SERVICE_PORT,
               keyPair,
-              spKeyPair);
+              spKeyPair,
+              1);
     }
     
     @Override
@@ -83,7 +85,10 @@ public class NonPOVClient extends Client {
                 
                 break;
             case DOWNLOAD:
-                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                String fname = String.format("%s/%s-%d",
+                                    Config.DOWNLOADS_DIR_PATH,
+                                    op.getPath(),
+                                    System.currentTimeMillis());
 
                 File file = new File(fname);
 
@@ -107,12 +112,22 @@ public class NonPOVClient extends Client {
     }
     
     @Override
-    public void run(List<Operation> operations, int runTimes) {
+    public void run(final List<Operation> operations, int runTimes) {
         System.out.println("Running:");
         
         long time = System.currentTimeMillis();
         for (int i = 1; i <= runTimes; i++) {
-            run(operations.get(i % operations.size()));
+            final int x = i;
+            pool.execute(() -> {
+                execute(operations.get(x % operations.size()));
+            });
+        }
+        
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
         }
         time = System.currentTimeMillis() - time;
         
@@ -120,7 +135,7 @@ public class NonPOVClient extends Client {
         
         System.out.println("Auditing:");
         
-        run(new Operation(OperationType.AUDIT, "", ""));
+        execute(new Operation(OperationType.AUDIT, "", ""));
         
         File reqAuditFile = new File(Config.DOWNLOADS_DIR_PATH + '/'
             + NonPOVHandler.REQ_ATTESTATION.getPath() + ".audit");

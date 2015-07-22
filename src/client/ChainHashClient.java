@@ -40,7 +40,8 @@ public class ChainHashClient extends Client {
         super(Config.SERVICE_HOSTNAME,
               Config.CHAINHASH_SERVICE_PORT,
               keyPair,
-              spKeyPair);
+              spKeyPair,
+              Config.NUM_PROCESSORS);
         
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
     }
@@ -70,6 +71,7 @@ public class ChainHashClient extends Client {
 
         String result = ack.getResult();
         String chainHash = ack.getChainHash();
+        String fname = "";
 
         if (chainHash.compareTo(lastChainHash) != 0) {
             throw new IllegalAccessException("Chain hash mismatch");
@@ -80,9 +82,13 @@ public class ChainHashClient extends Client {
         }
         
         switch (op.getType()) {
-            case AUDIT:
             case DOWNLOAD:
-                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                fname = "-" + System.currentTimeMillis();
+            case AUDIT:
+                fname = String.format("%s/%s%s",
+                            Config.DOWNLOADS_DIR_PATH,
+                            op.getPath(),
+                            fname);
 
                 File file = new File(fname);
 

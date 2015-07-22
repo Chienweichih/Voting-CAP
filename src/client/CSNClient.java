@@ -40,7 +40,8 @@ public class CSNClient extends Client {
         super(Config.SERVICE_HOSTNAME,
               Config.CSN_SERVICE_PORT,
               keyPair,
-              spKeyPair);
+              spKeyPair,
+              1);
         
         this.csn = 1;
     }
@@ -65,6 +66,7 @@ public class CSNClient extends Client {
         }
 
         String result = ack.getResult();
+        String fname = "";
 
         if (result.compareTo("CSN mismatch") == 0) {
             throw new IllegalAccessException(result);
@@ -73,9 +75,13 @@ public class CSNClient extends Client {
         csn += 1;
 
         switch (op.getType()) {
-            case AUDIT:
             case DOWNLOAD:
-                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                fname = "-" + System.currentTimeMillis();
+            case AUDIT:
+                fname = String.format("%s/%s%s",
+                            Config.DOWNLOADS_DIR_PATH,
+                            op.getPath(),
+                            fname);
 
                 File file = new File(fname);
 

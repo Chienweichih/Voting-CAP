@@ -42,7 +42,8 @@ public class ChainHashAndLSNClient extends Client {
         super(Config.SERVICE_HOSTNAME,
               Config.CHAINHASH_LSN_SERVICE_PORT,
               keyPair,
-              spKeyPair);
+              spKeyPair,
+              Config.NUM_PROCESSORS);
         
         this.id = id;
         this.lsn = 1;
@@ -51,7 +52,7 @@ public class ChainHashAndLSNClient extends Client {
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException, IllegalAccessException {
-        Request req = new Request(op, id, lsn);
+        Request req = new Request(op, op.getClientID(), lsn);
 
         req.sign(keyPair);
 
@@ -80,13 +81,18 @@ public class ChainHashAndLSNClient extends Client {
         }
 
         String result = ack.getResult();
+        String fname = "";
 
         lsn += 1;
 
         switch (op.getType()) {
-            case AUDIT:
             case DOWNLOAD:
-                String fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+                fname = "-" + System.currentTimeMillis();
+            case AUDIT:
+                fname = String.format("%s/%s%s",
+                            Config.DOWNLOADS_DIR_PATH,
+                            op.getPath(),
+                            fname);
 
                 File file = new File(fname);
 

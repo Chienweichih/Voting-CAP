@@ -36,8 +36,9 @@ public class Request extends SOAPMessage {
         OperationType opType = OperationType.valueOf(operation.item(0).getTextContent());
         String path = operation.item(1).getTextContent();
         String msg = operation.item(2).getTextContent();
+        String opClientID = operation.item(3).getTextContent();
         
-        this.operation = new Operation(opType, path, msg);
+        this.operation = new Operation(opType, path, msg, opClientID);
         this.clientID = body.item(1).getTextContent();
         this.localSequenceNumber = Integer.decode(body.item(2).getTextContent());
     }
