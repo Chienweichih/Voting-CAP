@@ -2,7 +2,6 @@ package client;
 
 import java.security.KeyPair;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -33,10 +32,7 @@ public class Experiment {
         
         List<Operation> ops = new ArrayList<>();
         
-        service.File[] files = new service.File[] { service.File.HUNDRED_MB }; //,
-//                                                    service.File.TEN_MB_2,
-//                                                    service.File.TEN_MB_3,
-//                                                    service.File.TEN_MB_4 };
+        service.File[] files = new service.File[] { service.File.HUNDRED_KB };
         
         for (service.File file : files) {
             ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), ""));
@@ -51,10 +47,6 @@ public class Experiment {
             System.out.println("\n" + client.getKey());
             
             client.getValue().run(ops, runTimes);
-            
-            if (client.getValue() instanceof NonPOVClient) {
-                new NonPOVClient(clientKeyPair, spKeyPair).run(ops, runTimes);
-            }
         }
         
         clients.clear();
