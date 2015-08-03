@@ -99,7 +99,7 @@ public class CSNClient extends Client {
         }
 
         long start = System.currentTimeMillis();
-        Utils.append(ATTESTATION, ack.toString() + '\n');
+        Utils.write(ATTESTATION, ack.toString() + '\n');
         super.attestationCollectTime += System.currentTimeMillis() - start;
     }
 
@@ -113,35 +113,33 @@ public class CSNClient extends Client {
         boolean success = true;
         PublicKey spKey = spKeyPair.getPublic();
         PublicKey cliKey = keyPair.getPublic();
+        int csn = 1;
         
         try (FileReader cliFr = new FileReader(ATTESTATION);
              BufferedReader cliBr = new BufferedReader(cliFr);
              FileReader spFr = new FileReader(spFile);
              BufferedReader spBr = new BufferedReader(spFr)) {
             while (success) {
-                String s1 = cliBr.readLine();
-                String s2 = spBr.readLine();
+                String s = spBr.readLine();
                 
-                if (s1 == null || s2 == null) {
+                if (s == null) {
                     break;
-                } else if (s1.compareTo(s2) != 0) {
-                    success = false;
                 } else {
-                    Acknowledgement ack1 = Acknowledgement.parse(s1);
-                    Request req1 = ack1.getRequest();
+                    Acknowledgement ack = Acknowledgement.parse(s);
+                    Request req = ack.getRequest();
                     
-                    Acknowledgement ack2 = Acknowledgement.parse(s2);
-                    Request req2 = ack2.getRequest();
-                    
-                    if (req1.getConsecutiveSequenceNumber().compareTo(
-                        req2.getConsecutiveSequenceNumber()) != 0) {
+                    if (req.getConsecutiveSequenceNumber() != csn) {
                         success = false;
+                    } else {
+                        csn += 1;
                     }
                     
-                    success &= ack1.validate(spKey) & req1.validate(cliKey);
-                    success &= ack2.validate(spKey) & req2.validate(cliKey);
+                    success &= ack.validate(spKey) & req.validate(cliKey);
                 }
             }
+            
+            Request req = Acknowledgement.parse(cliBr.readLine()).getRequest();
+            success = (csn == req.getConsecutiveSequenceNumber());
         } catch (IOException ex) {
             success = false;
             
