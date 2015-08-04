@@ -1,11 +1,12 @@
 package voting_pov.client;
 
-import client.Client;
 import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
+import client.Client;
 import message.Operation;
 import message.OperationType;
 import voting_pov.utility.Utils;

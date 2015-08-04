@@ -8,16 +8,16 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.Operation;
-import service.Config;
 import service.handler.ConnectionHandler;
 import voting_pov.utility.Utils;
-import voting_pov.utility.MerkleTree;
 import voting_pov.message.twostep.voting.Acknowledgement;
 import voting_pov.message.twostep.voting.Request;
+import voting_pov.service.Config;
 
 
 /**
@@ -25,11 +25,14 @@ import voting_pov.message.twostep.voting.Request;
  * @author Chienweichih
  */
 public class VotingHandler implements ConnectionHandler {
+    private static final ReentrantLock LOCK;
+    
     private final Socket socket;
     private final KeyPair keyPair;
     
-    private MerkleTree merkleTreeOld;
-    private MerkleTree merkleTreeNew;
+    static {
+        LOCK = new ReentrantLock();
+    }
     
     public VotingHandler(Socket socket, KeyPair keyPair) {
         this.socket = socket;
@@ -44,14 +47,18 @@ public class VotingHandler implements ConnectionHandler {
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
             
+            LOCK.lock();
+            
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
             }
             
-            Operation op = req.getOperation();
             String result = "failed";
+            
+            Operation op = req.getOperation();
+            
             File file = new File("");
-                       
+            
             switch (op.getType()) {
                 case UPLOAD:
                     //merkleTreeOld = new MerkleTree(merkleTreeNew);
@@ -106,6 +113,10 @@ public class VotingHandler implements ConnectionHandler {
             socket.close();
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(VotingHandler.class.getName()).log(Level.SEVERE, null, ex);
+        } finally {
+            if (LOCK != null) {
+                LOCK.unlock();
+            }
         }
     }
 }
