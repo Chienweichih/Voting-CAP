@@ -127,25 +127,20 @@ public class VotingClient extends Client {
         System.out.println("Running:");
         
         long time = System.currentTimeMillis();
+        
         for (int i = 1; i <= runTimes; i++) {
-            final int x = i;
-            Operation op = operations.get(x % operations.size());
-            for (int port_i : ports) {
-                execute(op, hostname, port_i);
-            }
-            boolean success = voting();
-            if (!success) {
-                execute(new Operation(OperationType.AUDIT, "", ""), hostname, ports[0]);
-                boolean audit = audit(null);
-            }
-            if (op.getType() == OperationType.DOWNLOAD) {
-                // Download from one server
-                execute(new Operation(OperationType.DOWNLOAD, op.getPath(), results[0]), hostname, ports[0]);
-                // Other Server do nothing
-                for (int port_i : Arrays.copyOfRange(ports, 1, ports.length)) {
-                    execute(new Operation(OperationType.DOWNLOAD, "", ""), hostname, port_i);
+            final int x = i; 
+            pool.execute(() -> {
+                Operation op = operations.get(x % operations.size());
+                for (int port_i : ports) {
+                    execute(op, hostname, port_i);
                 }
-            }
+                boolean success = voting();
+                if (!success) {
+                    execute(new Operation(OperationType.AUDIT, "", ""), hostname, ports[0]);
+                    boolean audit = audit(null);
+                }
+            });
         }
         
         pool.shutdown();
@@ -157,6 +152,16 @@ public class VotingClient extends Client {
         time = System.currentTimeMillis() - time;
         
         System.out.println(runTimes + " times cost " + time + "ms");
+        
+        Operation op = operations.get(1 % operations.size());
+        if (op.getType() == OperationType.DOWNLOAD) {
+            // Download from one server
+            execute(new Operation(OperationType.DOWNLOAD, op.getPath(), results[0]), hostname, ports[0]);
+            // Other Server do nothing
+            for (int port_i : Arrays.copyOfRange(ports, 1, ports.length)) {
+                execute(new Operation(OperationType.DOWNLOAD, "", ""), hostname, port_i);
+            }
+        }
         
         System.out.println("Auditing:");
                 
