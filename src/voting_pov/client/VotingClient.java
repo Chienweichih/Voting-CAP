@@ -140,6 +140,14 @@ public class VotingClient extends Client {
                     execute(new Operation(OperationType.AUDIT, "", ""), hostname, ports[0]);
                     boolean audit = audit(null);
                 }
+                if (op.getType() == OperationType.DOWNLOAD) {
+                    // Download from one server
+                    execute(new Operation(OperationType.DOWNLOAD, op.getPath(), results[0]), hostname, ports[0]);
+                    // Other Server do nothing
+                    for (int port_i : Arrays.copyOfRange(ports, 1, ports.length)) {
+                        execute(new Operation(OperationType.DOWNLOAD, "", ""), hostname, port_i);
+                    }
+                }
             });
         }
         
@@ -152,16 +160,6 @@ public class VotingClient extends Client {
         time = System.currentTimeMillis() - time;
         
         System.out.println(runTimes + " times cost " + time + "ms");
-        
-        Operation op = operations.get(1 % operations.size());
-        if (op.getType() == OperationType.DOWNLOAD) {
-            // Download from one server
-            execute(new Operation(OperationType.DOWNLOAD, op.getPath(), results[0]), hostname, ports[0]);
-            // Other Server do nothing
-            for (int port_i : Arrays.copyOfRange(ports, 1, ports.length)) {
-                execute(new Operation(OperationType.DOWNLOAD, "", ""), hostname, port_i);
-            }
-        }
         
         System.out.println("Auditing:");
                 

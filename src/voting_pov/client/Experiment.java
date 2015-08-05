@@ -46,5 +46,10 @@ public class Experiment {
             
             client.getValue().run(ops, runTimes);
         }
+        
+        long time = System.currentTimeMillis();
+        Utils.zipDir(".", "../test.zip");
+        Utils.unZip("../test", "../test.zip");
+        System.out.println(System.currentTimeMillis() - time);
     }
 }
