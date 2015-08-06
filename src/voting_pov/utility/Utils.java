@@ -84,7 +84,7 @@ public class Utils extends utility.Utils {
              BufferedOutputStream bos = new BufferedOutputStream(fos);
              ZipOutputStream zos = new ZipOutputStream(bos)) {
             for (File tmp: new File(sourceDir).listFiles()) {
-                checkFileType(tmp, zos, tmp.getName());
+                recursiveZip(tmp, zos, tmp.getName());
             }
             
             zos.finish();
@@ -94,6 +94,41 @@ public class Utils extends utility.Utils {
         } catch (Exception ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         }
+    }
+    
+    /**
+    * recursive zip dir.
+    * @param file
+    * @param zos
+    * @param fileName
+    */
+    private static void recursiveZip (File file, ZipOutputStream zos, String fileName) {
+        if (file.isDirectory()) {
+            for (File tmp: file.listFiles()) {
+                recursiveZip(tmp, zos, fileName +"/"+ tmp.getName());
+            }
+            return;
+        }
+        
+        try (FileInputStream fis = new FileInputStream(fileName);
+           BufferedInputStream bis = new BufferedInputStream(fis)) {
+           ZipEntry entry = new ZipEntry(fileName);
+           zos.putNextEntry(entry);
+           zos.setLevel(0);
+
+           byte[] b = new byte[1024];
+           int n;
+           while((n = bis.read(b)) > 0) {
+               zos.write(b, 0, n);
+           }
+
+           zos.closeEntry();
+           bis.close();
+       } catch (FileNotFoundException ex) {
+           Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+       } catch (IOException ex) {
+           Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+       }
     }
     
     public static void unZip (String outputPath, String fileName) {
@@ -127,52 +162,6 @@ public class Utils extends utility.Utils {
             }
             zIn.closeEntry();
             zIn.close();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-
-    /**
-    * recursive check File's attr.
-    * @param file
-    * @param zos
-    * @param fileName
-    * @throws Exception
-    */
-    private static void checkFileType (File file, ZipOutputStream zos, String fileName) {
-        if (file.isDirectory()) {
-            for (File tmp: file.listFiles()) {
-                checkFileType(tmp, zos, fileName +"/"+ tmp.getName());
-            }
-        } else {
-            addZipFile(zos, fileName);
-        }
-    }
-
-    /**
-    * add File to Zip
-    * @param file
-    * @param zos
-    * @param fileName
-    * @throws Exception
-    */
-    private static void addZipFile (ZipOutputStream zos, String fileName) {
-        try (FileInputStream fis = new FileInputStream(fileName);
-             BufferedInputStream bis = new BufferedInputStream(fis)) {
-            ZipEntry entry = new ZipEntry(fileName);
-            zos.putNextEntry(entry);
-            zos.setLevel(0);
-            
-            byte[] b = new byte[1024];
-            int n;
-            while((n = bis.read(b)) > 0) {
-                zos.write(b, 0, n);
-            }
-            
-            zos.closeEntry();
-            bis.close();
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {

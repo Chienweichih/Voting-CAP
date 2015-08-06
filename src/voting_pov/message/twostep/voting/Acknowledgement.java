@@ -8,11 +8,11 @@ import org.w3c.dom.NodeList;
  * @author Chienweichih
  */
 public class Acknowledgement extends SOAPMessage {
-    private static final long serialVersionUID = 20150714L;
+    private static final long serialVersionUID = 20141006L;
     private final String result;
     private final Request request;
     
-    public Acknowledgement(String result, Request req, String roothash) {
+    public Acknowledgement(String result, Request req) {
         super("acknowledgement");
         
         this.result = result;

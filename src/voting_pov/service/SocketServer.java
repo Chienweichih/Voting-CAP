@@ -17,6 +17,7 @@ public class SocketServer extends service.SocketServer {
     public static void main(String[] args) {
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
+        //MerkleTree.create();
                 
         new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_1).start();
         new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_2).start();

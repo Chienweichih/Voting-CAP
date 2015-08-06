@@ -81,11 +81,11 @@ public class VotingHandler implements ConnectionHandler {
                     break;
                 case DOWNLOAD:
                     //server do nothing
-                    if (op.getPath().equals("")) {
+                    if (op.getPath().equals(Config.EMPTY_STRING)) {
                         socket.close();
                         return;
                     }
-                    if (op.getMessage().equals("") || op.getMessage().equals(result)) {
+                    if (op.getMessage().equals(Config.EMPTY_STRING) || op.getMessage().equals(result)) {
                         file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
                         result = Utils.digest(file);
                     }
@@ -94,7 +94,7 @@ public class VotingHandler implements ConnectionHandler {
                     result = "operation type mismatch";
             }
             
-            Acknowledgement ack = new Acknowledgement(result, req, " ");
+            Acknowledgement ack = new Acknowledgement(result, req);
             
             ack.sign(keyPair);
             

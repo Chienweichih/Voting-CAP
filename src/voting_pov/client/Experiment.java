@@ -9,6 +9,7 @@ import java.util.Map;
 import client.Client;
 import message.Operation;
 import message.OperationType;
+import voting_pov.service.Config;
 import voting_pov.utility.Utils;
 
 /**
@@ -33,7 +34,7 @@ public class Experiment {
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
         
         for (service.File file : files) {
-            ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), ""));
+            ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), Config.EMPTY_STRING));
 //            ops.add(new Operation(OperationType.UPLOAD,
 //                    file.getName(),
 //                    Utils.readDigest(file.getPath())));
