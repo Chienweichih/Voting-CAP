@@ -124,15 +124,15 @@ public class MerkleTree {
         return update(hashRootPath, updateFromHere, Utils.digest(updateFromHere));
     }
     
-    public static void copy (String oldHashPath,
-                             String newHashPath) throws IOException {
-        File newHashRoot = new File(newHashPath);
+    public static void copy (String src,
+                             String dest) throws IOException {
+        File newHashRoot = new File(dest);
         if (!newHashRoot.exists()) {
             newHashRoot.mkdir();
         }
         Utils.clearDirectory(newHashRoot);
 
-        File oldHashRoot = new File(oldHashPath);
+        File oldHashRoot = new File(src);
         Utils.copyFolder(oldHashRoot, newHashRoot);
     }
 

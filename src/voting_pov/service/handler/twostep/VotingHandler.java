@@ -18,19 +18,24 @@ import voting_pov.utility.Utils;
 import voting_pov.message.twostep.voting.Acknowledgement;
 import voting_pov.message.twostep.voting.Request;
 import voting_pov.service.Config;
-
+import voting_pov.utility.MerkleTree;
 
 /**
  *
  * @author Chienweichih
  */
 public class VotingHandler implements ConnectionHandler {
+    public static final String OLD_HASH_PATH;
+    public static final String NEW_HASH_PATH;
+    
     private static final ReentrantLock LOCK;
     
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
+        OLD_HASH_PATH = Config.ATTESTATION_DIR_PATH + "/service-provider/old/data_HASH";
+        NEW_HASH_PATH = Config.ATTESTATION_DIR_PATH + "/service-provider/new/data_HASH";
         LOCK = new ReentrantLock();
     }
     
@@ -53,45 +58,59 @@ public class VotingHandler implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            String result = "failed";
+            String result;
             
             Operation op = req.getOperation();
             
-            File file = new File("");
+            File file = null;
+            boolean sendFileAfterAck = false;
             
             switch (op.getType()) {
                 case UPLOAD:
-                    //merkleTreeOld = new MerkleTree(merkleTreeNew);
-                    
                     file = new File(Config.DOWNLOADS_DIR_PATH + '/' + op.getPath());
                     
                     Utils.receive(in, file);
 
                     String digest = Utils.digest(file);
 
-                    if (!op.getMessage().equals(digest)) {
-                        break;
+                    if (op.getMessage().equals(digest)) {
+                        // write file
+                        MerkleTree.copy(NEW_HASH_PATH, OLD_HASH_PATH);
+                        MerkleTree.update(NEW_HASH_PATH, op.getPath(), digest);
+                        result = Utils.readDigest(NEW_HASH_PATH);
+                    } else {
+                        result = Config.UPLOAD_FAIL;
                     }
                     
-                    //merkleTreeNew.update(file, op.getPath());
-                    //result = merkleTreeNew.getRootHash();
                     break;
                 case AUDIT:
-                    result = ""; //merkleTreeNew.getRootHash()             
+                    file = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/voting");
+                    File oldHash = new File(OLD_HASH_PATH);
+                    if (!oldHash.exists()) {
+                        result = Config.AUDIT_FAIL;
+                        break;
+                    }
+                    Utils.zipDir(oldHash.getParentFile(), file);
+                    
+                    result = Utils.readDigest(NEW_HASH_PATH);
+                    
+                    sendFileAfterAck = true;
+                    
                     break;
                 case DOWNLOAD:
-                    //server do nothing
-                    if (op.getPath().equals(Config.EMPTY_STRING)) {
-                        socket.close();
-                        return;
+                    file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
+                    result = Utils.readDigest(file.getPath());
+                    
+                    if (!op.getMessage().equals(Config.EMPTY_STRING)) {
+                        sendFileAfterAck = op.getMessage().equals(result);
+                        if (!sendFileAfterAck) {
+                            result = Config.DOWNLOAD_FAIL;
+                        }
                     }
-                    if (op.getMessage().equals(Config.EMPTY_STRING) || op.getMessage().equals(result)) {
-                        file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-                        result = Utils.digest(file);
-                    }
+                    
                     break;
                 default:
-                    result = "operation type mismatch";
+                    result = Config.OP_TYPE_MISMATCH;
             }
             
             Acknowledgement ack = new Acknowledgement(result, req);
@@ -99,17 +118,11 @@ public class VotingHandler implements ConnectionHandler {
             ack.sign(keyPair);
             
             Utils.send(out, ack.toString());
-                     
-            switch (op.getType()) {
-                case AUDIT:
-                    //Utils.send(out, merkleTreeOld);
-                break;
-                case DOWNLOAD:
-                    if (op.getMessage().equals(result)) {
-                        Utils.send(out, file);
-                    }
-                break;
+            
+            if (sendFileAfterAck) {
+                Utils.send(out, file);
             }
+            
             socket.close();
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(VotingHandler.class.getName()).log(Level.SEVERE, null, ex);

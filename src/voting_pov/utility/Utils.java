@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.logging.Level;
@@ -15,6 +16,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
+import static utility.Utils.randomGenerateKeyPair;
 
 import voting_pov.service.Config;
 
@@ -156,6 +158,45 @@ public class Utils extends utility.Utils {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    public static void createRequiredFiles() {
+        File dir;
+        for (String path : new String[] { Config.DOWNLOADS_DIR_PATH,
+                                          Config.ATTESTATION_DIR_PATH,
+                                          Config.ATTESTATION_DIR_PATH + "/client",
+                                          Config.ATTESTATION_DIR_PATH + "/service-provider",
+                                          Config.ATTESTATION_DIR_PATH + "/service-provider/old",
+                                          Config.ATTESTATION_DIR_PATH + "/service-provider/new",
+                                          Config.DATA_DIR_PATH,
+                                          Config.KEYPAIR_DIR_PATH }) {
+            dir = new File(path);
+            
+            if (!dir.exists()) {
+                dir.mkdirs();
+            }
+        }
+        
+        copyFolder(new File(Config.SRC_DIR_PATH), new File(Config.DATA_DIR_PATH));
+        
+        for (service.KeyPair kp : service.KeyPair.values()) {
+            File keyFile = new File(kp.getPath());
+            
+            if (!keyFile.exists()) {
+                try {
+                    keyFile.createNewFile();
+                } catch (IOException ex) {
+                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            
+                try (FileOutputStream fos = new FileOutputStream(keyFile);
+                     ObjectOutputStream out = new ObjectOutputStream(fos)) {
+                    out.writeObject(randomGenerateKeyPair());
+                } catch (IOException ex) {
+                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
         }
     }
 }

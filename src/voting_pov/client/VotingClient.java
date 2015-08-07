@@ -19,6 +19,8 @@ import message.OperationType;
 import voting_pov.message.twostep.voting.Acknowledgement;
 import voting_pov.message.twostep.voting.Request;
 import voting_pov.service.Config;
+import voting_pov.service.handler.twostep.VotingHandler;
+import voting_pov.utility.MerkleTree;
 import voting_pov.utility.Utils;
 
 /**
@@ -33,8 +35,8 @@ public class VotingClient extends Client {
     }
     
     private final int[] ports;
+    private final String[] results;
     private String resultTemp;
-    private String[] results;
         
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
@@ -143,10 +145,6 @@ public class VotingClient extends Client {
                 if (op.getType() == OperationType.DOWNLOAD) {
                     // Download from one server
                     execute(new Operation(OperationType.DOWNLOAD, op.getPath(), results[0]), hostname, ports[0]);
-                    // Other Server do nothing
-                    for (int port_i : Arrays.copyOfRange(ports, 1, ports.length)) {
-                        execute(new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING), hostname, port_i);
-                    }
                 }
             });
         }
@@ -162,11 +160,15 @@ public class VotingClient extends Client {
         System.out.println(runTimes + " times cost " + time + "ms");
         
         System.out.println("Auditing:");
+        
+        String handlerAttestationPath = getHandlerAttestationPath();
                 
         execute(new Operation(OperationType.AUDIT, Config.EMPTY_STRING, Config.EMPTY_STRING), hostname, ports[0]);
+        
+        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + handlerAttestationPath);
                         
         time = System.currentTimeMillis();
-        boolean audit = audit(null);
+        boolean audit = audit(auditFile);
         time = System.currentTimeMillis() - time;
         
         System.out.println("Audit: " + audit + ", cost " + time + "ms");
@@ -174,23 +176,24 @@ public class VotingClient extends Client {
 
     @Override
     public String getHandlerAttestationPath() {
-        return "No used in this Client";
+        return VotingHandler.ATTESTATION.getPath();
     }
 
     @Override
     public boolean audit(File spFile) {
-        boolean success = true;
-        //success = merkleTree.update( Utils.digest(spFile) );
-        //success &= result.equals( merkleTree.getRootHash );
-        
-        return success;
+        return audit("", Utils.digest(spFile));
+    }
+    
+    public boolean audit(String filePath, String spFileDigest) {
+        return true;
     }
     
     private boolean voting() {
-        boolean success = true;
         for (int i = 1; i < results.length; ++i) {
-            success &= results[i].equals(results[i-1]);
+            if(!results[i].equals(results[i-1])) {
+                return false;
+            }
         }
-        return success;
+        return true;
     }
 }

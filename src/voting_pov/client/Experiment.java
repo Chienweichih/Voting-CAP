@@ -8,9 +8,6 @@ import java.util.Map;
 
 import client.Client;
 import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import message.Operation;
 import message.OperationType;
 import voting_pov.service.Config;
@@ -38,7 +35,7 @@ public class Experiment {
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
         
         for (service.File file : files) {
-            ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), Config.EMPTY_STRING));
+            ops.add(new Operation(OperationType.DOWNLOAD, "voting_pov/utility/MerkleTree.java", Config.EMPTY_STRING));
 //            ops.add(new Operation(OperationType.UPLOAD,
 //                    file.getName(),
 //                    Utils.readDigest(file.getPath())));
