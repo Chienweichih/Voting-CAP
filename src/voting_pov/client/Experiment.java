@@ -7,6 +7,10 @@ import java.util.List;
 import java.util.Map;
 
 import client.Client;
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import message.Operation;
 import message.OperationType;
 import voting_pov.service.Config;
@@ -49,8 +53,8 @@ public class Experiment {
         }
         
         long time = System.currentTimeMillis();
-        Utils.zipDir(".", "../test.zip");
-        Utils.unZip("../test", "../test.zip");
+        Utils.zipDir(new File(Config.DATA_DIR_PATH), new File(Config.ATTESTATION_DIR_PATH + "/test.zip"));
+        Utils.unZip(Config.ATTESTATION_DIR_PATH + "/test", Config.ATTESTATION_DIR_PATH + "/test.zip");
         System.out.println(System.currentTimeMillis() - time);
     }
 }

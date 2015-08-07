@@ -78,59 +78,49 @@ public class Utils extends utility.Utils {
             System.out.println("File copied from " + src + " to " + dest);
         }
     }
-    
-    public static void zipDir (String sourceDir, String targetFilePath) {
-        try (FileOutputStream fos = new FileOutputStream(targetFilePath);
-             BufferedOutputStream bos = new BufferedOutputStream(fos);
-             ZipOutputStream zos = new ZipOutputStream(bos)) {
-            for (File tmp: new File(sourceDir).listFiles()) {
-                recursiveZip(tmp, zos, tmp.getName());
-            }
-            
-            zos.finish();
-            zos.close();
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (Exception ex) {
+ 
+    public static void zipDir(File dir, File zipFile) {
+        try (FileOutputStream fout = new FileOutputStream(zipFile);
+             BufferedOutputStream bout = new BufferedOutputStream(fout);
+             ZipOutputStream zout = new ZipOutputStream(bout)) {
+            zipSubDirectory("", dir, zout);
+            zout.close();
+        } catch (IOException ex) {
             Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
-    /**
-    * recursive zip dir.
-    * @param file
-    * @param zos
-    * @param fileName
-    */
-    private static void recursiveZip (File file, ZipOutputStream zos, String fileName) {
-        if (file.isDirectory()) {
-            for (File tmp: file.listFiles()) {
-                recursiveZip(tmp, zos, fileName +"/"+ tmp.getName());
+
+    private static void zipSubDirectory(String basePath, File dir, ZipOutputStream zout) {
+        byte[] buffer = new byte[4096];
+        zout.setLevel(0);
+        for (File file : dir.listFiles()) {
+            if (file.isDirectory()) {
+                String path = basePath + file.getName() + "/";
+                try {
+                    zout.putNextEntry(new ZipEntry(path));
+                    zipSubDirectory(path, file, zout);
+                    zout.closeEntry();
+                } catch (IOException ex) {
+                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            } else {
+                try (FileInputStream fin = new FileInputStream(file);
+                     BufferedInputStream bis = new BufferedInputStream(fin)) {
+                    zout.putNextEntry(new ZipEntry(basePath + file.getName()));
+                    int length;
+                    while ((length = bis.read(buffer)) > 0) {
+                        zout.write(buffer, 0, length);
+                    }
+                    
+                    zout.closeEntry();
+                    fin.close();
+                } catch (IOException ex) {
+                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
-            return;
         }
-        
-        try (FileInputStream fis = new FileInputStream(fileName);
-           BufferedInputStream bis = new BufferedInputStream(fis)) {
-           ZipEntry entry = new ZipEntry(fileName);
-           zos.putNextEntry(entry);
-           zos.setLevel(0);
-
-           byte[] b = new byte[1024];
-           int n;
-           while((n = bis.read(b)) > 0) {
-               zos.write(b, 0, n);
-           }
-
-           zos.closeEntry();
-           bis.close();
-       } catch (FileNotFoundException ex) {
-           Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-       } catch (IOException ex) {
-           Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-       }
     }
-    
+     
     public static void unZip (String outputPath, String fileName) {
         try (FileInputStream fis = new FileInputStream(fileName);
              BufferedInputStream bis = new BufferedInputStream(fis);
