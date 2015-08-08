@@ -10,8 +10,8 @@ import client.Client;
 import java.io.File;
 import message.Operation;
 import message.OperationType;
+import utility.Utils;
 import voting_pov.service.Config;
-import voting_pov.utility.Utils;
 
 /**
  *
@@ -23,7 +23,7 @@ public class Experiment {
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
         KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
         
-        Utils.cleanAllAttestations();
+        //Utils.cleanAllAttestations();
         
         Map<String, Client> clients = new LinkedHashMap<>();
         clients.put("Voting", new VotingClient(clientKeyPair, spKeyPair));
@@ -33,12 +33,15 @@ public class Experiment {
         List<Operation> ops = new ArrayList<>();
         
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
+        String testFileName = "voting_pov/utility/MerkleTree.java";
         
         for (service.File file : files) {
-            ops.add(new Operation(OperationType.DOWNLOAD, "voting_pov/utility/MerkleTree.java", Config.EMPTY_STRING));
-//            ops.add(new Operation(OperationType.UPLOAD,
-//                    file.getName(),
-//                    Utils.readDigest(file.getPath())));
+            /*ops.add(new Operation(OperationType.DOWNLOAD,
+                                  testFileName,
+                                  Config.EMPTY_STRING));*/
+            ops.add(new Operation(OperationType.UPLOAD,
+                    testFileName,
+                    Utils.digest(new File(Config.DATA_DIR_PATH + "/" + testFileName))));
         }
         
         for (Map.Entry<String, Client> client : clients.entrySet()) {
@@ -48,10 +51,5 @@ public class Experiment {
             
             client.getValue().run(ops, runTimes);
         }
-        
-        long time = System.currentTimeMillis();
-        Utils.zipDir(new File(Config.DATA_DIR_PATH), new File(Config.ATTESTATION_DIR_PATH + "/test.zip"));
-        Utils.unZip(Config.ATTESTATION_DIR_PATH + "/test", Config.ATTESTATION_DIR_PATH + "/test.zip");
-        System.out.println(System.currentTimeMillis() - time);
     }
 }

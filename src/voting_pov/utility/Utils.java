@@ -55,8 +55,6 @@ public class Utils extends utility.Utils {
             //if directory not exists, create it
             if(!dest.exists()) {
                dest.mkdir();
-               System.out.println("Directory copied from " 
-                          + src + "  to " + dest);
             }
 
             //list all the directory contents
@@ -72,12 +70,23 @@ public class Utils extends utility.Utils {
         } else {
             //if file, then copy it
             //Use bytes stream to support all file types
-            try {
-                Utils.send(new DataOutputStream(new FileOutputStream(dest)), src);
+            try (FileOutputStream fos = new FileOutputStream(dest);
+                 BufferedOutputStream bos = new BufferedOutputStream(fos);
+                 FileInputStream fis = new FileInputStream(src);
+                 BufferedInputStream bin = new BufferedInputStream(fis)) {
+                byte[] buf = new byte[1024];
+                int n;
+
+                while ((n = bin.read(buf)) > 0) {
+                    bos.write(buf, 0, n);
+                }
+
+                bos.flush();
             } catch (FileNotFoundException ex) {
                 Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
             }
-            System.out.println("File copied from " + src + " to " + dest);
         }
     }
  
@@ -137,19 +146,30 @@ public class Utils extends utility.Utils {
                 String fName = zipEntry.getName();
                 File newFile = new File(outputPath + File.separator + fName);
                 
-                //create all non exists folders
-                //else you will hit FileNotFoundException for compressed folder
-                new File(newFile.getParent()).mkdirs();
-
-                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile));
+                //new File(newFile.getParent()).mkdirs();
                 
-                byte[] b1 = new byte[1024];
-                int len;
-                while ((len = zIn.read(b1)) > 0) {
-                    bos.write(b1, 0, len);
-                }
+                // create the directories of the zip directory
+                if (zipEntry.isDirectory()) {
+                    File newDir = newFile.getAbsoluteFile();
+                    if (!newDir.exists()) {
+                        boolean success = newDir.mkdirs();
+                        if (!success) {
+                            System.err.println("Problem creating Folder");
+                        }
+                    }
+                } else {
+                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile));
+                
+                    byte[] b1 = new byte[1024];
+                    int len;
+                    while ((len = zIn.read(b1)) > 0) {
+                        bos.write(b1, 0, len);
+                    }
 
-                bos.close();   
+                    bos.close();   
+                }
+                
+                zIn.closeEntry();
                 zipEntry = zIn.getNextEntry();
             }
             zIn.closeEntry();

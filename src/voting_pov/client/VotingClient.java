@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.SignatureException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -19,7 +18,6 @@ import message.OperationType;
 import voting_pov.message.twostep.voting.Acknowledgement;
 import voting_pov.message.twostep.voting.Request;
 import voting_pov.service.Config;
-import voting_pov.service.handler.twostep.VotingHandler;
 import voting_pov.utility.MerkleTree;
 import voting_pov.utility.Utils;
 
@@ -36,8 +34,9 @@ public class VotingClient extends Client {
     
     private final int[] ports;
     private final String[] results;
+    private final String[] resultLast;
     private String resultTemp;
-        
+    
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
               Config.VOTING_SERVICE_PORT_1,
@@ -51,6 +50,20 @@ public class VotingClient extends Client {
                           Config.VOTING_SERVICE_PORT_5};
         resultTemp = "Ctor";
         results = new String[ports.length];
+        resultLast = new String[ports.length];
+        
+        try {
+            MerkleTree.create(Config.DATA_DIR_PATH,
+                              getHandlerAttestationPath(),
+                              true);
+        } catch (IOException ex) {
+            Logger.getLogger(VotingClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        String roothash = Utils.readDigest(getHandlerAttestationPath());
+        for (int i = 0; i < resultLast.length; ++i) {
+            resultLast[i] = roothash;
+        }
     }
         
     @Override
@@ -61,19 +74,11 @@ public class VotingClient extends Client {
         req.sign(keyPair);
 
         Utils.send(out, req.toString());
-
-        switch (op.getType()) {
-            case UPLOAD:
-                Utils.send(out, new File(Config.DATA_DIR_PATH + '/' + op.getPath()));
-            break;
-            case DOWNLOAD:
-                //server do nothing
-                if (op.getPath().equals(Config.EMPTY_STRING)) {
-                    return;
-                }
-            break;
+        
+        if (op.getType() == OperationType.UPLOAD) {
+            Utils.send(out, new File(Config.DATA_DIR_PATH + '/' + op.getPath()));
         }
-
+        
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
 
         if (!ack.validate(spKeyPair.getPublic())) {
@@ -81,28 +86,41 @@ public class VotingClient extends Client {
         }
 
         resultTemp = ack.getResult();
+        String fname = null;
+        
+        if (resultTemp.equals(Config.AUDIT_FAIL) || 
+            resultTemp.equals(Config.DOWNLOAD_FAIL) ||
+            resultTemp.equals(Config.UPLOAD_FAIL)) {
+            System.err.println(resultTemp);
+        }
+        
+        if (op.getType() == OperationType.DOWNLOAD &&
+            !op.getMessage().equals(Config.EMPTY_STRING)) {
+            fname = Config.DOWNLOADS_DIR_PATH + '/' + op.getPath();
+        } else if (op.getType() == OperationType.AUDIT) {
+            fname = Config.ATTESTATION_DIR_PATH + "/client/voting";
+            this.attestationCollectTime = System.currentTimeMillis();
+        }
+        
+        if (fname != null) {
+            File file = new File(fname);
 
-        switch (op.getType()) {
-            case AUDIT:
-                long start = System.currentTimeMillis();
-                //Utils.receive(in, merkleTree);
-                this.attestationCollectTime += System.currentTimeMillis() - start;
-            break;
-            case DOWNLOAD:
-                if (op.getMessage().equals(resultTemp)) {
-                    File file = new File(Config.DOWNLOADS_DIR_PATH + '/' + op.getPath());
+            Utils.receive(in, file);
 
-                    Utils.receive(in, file);
+            String digest = Utils.digest(file);
 
-                    String digest = Utils.digest(file);
-
-                    if (resultTemp.compareTo(digest) != 0) {
-                        resultTemp = "download success";
-                    } else {
-                        resultTemp = "download file digest mismatch";
-                    }
-                }
-            break;
+            if (resultTemp.equals(digest)) {
+                resultTemp = "download success";
+            } else {
+                resultTemp = "download file digest mismatch";
+            }
+        }
+        
+        if (op.getType() == OperationType.AUDIT) {
+            String dest = Config.ATTESTATION_DIR_PATH + "/client";
+            Utils.clearDirectory(new File(dest + "/data_HASH"));
+            Utils.unZip(dest, dest + "/voting");
+            this.attestationCollectTime = System.currentTimeMillis() - this.attestationCollectTime;
         }
     }
     
@@ -112,6 +130,9 @@ public class VotingClient extends Client {
                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
             hook(op, socket, out, in);
             for (int i = 0;i < ports.length;++i) {
+                if (op.getType() == OperationType.UPLOAD) {
+                    resultLast[i] = results[i];
+                }
                 if (ports[i] == port) {
                     results[i] = resultTemp;
                     break;
@@ -129,7 +150,6 @@ public class VotingClient extends Client {
         System.out.println("Running:");
         
         long time = System.currentTimeMillis();
-        
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
@@ -137,14 +157,27 @@ public class VotingClient extends Client {
                 for (int port_i : ports) {
                     execute(op, hostname, port_i);
                 }
-                boolean success = voting();
-                if (!success) {
-                    execute(new Operation(OperationType.AUDIT, Config.EMPTY_STRING, Config.EMPTY_STRING), hostname, ports[0]);
-                    boolean audit = audit(null);
+                int diffIndex = voting();
+                if (diffIndex != -1) {
+                    String fname = op.getPath();
+                    File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + fname);
+                    execute(new Operation(OperationType.AUDIT,
+                                          Config.EMPTY_STRING,
+                                          Config.EMPTY_STRING),
+                            hostname,
+                            ports[0]);
+                    boolean audit = audit(auditFile,
+                                          getHandlerAttestationPath() + "/" + fname + ".digest",
+                                          resultLast[diffIndex]);
+                    System.out.println("Audit: " + audit);
                 }
                 if (op.getType() == OperationType.DOWNLOAD) {
                     // Download from one server
-                    execute(new Operation(OperationType.DOWNLOAD, op.getPath(), results[0]), hostname, ports[0]);
+                    execute(new Operation(OperationType.DOWNLOAD,
+                                          op.getPath(),
+                                          results[0]),
+                            hostname,
+                            ports[0]);
                 }
             });
         }
@@ -161,39 +194,57 @@ public class VotingClient extends Client {
         
         System.out.println("Auditing:");
         
-        String handlerAttestationPath = getHandlerAttestationPath();
-                
-        execute(new Operation(OperationType.AUDIT, Config.EMPTY_STRING, Config.EMPTY_STRING), hostname, ports[0]);
+        String fname = operations.get(runTimes % operations.size()).getPath();
+        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + fname);
         
-        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + '/' + handlerAttestationPath);
-                        
+        execute(new Operation(OperationType.AUDIT,
+                              Config.EMPTY_STRING,
+                              Config.EMPTY_STRING),
+                hostname,
+                ports[0]);
+        
         time = System.currentTimeMillis();
-        boolean audit = audit(auditFile);
+        boolean audit = audit(auditFile,
+                              getHandlerAttestationPath() + "/" + fname + ".digest",
+                              resultLast[0]);
         time = System.currentTimeMillis() - time;
-        
+        System.out.println("Attestation Collect cost " + attestationCollectTime + "ms");
         System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 
     @Override
     public String getHandlerAttestationPath() {
-        return VotingHandler.ATTESTATION.getPath();
+        return Config.ATTESTATION_DIR_PATH + "/client/data_HASH";
     }
 
     @Override
-    public boolean audit(File spFile) {
-        return audit("", Utils.digest(spFile));
+    public boolean audit (File spFile) {
+        String handlerAttestationPath = getHandlerAttestationPath();
+        return audit(spFile,
+                     getHandlerAttestationPath() + ".digest",
+                     Utils.readDigest(handlerAttestationPath));
     }
     
-    public boolean audit(String filePath, String spFileDigest) {
-        return true;
+    public boolean audit (File spFile, String filePath, String lastResult) {
+        String handlerAttestationPath = getHandlerAttestationPath();
+        MerkleTree.update(handlerAttestationPath,
+                          filePath,
+                          Utils.digest(spFile));
+        return Utils.readDigest(handlerAttestationPath).equals(lastResult);
     }
     
-    private boolean voting() {
+    private int voting() {
         for (int i = 1; i < results.length; ++i) {
             if(!results[i].equals(results[i-1])) {
-                return false;
+                if (results.length == 2 || i > 1) {
+                    return i;
+                }
+                if (results[i].equals(results[i+1])) {
+                    return i-1;
+                }
+                return i;
             }
         }
-        return true;
+        return -1;
     }
 }

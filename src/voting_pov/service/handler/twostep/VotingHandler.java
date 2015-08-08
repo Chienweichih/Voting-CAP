@@ -76,7 +76,9 @@ public class VotingHandler implements ConnectionHandler {
                     if (op.getMessage().equals(digest)) {
                         // write file
                         MerkleTree.copy(NEW_HASH_PATH, OLD_HASH_PATH);
-                        MerkleTree.update(NEW_HASH_PATH, op.getPath(), digest);
+                        MerkleTree.update(NEW_HASH_PATH,
+                                          NEW_HASH_PATH + "/" + op.getPath() + ".digest",
+                                          digest);
                         result = Utils.readDigest(NEW_HASH_PATH);
                     } else {
                         result = Config.UPLOAD_FAIL;
@@ -92,14 +94,14 @@ public class VotingHandler implements ConnectionHandler {
                     }
                     Utils.zipDir(oldHash.getParentFile(), file);
                     
-                    result = Utils.readDigest(NEW_HASH_PATH);
+                    result = Utils.digest(file);
                     
                     sendFileAfterAck = true;
                     
                     break;
                 case DOWNLOAD:
                     file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-                    result = Utils.readDigest(file.getPath());
+                    result = Utils.readDigest(NEW_HASH_PATH + '/' + op.getPath());
                     
                     if (!op.getMessage().equals(Config.EMPTY_STRING)) {
                         sendFileAfterAck = op.getMessage().equals(result);

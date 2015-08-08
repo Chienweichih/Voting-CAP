@@ -73,7 +73,11 @@ public class MerkleTree {
     
     public static boolean update (String hashRootPath,
                                   String digestPath,
-                                  String digest) throws IOException {
+                                  String digest) {
+        if (digestPath.equals(adjustLastChar(hashRootPath) + ".digest")) {
+            return Utils.readDigest(hashRootPath).equals(digest);
+        }
+        
         Utils.writeDigest(removeSuffix(digestPath), digest);
         
         File parent = new File(digestPath).getParentFile();
@@ -91,8 +95,12 @@ public class MerkleTree {
             Utils.writeDigest(parent.getPath(), folderDigest);
 
             File hashRoot = new File(hashRootPath);
-            if (parent.getCanonicalPath().equals(hashRoot.getCanonicalPath())) {
-                return true;
+            try {
+                if (parent.getCanonicalPath().equals(hashRoot.getCanonicalPath())) {
+                    return true;
+                }
+            } catch (IOException ex) {
+                Logger.getLogger(MerkleTree.class.getName()).log(Level.SEVERE, null, ex);
             }
             parent = parent.getParentFile();
         }

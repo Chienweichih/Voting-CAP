@@ -19,6 +19,8 @@ public class SocketServer extends service.SocketServer {
         
         try {
             MerkleTree.create(Config.DATA_DIR_PATH, VotingHandler.NEW_HASH_PATH, true);
+            MerkleTree.copy(Config.ATTESTATION_DIR_PATH + "/service-provider/new",
+                            Config.ATTESTATION_DIR_PATH + "/service-provider/old");
         } catch (IOException ex) {
             Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
         }
