@@ -11,7 +11,7 @@ public interface Config extends service.Config {
     public int VOTING_SERVICE_PORT_4 = 3014;
     public int VOTING_SERVICE_PORT_5 = 3015;
     
-    public String SRC_DIR_PATH = "src";
+    public String SRC_DIR_PATH = "../TEST_DATA";
     
     public String EMPTY_STRING = " ";
     public String DOWNLOAD_FAIL = "download fail";

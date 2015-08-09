@@ -33,8 +33,7 @@ public class Experiment {
         List<Operation> ops = new ArrayList<>();
         
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
-        String testFileName = "voting_pov/utility/MerkleTree.java";
-        
+        String testFileName = "src/summer/ChainHashing/Base64codc.java";
         for (service.File file : files) {
             /*ops.add(new Operation(OperationType.DOWNLOAD,
                                   testFileName,
