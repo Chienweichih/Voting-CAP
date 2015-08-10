@@ -15,8 +15,7 @@ import java.util.logging.Logger;
 import message.Operation;
 import service.handler.ConnectionHandler;
 import voting_pov.utility.Utils;
-import voting_pov.message.twostep.voting.Acknowledgement;
-import voting_pov.message.twostep.voting.Request;
+import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
 import voting_pov.utility.MerkleTree;
 
@@ -27,15 +26,16 @@ import voting_pov.utility.MerkleTree;
 public class VotingHandler implements ConnectionHandler {
     public static final String OLD_HASH_PATH;
     public static final String NEW_HASH_PATH;
-    
+    private static final String attestationPath;
     private static final ReentrantLock LOCK;
     
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
-        OLD_HASH_PATH = Config.ATTESTATION_DIR_PATH + "/service-provider/old/data_HASH";
-        NEW_HASH_PATH = Config.ATTESTATION_DIR_PATH + "/service-provider/new/data_HASH";
+        attestationPath = Config.ATTESTATION_DIR_PATH + File.separator + "service-provider";
+        OLD_HASH_PATH = attestationPath + File.separator +"old" + File.separator + "data_HASH";
+        NEW_HASH_PATH = attestationPath + File.separator +"new" + File.separator + "data_HASH";
         LOCK = new ReentrantLock();
     }
     
@@ -67,7 +67,7 @@ public class VotingHandler implements ConnectionHandler {
             
             switch (op.getType()) {
                 case UPLOAD:
-                    file = new File(Config.DOWNLOADS_DIR_PATH + '/' + op.getPath());
+                    file = new File(Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath());
                     
                     Utils.receive(in, file);
 
@@ -77,7 +77,7 @@ public class VotingHandler implements ConnectionHandler {
                         // write file
                         MerkleTree.copy(NEW_HASH_PATH, OLD_HASH_PATH);
                         MerkleTree.update(NEW_HASH_PATH,
-                                          NEW_HASH_PATH + "/" + op.getPath() + ".digest",
+                                          NEW_HASH_PATH + File.separator + op.getPath() + ".digest",
                                           digest);
                         result = Utils.readDigest(NEW_HASH_PATH);
                     } else {
@@ -86,7 +86,7 @@ public class VotingHandler implements ConnectionHandler {
                     
                     break;
                 case AUDIT:
-                    file = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/voting");
+                    file = new File(attestationPath + File.separator + "voting");
                     File oldHash = new File(OLD_HASH_PATH);
                     if (!oldHash.exists()) {
                         result = Config.AUDIT_FAIL;
@@ -100,8 +100,8 @@ public class VotingHandler implements ConnectionHandler {
                     
                     break;
                 case DOWNLOAD:
-                    file = new File(Config.DATA_DIR_PATH + '/' + op.getPath());
-                    result = Utils.readDigest(NEW_HASH_PATH + '/' + op.getPath());
+                    file = new File(Config.DATA_DIR_PATH + File.separator + op.getPath());
+                    result = Utils.readDigest(NEW_HASH_PATH + File.separator + op.getPath());
                     
                     if (!op.getMessage().equals(Config.EMPTY_STRING)) {
                         sendFileAfterAck = op.getMessage().equals(result);
