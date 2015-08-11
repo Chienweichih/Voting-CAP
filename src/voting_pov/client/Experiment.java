@@ -33,14 +33,14 @@ public class Experiment {
         List<Operation> ops = new ArrayList<>();
         
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
-        String testFileName = "src/summer/ChainHashing/Base64codc.java";
+        String testFileName = "1KB.bin";
         for (service.File file : files) {
-            ops.add(new Operation(OperationType.DOWNLOAD,
+            /*ops.add(new Operation(OperationType.DOWNLOAD,
                                   testFileName,
-                                  Config.EMPTY_STRING));
-            /*ops.add(new Operation(OperationType.UPLOAD,
+                                  Config.EMPTY_STRING));*/
+            ops.add(new Operation(OperationType.UPLOAD,
                     testFileName,
-                    Utils.digest(new File(Config.DATA_DIR_PATH + "/" + testFileName))));*/
+                    Utils.digest(new File(Config.DATA_DIR_PATH + "/" + testFileName))));
         }
         
         for (Map.Entry<String, Client> client : clients.entrySet()) {

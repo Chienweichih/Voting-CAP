@@ -146,27 +146,25 @@ public class Utils extends utility.Utils {
         for (File file : src.listFiles()) {
             if (file.isDirectory()) {
                 String path = parentPath + file.getName() + File.separator;
-                try {
-                    zout.putNextEntry(new ZipEntry(path));
-                    zipSubDirectory(path, file, zout);
-                    zout.closeEntry();
-                } catch (IOException ex) {
-                    Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-                }
+                zipSubDirectory(path, file, zout);
             } else {
                 try (FileInputStream fin = new FileInputStream(file);
                      BufferedInputStream bis = new BufferedInputStream(fin)) {
                     zout.putNextEntry(new ZipEntry(parentPath + file.getName()));
+                    
                     int length;
                     while ((length = bis.read(buffer)) > 0) {
                         zout.write(buffer, 0, length);
                     }
-                    
-                    zout.closeEntry();
-                    fin.close();
+                    bis.close();
                 } catch (IOException ex) {
                     Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
                 }
+            }
+            try {
+                zout.closeEntry();
+            } catch (IOException ex) {
+                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
             }
         }
     }
