@@ -3,6 +3,7 @@ package voting_pov.service.handler.twostep;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -28,15 +29,22 @@ public class VotingHandler implements ConnectionHandler {
     public static final String NEW_HASH_PATH;
     private static final String attestationPath;
     private static final ReentrantLock LOCK;
+    private static Acknowledgement lastAck;
+    private static Acknowledgement thisAck;
     
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
-        attestationPath = Config.ATTESTATION_DIR_PATH + File.separator + "service-provider";
-        OLD_HASH_PATH = attestationPath + File.separator +"old" + File.separator + "data_HASH";
-        NEW_HASH_PATH = attestationPath + File.separator +"new" + File.separator + "data_HASH";
+        attestationPath = Config.ATTESTATION_DIR_PATH + File.separator + "voting" +
+                                                        File.separator + "service-provider";
+        OLD_HASH_PATH = attestationPath + File.separator +"old" +
+                                          File.separator + "data_HASH";
+        NEW_HASH_PATH = attestationPath + File.separator +"new" +
+                                          File.separator + "data_HASH";
         LOCK = new ReentrantLock();
+        lastAck = null;
+        thisAck = null;
     }
     
     public VotingHandler(Socket socket, KeyPair keyPair) {
@@ -64,6 +72,7 @@ public class VotingHandler implements ConnectionHandler {
             
             File file = null;
             boolean sendFileAfterAck = false;
+            boolean updateLastAck = false;
             
             switch (op.getType()) {
                 case UPLOAD:
@@ -80,19 +89,40 @@ public class VotingHandler implements ConnectionHandler {
                                           NEW_HASH_PATH + File.separator + op.getPath() + ".digest",
                                           digest);
                         result = Utils.readDigest(NEW_HASH_PATH);
+                        updateLastAck = true;
                     } else {
                         result = Config.UPLOAD_FAIL;
                     }
                     
                     break;
                 case AUDIT:
-                    file = new File(attestationPath + File.separator + "voting");
-                    File oldHash = new File(OLD_HASH_PATH);
-                    if (!oldHash.exists()) {
+                    if (lastAck == null) {
                         result = Config.AUDIT_FAIL;
                         break;
                     }
-                    Utils.zipDir(oldHash.getParentFile(), file);
+                    
+                    Request lastReq = lastAck.getRequest();
+                    if (op.getPath().equals(Config.EMPTY_STRING)) {
+                        result = Utils.readDigest(NEW_HASH_PATH);
+                        req = lastReq;
+                        break;
+                    }
+                    
+                    switch (lastReq.getOperation().getType()) {
+                        case DOWNLOAD:
+                            file = new File(OLD_HASH_PATH + ".digest");
+                            break;
+                        case UPLOAD:
+                            file = new File(attestationPath + File.separator + "voting");
+                            File oldHash = new File(OLD_HASH_PATH);
+                            if (!oldHash.exists()) {
+                                throw new FileNotFoundException("Old Hash Not Found!"); 
+                            }
+                            Utils.zipDir(oldHash.getParentFile(), file);
+                            break;
+                        default:
+                            System.err.println(Config.AUDIT_FAIL);
+                    }
                     
                     result = Utils.digest(file);
                     
@@ -108,6 +138,8 @@ public class VotingHandler implements ConnectionHandler {
                         if (!sendFileAfterAck) {
                             result = Config.DOWNLOAD_FAIL;
                         }
+                    } else {
+                        updateLastAck = true;
                     }
                     
                     break;
@@ -123,6 +155,11 @@ public class VotingHandler implements ConnectionHandler {
             
             if (sendFileAfterAck) {
                 Utils.send(out, file);
+            }
+            
+            if (updateLastAck) {
+                lastAck = thisAck;
+                thisAck = ack;
             }
             
             socket.close();

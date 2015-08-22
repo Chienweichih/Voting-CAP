@@ -49,7 +49,10 @@ public class Utils extends utility.Utils {
     }
     
     public static void cleanClientAttestations() {
-        for (String path : new String[] { Config.ATTESTATION_DIR_PATH + File.separator + "client",
+        for (String path : new String[] { Config.ATTESTATION_DIR_PATH + File.separator + "voting" 
+                                                                      + File.separator + "client",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "senior" 
+                                                                      + File.separator + "client",
                                           Config.DOWNLOADS_DIR_PATH }) {
             File dir = new File(path);
 
@@ -60,13 +63,18 @@ public class Utils extends utility.Utils {
     public static void createRequiredFiles() {
         File dir;
         for (String path : new String[] { Config.DOWNLOADS_DIR_PATH,
-                                          Config.ATTESTATION_DIR_PATH,
-                                          Config.ATTESTATION_DIR_PATH + File.separator + "client",
-                                          Config.ATTESTATION_DIR_PATH + File.separator + "service-provider",
-                                          Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" +
-                                                                        File.separator + "old",
-                                          Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" +
-                                                                        File.separator + "new",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "voting"
+                                                                      + File.separator + "client",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "voting"
+                                                                      + File.separator + "service-provider"
+                                                                      + File.separator + "old",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "voting"
+                                                                      + File.separator + "service-provider"
+                                                                      + File.separator + "new",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "senior"
+                                                                      + File.separator + "client",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "senior"
+                                                                      + File.separator + "service-provider",
                                           Config.DATA_DIR_PATH,
                                           Config.KEYPAIR_DIR_PATH }) {
             dir = new File(path);

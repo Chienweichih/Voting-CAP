@@ -42,4 +42,26 @@ public class Acknowledgement extends SOAPMessage {
     public static Acknowledgement parse(String receive) {
         return new Acknowledgement(SOAPMessage.parseSOAP(receive));
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        
+        final Acknowledgement objAck = (Acknowledgement) obj;
+        
+        return this.result.equals(objAck.result) && this.request.equals(objAck.request);
+    }
+    
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 53 * hash + (this.result != null ? this.result.hashCode() : 0);
+        hash = 53 * hash + (this.request != null ? this.request.hashCode() : 0);
+        return hash;
+    }
 }

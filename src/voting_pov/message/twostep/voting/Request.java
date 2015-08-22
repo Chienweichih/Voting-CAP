@@ -42,4 +42,27 @@ public class Request extends SOAPMessage {
     public static Request parse(String receive) {
         return new Request(SOAPMessage.parseSOAP(receive));
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        
+        final Operation objOp = ((Request) obj).operation;
+        
+        return objOp.getType() == this.operation.getType() && 
+               objOp.getPath().equals(this.operation.getPath()) &&
+               objOp.getMessage().equals(this.operation.getMessage());
+    }
+    
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 53 * hash + (this.operation != null ? this.operation.hashCode() : 0);
+        return hash;
+    }
 }

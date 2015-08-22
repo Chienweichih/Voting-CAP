@@ -76,15 +76,15 @@ public class MerkleTree {
     }
     
     public static boolean update (String hashHome,
-                                  String pathUnderHome,
+                                  String absPath,
                                   String digest) {
-        if (pathUnderHome.equals(adjustLastChar(hashHome) + ".digest")) {
+        if (absPath.equals(adjustLastChar(hashHome) + ".digest")) {
             return Utils.readDigest(hashHome).equals(digest);
         }
         
-        Utils.writeDigest(removeSuffix(pathUnderHome), digest);
+        Utils.writeDigest(removeSuffix(absPath), digest);
         
-        File parent = new File(pathUnderHome).getParentFile();
+        File parent = new File(absPath).getParentFile();
         while (parent.exists()) {
             String folderDigest = "";
             for (File file : sortedFiles(parent.listFiles())) {

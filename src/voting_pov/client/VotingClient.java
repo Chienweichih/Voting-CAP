@@ -9,7 +9,6 @@ import java.security.KeyPair;
 import java.security.SignatureException;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -34,18 +33,11 @@ public class VotingClient extends Client {
         LOGGER = Logger.getLogger(VotingClient.class.getName());
     }
     
-    private class Roothash {
-        public String voting;
-        public String auditing;
-        
-        public Roothash(String v, String a) {
-            voting = v;
-            auditing = a;
-        }
-    }
-    private final Map<Integer, Roothash> roothash;
+    private final Map<Integer, String> roothashs;
+    private final Map<Integer, Acknowledgement> lastAcks;
     private final int[] ports;
     private String result;
+    private Acknowledgement acknowledgement;
     private long serverProcessTime;
     
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
@@ -73,10 +65,11 @@ public class VotingClient extends Client {
         }
         
         String roothashValue = Utils.readDigest(attestationPath);
-        roothash = new HashMap<>();
+        roothashs = new HashMap<>();
         for (int p : ports) {
-            roothash.put(p, new Roothash(roothashValue, roothashValue));
+            roothashs.put(p, roothashValue);
         }
+        lastAcks = new HashMap<>();
     }
         
     @Override
@@ -107,51 +100,56 @@ public class VotingClient extends Client {
             System.err.println(result);
         }
         
-        String fname = null;
-        if (op.getType() == OperationType.DOWNLOAD &&
-            !op.getMessage().equals(Config.EMPTY_STRING)) {
-            fname = Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath();
-        } else if (op.getType() == OperationType.AUDIT) {
-            fname = Config.ATTESTATION_DIR_PATH + File.separator + "client" + File.separator + "voting";
-        }
+        acknowledgement = null;
         
-        if (fname != null) {
-            File file = new File(fname);
+        switch (op.getType()) {
+            case DOWNLOAD:
+                if (op.getMessage().equals(Config.EMPTY_STRING)) {
+                    break;
+                }
+            case AUDIT:
+                if (op.getPath().equals(Config.EMPTY_STRING)) {
+                    acknowledgement = ack;
+                    break;
+                }
+                
+                File file = new File(Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath());
 
-            Utils.receive(in, file);
+                Utils.receive(in, file);
 
-            String digest = Utils.digest(file);
+                String digest = Utils.digest(file);
 
-            if (result.equals(digest)) {
-                result = "download success";
-            } else {
-                result = "download file digest mismatch";
-            }
-        }
-        
-        if (op.getType() == OperationType.AUDIT) {
-            String dest = Config.ATTESTATION_DIR_PATH + File.separator + "client";
-            Utils.clearDirectory(new File(dest + File.separator + "data_HASH"));
-            Utils.unZip(dest, dest + File.separator + "voting");
+                if (result.equals(digest)) {
+                    result = "download success";
+                } else {
+                    result = "download file digest mismatch";
+                }
+            break;
+            default:
         }
     }
     
     public final void execute(Operation op, String hostname, int port) {
         try (Socket socket = new Socket(hostname, port);
-                DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                DataInputStream in = new DataInputStream(socket.getInputStream())) {
+             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+             DataInputStream in = new DataInputStream(socket.getInputStream())) {
             hook(op, socket, out, in);
             
-            Roothash temp = roothash.get(port);
-            if (op.getType() == OperationType.DOWNLOAD &&
-                op.getMessage().equals(Config.EMPTY_STRING)) {
-                temp.voting = result;
-            } else if (op.getType() == OperationType.UPLOAD) {
-                temp.auditing = temp.voting;
-                temp.voting = result;
+            switch (op.getType()) {
+                case DOWNLOAD:
+                    if (!op.getMessage().equals(Config.EMPTY_STRING)) {
+                        break;
+                    }
+                case UPLOAD:
+                    roothashs.put(port, result);
+                    break;
+                default:
             }
-            roothash.put(port, temp);
-
+                    
+            if (acknowledgement != null) {
+                lastAcks.put(port, acknowledgement);
+            }
+            
             socket.close();
         } catch (IOException | SignatureException ex) {
             LOGGER.log(Level.SEVERE, null, ex);
@@ -172,23 +170,34 @@ public class VotingClient extends Client {
                 }
                 int diffPort = voting();
                 if (diffPort != -1) {
-                    String fname = op.getPath();
-                    File auditFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + fname);
+                    for (int port_i : ports) {
+                        execute(new Operation(OperationType.AUDIT,
+                                              Config.EMPTY_STRING,
+                                              Config.EMPTY_STRING),
+                                hostname,
+                                port_i);
+                    }
+                    
+                    Acknowledgement ack = lastAcks.get(ports[0]);
+                    for (Acknowledgement a : lastAcks.values()) {
+                        if (!ack.equals(a)) {
+                            System.out.println(Config.AUDIT_FAIL);
+                        }
+                    }
+                    
                     execute(new Operation(OperationType.AUDIT,
-                                          Config.EMPTY_STRING,
+                                          "ATT_FOR_AUDIT.digest",
                                           Config.EMPTY_STRING),
                             hostname,
                             diffPort);
-                    boolean audit = audit(auditFile,
-                                          getHandlerAttestationPath() + File.separator + fname + ".digest",
-                                          roothash.get(diffPort).auditing);
+                    boolean audit = audit(lastAcks.get(diffPort));
                     System.out.println("Audit: " + audit);
                 }
                 if (op.getType() == OperationType.DOWNLOAD) {
                     // Download from one server
                     execute(new Operation(OperationType.DOWNLOAD,
                                           op.getPath(),
-                                          roothash.get(ports[0]).voting),
+                                          roothashs.get(ports[0])),
                             hostname,
                             ports[0]);
                 }
@@ -207,72 +216,102 @@ public class VotingClient extends Client {
         System.out.println("server average process cost " + serverProcessTime / runTimes + "ms");
         
         System.out.println("Auditing:");
-        
-        String fname = operations.get(runTimes % operations.size()).getPath();
-        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + fname);
-        
         time = System.currentTimeMillis();
+        
+        for (int port_i : ports) {
+            execute(new Operation(OperationType.AUDIT,
+                                  Config.EMPTY_STRING,
+                                  Config.EMPTY_STRING),
+                    hostname,
+                    port_i);
+        }
+
+        Acknowledgement ack = lastAcks.get(ports[0]);
+        for (Acknowledgement a : lastAcks.values()) {
+            if (!ack.equals(a)) {
+                System.out.println(Config.AUDIT_FAIL);
+            }
+        }
+
         execute(new Operation(OperationType.AUDIT,
-                              Config.EMPTY_STRING,
+                              "ATT_FOR_AUDIT.digest",
                               Config.EMPTY_STRING),
                 hostname,
                 ports[0]);
+        
         time = System.currentTimeMillis() - time;
         System.out.println("Download attestation, cost " + time + "ms");
         
         time = System.currentTimeMillis();
-        boolean audit = audit(auditFile,
-                              getHandlerAttestationPath() + File.separator + fname + ".digest",
-                              roothash.get(ports[0]).auditing);
+        boolean audit = audit(lastAcks.get(ports[0]));
         time = System.currentTimeMillis() - time;
         System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 
     @Override
     public String getHandlerAttestationPath() {
-        return Config.ATTESTATION_DIR_PATH + File.separator + "client" + File.separator +"data_HASH";
+        return Config.ATTESTATION_DIR_PATH + File.separator + "voting" + File.separator + "client" + File.separator +"data_HASH";
     }
 
     @Override
-    public boolean audit (File spFile) {
-        String attestationPath = getHandlerAttestationPath();
-        return audit(spFile,
-                     attestationPath + ".digest",
-                     Utils.readDigest(attestationPath));
+    public boolean audit(File spFile) {
+        return audit((Acknowledgement) null);
     }
     
-    public boolean audit (File spFile, String filePath, String lastResult) {
-        String attestationPath = getHandlerAttestationPath();
-        MerkleTree.update(attestationPath,
-                          filePath,
-                          Utils.digest(spFile));
-        return Utils.readDigest(attestationPath).equals(lastResult);
+    public boolean audit(Acknowledgement ack) {
+        if (ack == null) {
+            System.err.println(Config.WRONG_OP);
+            return false;
+        }
+        
+        String calResult;
+        Operation op = ack.getRequest().getOperation();
+        
+        String attFileName = Config.DOWNLOADS_DIR_PATH + File.separator + "ATT_FOR_AUDIT";
+        switch (op.getType()) {
+            case DOWNLOAD:
+                calResult = Utils.readDigest(attFileName);
+                break;
+            case UPLOAD:
+                Utils.clearDirectory(new File(getHandlerAttestationPath()));
+                Utils.unZip(new File(getHandlerAttestationPath()).getParent(),
+                            attFileName + ".digest");
+                
+                String attestationPath = getHandlerAttestationPath();
+                MerkleTree.update(attestationPath,
+                                  attestationPath + File.separator + op.getPath() + ".digest",
+                                  op.getMessage());
+                calResult = Utils.readDigest(attestationPath);
+                break;
+            default:
+                calResult = Config.WRONG_OP;
+        }
+        
+        return calResult.equals(ack.getResult());
     }
     
     private int voting() {
-        if (roothash.size() == 1) {
-            return -1;
-        }
-        
-        Integer prev = null;
-        
-        for (Iterator<Integer> iter = roothash.keySet().iterator(); iter.hasNext(); ) {
-            Integer element = iter.next();
-            
-            String elementHash = roothash.get(element).auditing;
-            if (prev != null &&
-                !elementHash.equals(roothash.get(prev).auditing)) {
-                if (roothash.size() == 2) {
-                    return element;
+        HashMap<String, Integer> occurrenceCount = new HashMap<>();
+        String currentMaxElement = (String) roothashs.get(ports[0]);
+
+        for (String element : roothashs.values()) {
+            Integer elementCount = occurrenceCount.get(element);
+            if (elementCount != null) {
+                occurrenceCount.put(element, elementCount + 1);
+                if (elementCount >= occurrenceCount.get(currentMaxElement)) {
+                    currentMaxElement = element;
                 }
-                if (!elementHash.equals(roothash.get(iter.next()).auditing)) {
-                    return prev;
-                }
-                return element;
+            } else {
+                occurrenceCount.put(element, 1);
             }
-            
-            prev = element;
         }
+        
+        for (Integer port_i : roothashs.keySet()) {
+            if (!currentMaxElement.equals(roothashs.get(port_i))) {
+                return port_i;
+            }
+        }
+        
         return -1;
     }
 }

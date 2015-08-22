@@ -1,6 +1,5 @@
 package voting_pov.service;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -24,9 +23,7 @@ public class SocketServer extends service.SocketServer {
                               VotingHandler.NEW_HASH_PATH,
                               true);
             
-            String attestationPath = Config.ATTESTATION_DIR_PATH + File.separator + "service-provider";
-            MerkleTree.copy(attestationPath + File.separator + "new" + File.separator + "data_HASH",
-                            attestationPath + File.separator + "old" + File.separator + "data_HASH");
+            MerkleTree.copy(VotingHandler.NEW_HASH_PATH, VotingHandler.OLD_HASH_PATH);
         } catch (IOException ex) {
             Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
         }
