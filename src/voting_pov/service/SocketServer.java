@@ -1,13 +1,8 @@
 package voting_pov.service;
 
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import service.handler.ConnectionHandler;
 import voting_pov.utility.Utils;
 import voting_pov.service.handler.twostep.VotingHandler;
-import voting_pov.utility.MerkleTree_file;
 
 /**
  *
@@ -17,16 +12,6 @@ public class SocketServer extends service.SocketServer {
  
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         super(handler, port);
-        
-        try {
-            MerkleTree_file.create(Config.DATA_DIR_PATH,
-                              VotingHandler.NEW_HASH_PATH,
-                              true);
-            
-            MerkleTree_file.copy(VotingHandler.NEW_HASH_PATH, VotingHandler.OLD_HASH_PATH);
-        } catch (IOException ex) {
-            Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
-        }
     }
     
     public static void main(String[] args) {

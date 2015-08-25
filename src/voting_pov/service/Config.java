@@ -1,5 +1,7 @@
 package voting_pov.service;
 
+import java.io.File;
+
 /**
  *
  * @author chienweichih
@@ -11,7 +13,7 @@ public interface Config extends service.Config {
     public int VOTING_SERVICE_PORT_4 = 3014;
     public int VOTING_SERVICE_PORT_5 = 3015;
     
-    public String DATA_DIR_PATH = "..\\Accounts\\Account A";
+    public String DATA_DIR_PATH = ".." + File.separator + "Accounts" + File.separator + "Account B";
     
     public String EMPTY_STRING = " ";
     public String DOWNLOAD_FAIL = "download fail";

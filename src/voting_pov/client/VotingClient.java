@@ -19,7 +19,8 @@ import message.Operation;
 import message.OperationType;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
-import voting_pov.utility.MerkleTree_file;
+import voting_pov.utility.MerkleTree_mem;
+import static voting_pov.utility.MerkleTree_mem.Deserialize;
 import voting_pov.utility.Utils;
 
 /**
@@ -33,12 +34,15 @@ public class VotingClient extends Client {
         LOGGER = Logger.getLogger(VotingClient.class.getName());
     }
     
+    
+    private final int[] ports;
+    private long serverProcessTime;
+    
     private final Map<Integer, String> roothashs;
     private final Map<Integer, Acknowledgement> lastAcks;
-    private final int[] ports;
     private String result;
     private Acknowledgement acknowledgement;
-    private long serverProcessTime;
+    
     
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
@@ -55,21 +59,11 @@ public class VotingClient extends Client {
         
         serverProcessTime = 0;
         
-        String attestationPath = getHandlerAttestationPath();
-        try {
-            MerkleTree_file.create(Config.DATA_DIR_PATH,
-                              attestationPath,
-                              true);
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        
-        String roothashValue = Utils.readDigest(attestationPath);
+        lastAcks = new HashMap<>();
         roothashs = new HashMap<>();
         for (int p : ports) {
-            roothashs.put(p, roothashValue);
+            roothashs.put(p, null);
         }
-        lastAcks = new HashMap<>();
     }
         
     @Override
@@ -250,7 +244,7 @@ public class VotingClient extends Client {
 
     @Override
     public String getHandlerAttestationPath() {
-        return Config.ATTESTATION_DIR_PATH + File.separator + "voting" + File.separator + "client" + File.separator +"data_HASH";
+        return "no used in this case";
     }
 
     @Override
@@ -273,15 +267,9 @@ public class VotingClient extends Client {
                 calResult = Utils.readDigest(attFileName);
                 break;
             case UPLOAD:
-                Utils.clearDirectory(new File(getHandlerAttestationPath()));
-                Utils.unZip(new File(getHandlerAttestationPath()).getParent(),
-                            attFileName + ".digest");
-                
-                String attestationPath = getHandlerAttestationPath();
-                MerkleTree_file.update(attestationPath,
-                                  attestationPath + op.getPath() + ".digest",
-                                  op.getMessage());
-                calResult = Utils.readDigest(attestationPath);
+                MerkleTree_mem merkleTree = Deserialize(attFileName + ".digest");
+                merkleTree.update(op.getPath(), op.getMessage());
+                calResult = merkleTree.getRootHash();
                 break;
             default:
                 calResult = Config.WRONG_OP;

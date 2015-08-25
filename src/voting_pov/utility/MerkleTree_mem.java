@@ -60,7 +60,7 @@ public class MerkleTree_mem {
         }
     }
     
-    public final Node root;
+    private final Node root;
     
     public MerkleTree_mem(MerkleTree_mem merkleTree) {
         this.root = new Node(merkleTree.root, null);
@@ -128,7 +128,7 @@ public class MerkleTree_mem {
         update(node.children.get(0), node.children.get(0).digest);
     }
     
-    public void Serialize(String dest) {
+    public void Serialize(File dest) {
         try (FileOutputStream fout = new FileOutputStream(dest);
              ObjectOutputStream oos = new ObjectOutputStream(fout)) {   
             oos.writeObject(this.root);
@@ -148,6 +148,10 @@ public class MerkleTree_mem {
             Logger.getLogger(MerkleTree_mem.class.getName()).log(Level.SEVERE, null, ex);
         }
         return new MerkleTree_mem(node);
+    }
+    
+    public String getRootHash() {
+        return root.digest;
     }
     
     private static List<File> sortedFiles(File[] unSortedFiles) {
@@ -210,7 +214,7 @@ public class MerkleTree_mem {
         mt.print();
         
         long time = System.currentTimeMillis();
-        mt.Serialize(fname);
+        mt.Serialize(new File(fname));
         
         System.out.println("============================ Create! ============================");
         mt.update(target, digest);
