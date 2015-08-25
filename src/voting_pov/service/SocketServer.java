@@ -7,7 +7,7 @@ import java.util.logging.Logger;
 import service.handler.ConnectionHandler;
 import voting_pov.utility.Utils;
 import voting_pov.service.handler.twostep.VotingHandler;
-import voting_pov.utility.MerkleTree;
+import voting_pov.utility.MerkleTree_file;
 
 /**
  *
@@ -19,11 +19,11 @@ public class SocketServer extends service.SocketServer {
         super(handler, port);
         
         try {
-            MerkleTree.create(Config.DATA_DIR_PATH,
+            MerkleTree_file.create(Config.DATA_DIR_PATH,
                               VotingHandler.NEW_HASH_PATH,
                               true);
             
-            MerkleTree.copy(VotingHandler.NEW_HASH_PATH, VotingHandler.OLD_HASH_PATH);
+            MerkleTree_file.copy(VotingHandler.NEW_HASH_PATH, VotingHandler.OLD_HASH_PATH);
         } catch (IOException ex) {
             Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
         }

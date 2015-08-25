@@ -60,6 +60,50 @@ public class Utils extends utility.Utils {
         }
     }
     
+    /**
+     * Delete all of attestation files.
+     */
+    public static void cleanAllAttestations() {
+        for (String path : new String[] { Config.DOWNLOADS_DIR_PATH,
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "voting"
+                                                                      + File.separator + "client",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "voting"
+                                                                      + File.separator + "service-provider"
+                                                                      + File.separator + "old",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "voting"
+                                                                      + File.separator + "service-provider"
+                                                                      + File.separator + "new",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "senior"
+                                                                      + File.separator + "client",
+                                          Config.ATTESTATION_DIR_PATH + File.separator + "senior"
+                                                                      + File.separator + "service-provider" }) {
+            File dir = new File(path);
+
+            clearDirectory(dir);
+        }
+    }
+    
+    public static void clearDirectory(File folder) {
+        if (folder == null) {
+            return;
+        }
+        for (File file : folder.listFiles()) {
+            clearAllFile(file);
+        }
+    }
+    
+    public static void clearAllFile(File folder) {
+        if (folder == null) {
+            return;
+        }
+        if (folder.isDirectory()) {
+            for (File file : folder.listFiles()) {
+                clearAllFile(file);
+            }
+        }
+        folder.delete();
+    }
+    
     public static void createRequiredFiles() {
         File dir;
         for (String path : new String[] { Config.DOWNLOADS_DIR_PATH,
@@ -83,8 +127,6 @@ public class Utils extends utility.Utils {
                 dir.mkdirs();
             }
         }
-        
-        copyFolder(new File(Config.SRC_DIR_PATH), new File(Config.DATA_DIR_PATH));
         
         for (service.KeyPair kp : service.KeyPair.values()) {
             File keyFile = new File(kp.getPath());
@@ -192,23 +234,16 @@ public class Utils extends utility.Utils {
                 String fName = zipEntry.getName();
                 File newFile = new File(dest + File.separator + fName);
                 
-                if (zipEntry.isDirectory()) {
-                    File newDir = newFile.getAbsoluteFile();
-                    if (!newDir.exists()) {
-                        newDir.mkdirs();
-                    }
-                } else {
-                    BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile));
-                    
-                    int len;
-                    while ((len = zIn.read(buffer)) > 0) {
-                        bos.write(buffer, 0, len);
-                    }
-
-                    bos.close();   
-                }
+                new File(newFile.getParent()).mkdirs();
                 
-                zIn.closeEntry();
+                BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(newFile));
+
+                int len;
+                while ((len = zIn.read(buffer)) > 0) {
+                    bos.write(buffer, 0, len);
+                }
+
+                bos.close();
                 zipEntry = zIn.getNextEntry();
             }
             zIn.closeEntry();

@@ -13,7 +13,7 @@ import java.util.logging.Logger;
  *
  * @author Chienweichih
  */
-public class MerkleTree {
+public class MerkleTree_file {
     public static String create (String srcPath,
                                  String destPath,
                                  boolean isFirst) throws IOException {
@@ -66,7 +66,7 @@ public class MerkleTree {
             try {
                 digest = create(dataHome + pathUnderHome, absPath, true);
             } catch (IOException ex) {
-                Logger.getLogger(MerkleTree.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(MerkleTree_file.class.getName()).log(Level.SEVERE, null, ex);
             }
         } else {
             digest = Utils.digest(file);
@@ -104,7 +104,7 @@ public class MerkleTree {
                     return true;
                 }
             } catch (IOException ex) {
-                Logger.getLogger(MerkleTree.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(MerkleTree_file.class.getName()).log(Level.SEVERE, null, ex);
             }
             parent = parent.getParentFile();
         }
@@ -194,25 +194,23 @@ public class MerkleTree {
     }
 
     private static void unitTest() throws IOException {
-        String dataHome = "TEST_DATA";
+        String dataHome = "C:\\Users\\Chienweichih\\ShowerWei\\Accounts\\Account A";
         String hashHome = "TEST_DATA_HASH";
         
-        
-        long time = System.currentTimeMillis();
-        create(dataHome, hashHome, true);
-        time = System.currentTimeMillis() - time;
-        System.out.println("Create cost : " + time + "ms");
+        for (int i = 0;i < 10;++i) {
+            long time = System.currentTimeMillis();
+            create(dataHome, hashHome, true);
+            time = System.currentTimeMillis() - time;
+            System.out.println("Create cost : " + time + "ms");
+        }
         print(hashHome);
         
         /**
          * update a file's hash
          */
-        String pathUnderHome = File.separator + "src" +
-                               File.separator + "summer" +
-                               File.separator + "ChainHashing" +
-                               File.separator + "Base64codc.java";
+        String pathUnderHome = File.separator + "folder1" + File.separator + "small_1.txt";
         File updateFile = new File(dataHome + pathUnderHome);        
-        time = System.currentTimeMillis();
+        long time = System.currentTimeMillis();
         if (update(dataHome, hashHome, pathUnderHome, updateFile)) {
             System.out.println("Update OK!");
         } else {

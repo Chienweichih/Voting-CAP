@@ -18,7 +18,7 @@ import service.handler.ConnectionHandler;
 import voting_pov.utility.Utils;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
-import voting_pov.utility.MerkleTree;
+import voting_pov.utility.MerkleTree_file;
 
 /**
  *
@@ -76,7 +76,7 @@ public class VotingHandler implements ConnectionHandler {
             
             switch (op.getType()) {
                 case UPLOAD:
-                    file = new File(Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath());
+                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     
                     Utils.receive(in, file);
 
@@ -84,9 +84,9 @@ public class VotingHandler implements ConnectionHandler {
 
                     if (op.getMessage().equals(digest)) {
                         // write file
-                        MerkleTree.copy(NEW_HASH_PATH, OLD_HASH_PATH);
-                        MerkleTree.update(NEW_HASH_PATH,
-                                          NEW_HASH_PATH + File.separator + op.getPath() + ".digest",
+                        MerkleTree_file.copy(NEW_HASH_PATH, OLD_HASH_PATH);
+                        MerkleTree_file.update(NEW_HASH_PATH,
+                                          NEW_HASH_PATH + op.getPath() + ".digest",
                                           digest);
                         result = Utils.readDigest(NEW_HASH_PATH);
                         updateLastAck = true;
@@ -130,8 +130,8 @@ public class VotingHandler implements ConnectionHandler {
                     
                     break;
                 case DOWNLOAD:
-                    file = new File(Config.DATA_DIR_PATH + File.separator + op.getPath());
-                    result = Utils.readDigest(NEW_HASH_PATH + File.separator + op.getPath());
+                    file = new File(Config.DATA_DIR_PATH + op.getPath());
+                    result = Utils.readDigest(NEW_HASH_PATH + op.getPath());
                     
                     if (!op.getMessage().equals(Config.EMPTY_STRING)) {
                         sendFileAfterAck = op.getMessage().equals(result);

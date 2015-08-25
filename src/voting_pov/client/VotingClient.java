@@ -19,7 +19,7 @@ import message.Operation;
 import message.OperationType;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
-import voting_pov.utility.MerkleTree;
+import voting_pov.utility.MerkleTree_file;
 import voting_pov.utility.Utils;
 
 /**
@@ -57,7 +57,7 @@ public class VotingClient extends Client {
         
         String attestationPath = getHandlerAttestationPath();
         try {
-            MerkleTree.create(Config.DATA_DIR_PATH,
+            MerkleTree_file.create(Config.DATA_DIR_PATH,
                               attestationPath,
                               true);
         } catch (IOException ex) {
@@ -83,7 +83,7 @@ public class VotingClient extends Client {
         Utils.send(out, req.toString());
         
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(Config.DATA_DIR_PATH + File.separator + op.getPath()));
+            Utils.send(out, new File(Config.DATA_DIR_PATH + op.getPath()));
         }
         
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
@@ -113,7 +113,7 @@ public class VotingClient extends Client {
                     break;
                 }
                 
-                File file = new File(Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath());
+                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
 
                 Utils.receive(in, file);
 
@@ -186,7 +186,7 @@ public class VotingClient extends Client {
                     }
                     
                     execute(new Operation(OperationType.AUDIT,
-                                          "ATT_FOR_AUDIT.digest",
+                                          File.separator + "ATT_FOR_AUDIT.digest",
                                           Config.EMPTY_STRING),
                             hostname,
                             diffPort);
@@ -234,7 +234,7 @@ public class VotingClient extends Client {
         }
 
         execute(new Operation(OperationType.AUDIT,
-                              "ATT_FOR_AUDIT.digest",
+                              File.separator + "ATT_FOR_AUDIT.digest",
                               Config.EMPTY_STRING),
                 hostname,
                 ports[0]);
@@ -278,8 +278,8 @@ public class VotingClient extends Client {
                             attFileName + ".digest");
                 
                 String attestationPath = getHandlerAttestationPath();
-                MerkleTree.update(attestationPath,
-                                  attestationPath + File.separator + op.getPath() + ".digest",
+                MerkleTree_file.update(attestationPath,
+                                  attestationPath + op.getPath() + ".digest",
                                   op.getMessage());
                 calResult = Utils.readDigest(attestationPath);
                 break;
