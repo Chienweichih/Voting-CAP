@@ -180,7 +180,7 @@ public class VotingClient extends Client {
                     }
                     
                     execute(new Operation(OperationType.AUDIT,
-                                          File.separator + "ATT_FOR_AUDIT.digest",
+                                          File.separator + "ATT_FOR_AUDIT",
                                           Config.EMPTY_STRING),
                             hostname,
                             diffPort);
@@ -228,7 +228,7 @@ public class VotingClient extends Client {
         }
 
         execute(new Operation(OperationType.AUDIT,
-                              File.separator + "ATT_FOR_AUDIT.digest",
+                              File.separator + "ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
                 hostname,
                 ports[0]);
@@ -267,7 +267,7 @@ public class VotingClient extends Client {
                 calResult = Utils.readDigest(attFileName);
                 break;
             case UPLOAD:
-                MerkleTree_mem merkleTree = Deserialize(attFileName + ".digest");
+                MerkleTree_mem merkleTree = Deserialize(attFileName);
                 merkleTree.update(op.getPath(), op.getMessage());
                 calResult = merkleTree.getRootHash();
                 break;

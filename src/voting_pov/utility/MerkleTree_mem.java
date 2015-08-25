@@ -199,36 +199,36 @@ public class MerkleTree_mem {
     }
     
     public static void main(String[] args) {
-        for (int i = 0; i < 10; ++i) {
+//        for (int i = 0; i < 10; ++i) {
             long time = System.currentTimeMillis();
             MerkleTree_mem mt = new MerkleTree_mem(new File(Config.DATA_DIR_PATH));
             time = System.currentTimeMillis() - time;
             System.out.println("Create cost : " + time + "ms");
-        }
-        
-        String target = File.separator + "folder1" + File.separator + "small_1.txt";
-        String digest = "0D7422AAE4B30F62603837F9B7AA26E1FBFDD6FF";
-        String fname = "test.ser";
-        
-        MerkleTree_mem mt = new MerkleTree_mem(new File(Config.DATA_DIR_PATH));
-        mt.print();
-        
-        long time = System.currentTimeMillis();
-        mt.Serialize(new File(fname));
-        
-        System.out.println("============================ Create! ============================");
-        mt.update(target, digest);
-        mt.print();
-        System.out.println("============================ Update! ============================");
-        MerkleTree_mem mt2 = new MerkleTree_mem(mt);
-        mt.delete(target);
-        mt.print();
-        System.out.println("============================ Delete! ============================");
-        mt2.print();
-        
-        mt2 = Deserialize(fname);
-        mt2.print();
-        time = System.currentTimeMillis() - time;
-        System.out.println("All cost : " + time + "ms");
+//        }
+            mt.Serialize(new File("ACCOUNT_C"));
+//        String target = File.separator + "folder1" + File.separator + "small_1.txt";
+//        String digest = "0D7422AAE4B30F62603837F9B7AA26E1FBFDD6FF";
+//        String fname = "test.ser";
+//        
+//        MerkleTree_mem mt = new MerkleTree_mem(new File(Config.DATA_DIR_PATH));
+//        mt.print();
+//        
+//        long time = System.currentTimeMillis();
+//        mt.Serialize(new File(fname));
+//        
+//        System.out.println("============================ Create! ============================");
+//        mt.update(target, digest);
+//        mt.print();
+//        System.out.println("============================ Update! ============================");
+//        MerkleTree_mem mt2 = new MerkleTree_mem(mt);
+//        mt.delete(target);
+//        mt.print();
+//        System.out.println("============================ Delete! ============================");
+//        mt2.print();
+//        
+//        mt2 = Deserialize(fname);
+//        mt2.print();
+//        time = System.currentTimeMillis() - time;
+//        System.out.println("All cost : " + time + "ms");
     }
 }
