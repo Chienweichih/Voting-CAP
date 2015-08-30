@@ -2,9 +2,11 @@ package voting_pov.utility;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -42,6 +44,19 @@ public class Utils extends utility.Utils {
         }
         
         return result;
+    }
+    
+    public static String read(String fname) {
+        String digest = null;
+        
+        try (FileReader fr = new FileReader(fname);
+             BufferedReader br = new BufferedReader(fr)) {
+            digest = br.readLine();
+        } catch (IOException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        
+        return digest;
     }
     
     public static void copyFolder(File src, File dest) {
