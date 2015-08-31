@@ -33,6 +33,7 @@
 %\usetheme{Szeged}
 %\usetheme{Warsaw}
 
+\usepackage{CJKutf8}
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows}
 
@@ -82,7 +83,7 @@
 \graphicspath{{fig/}}
 
 %First page
-\title[Progress Report]{***Instant Auditing of Cloud Storage Access without Accumulating Attestations***}
+\title[Progress Report]{Instant Auditing of Cloud Storage Access without Accumulating Attestations}
 
 \author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang\\ Student : Wei-Chih Chien}
 
@@ -99,7 +100,7 @@
 
 % Let's get started
 \begin{document}
-
+\begin{CJK}{UTF8}{bkai}
 \begin{frame}
   \titlepage
 \end{frame}
@@ -139,25 +140,27 @@
 	\end{center}
 \end{frame}
 
-\section{POV on multi-server **change subsection name**}
-\subsection{Case 1}
-\begin{frame}{Case 1}
+\section{POV's Evolution}
+\subsection{Single Client and Service Provider}
+\begin{frame}{Single Client and Service Provider}
 	\begin{center}
 	\includegraphics[width=.7\textwidth]{Case1.png}
 	\end{center}
 \end{frame}
 
-\subsection{Case 2}
-\begin{frame}{Case 2}{(\textit{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree})}
+\subsection{Multiple Clients}
+\begin{frame}{Multiple Clients}{(\textit{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree})}
 	\begin{center}
-	\includegraphics[width=.9\textwidth]{Case2.png}
+	\includegraphics[width=.8\textwidth]{Case2.png}
 	\end{center}
+	\alert{Worst-case : 很久沒更新而累積了大量的files update動作}
 \end{frame}
 
-\subsection{Case 3}
-\begin{frame}{Case 3}
+\subsection{Reduce Device's Storage Usage}
+\begin{frame}{Reduce Device's Storage Usage}
+	\color{blue} Assumption: $\text{同時有k個server上同一file出問題的機率} \approx 0$\\\ \\
 	\begin{center}
-	\includegraphics[width=.9\textwidth]{Case3.png}
+	\includegraphics[width=.8\textwidth]{Case3.png}
 	\end{center}
 \end{frame}
 
@@ -252,15 +255,16 @@
 
 \begin{frame}[fragile]{AUDIT}{\RNum{3}. Auditing}
 	\begin{center}
-	\begin{minipage}{.8\hsize}
+	\begin{minipage}{.9\hsize}
 	\begin{lstlisting}[mathescape, language=Java, caption=Audit algorithm]
 	AUDIT(lastAck)
 	$\tab{}$op $\leftarrow$ lastAck.req.op
 	$\tab{}$if op.type = DOWNLOAD
-	$\tab{}$$\tab{}$compare roothash with lastAck.result
+	$\tab{}$$\tab{}$success $\leftarrow$ roothash.equals(lastAck.result)
 	$\tab{}$if op.type = UPLOAD
-	$\tab{}$$\tab{}$update merkleTreeOld by op.msg
-	$\tab{}$$\tab{}$compare roothash with lastAck.result
+	$\tab{}$$\tab{}$merkleTreeOld.update(op.msg)
+	$\tab{}$$\tab{}$success $\leftarrow$ roothash.equals(lastAck.result)
+	$\tab{}$return success
 	\end{lstlisting}
 	\end{minipage}
 	\end{center}
@@ -334,4 +338,5 @@
 	\footnote{* download attestations time + audit time}
 	\end{table}	
 \end{frame}
+\end{CJK}
 \end{document}
