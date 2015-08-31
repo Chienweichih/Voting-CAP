@@ -264,7 +264,7 @@ public class VotingClient extends Client {
         String attFileName = Config.DOWNLOADS_DIR_PATH + File.separator + "ATT_FOR_AUDIT";
         switch (op.getType()) {
             case DOWNLOAD:
-                calResult = Utils.readDigest(attFileName);
+                calResult = Utils.read(attFileName);
                 break;
             case UPLOAD:
                 MerkleTree_mem merkleTree = Deserialize(attFileName);
