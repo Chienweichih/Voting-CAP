@@ -27,10 +27,9 @@ public class VotingHandler implements ConnectionHandler {
     public static final File ATTESTATION;
     private static final ReentrantLock LOCK;
     
-    private static final MerkleTree_mem merkleTreeNew;
-    private static MerkleTree_mem merkleTreeOld;
+    private static final MerkleTree_mem merkleTree;
+    private static String digestBeforeUpdate;
     private static Acknowledgement lastAck;
-    private static Acknowledgement thisAck;
     
     private final Socket socket;
     private final KeyPair keyPair;
@@ -40,11 +39,10 @@ public class VotingHandler implements ConnectionHandler {
         
         LOCK = new ReentrantLock();
         
-        merkleTreeNew = new MerkleTree_mem(new File(Config.DATA_DIR_PATH));
-        merkleTreeOld = new MerkleTree_mem(merkleTreeNew);
+        merkleTree = new MerkleTree_mem(new File(Config.DATA_DIR_PATH));
+        digestBeforeUpdate = "";
         
         lastAck = null;
-        thisAck = null;
     }
     
     public VotingHandler(Socket socket, KeyPair keyPair) {
@@ -66,7 +64,7 @@ public class VotingHandler implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            String result = merkleTreeNew.getRootHash();
+            String result = merkleTree.getRootHash();
             
             Operation op = req.getOperation();
             
@@ -75,6 +73,20 @@ public class VotingHandler implements ConnectionHandler {
             boolean updateLastAck = false;
             
             switch (op.getType()) {
+                case DOWNLOAD:
+                    file = new File(Config.DATA_DIR_PATH + op.getPath());
+                    
+                    if (!op.getMessage().equals(Config.EMPTY_STRING)) {
+                        sendFileAfterAck = op.getMessage().equals(result);
+                        if (!sendFileAfterAck) {
+                            result = Config.DOWNLOAD_FAIL;
+                        }
+                    } else {
+                        updateLastAck = true;
+                        digestBeforeUpdate = merkleTree.getDigest(op.getPath());
+                    }
+                    
+                    break;
                 case UPLOAD:
                     file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     
@@ -84,9 +96,9 @@ public class VotingHandler implements ConnectionHandler {
 
                     if (op.getMessage().equals(digest)) {
                         // write file
-                        merkleTreeOld = new MerkleTree_mem(merkleTreeNew);
-                        merkleTreeNew.update(op.getPath(), digest);
-                        result = merkleTreeNew.getRootHash();
+                        digestBeforeUpdate = merkleTree.getDigest(op.getPath());
+                        merkleTree.update(op.getPath(), digest);
+                        result = merkleTree.getRootHash();
                         updateLastAck = true;
                     } else {
                         result = Config.UPLOAD_FAIL;
@@ -99,18 +111,17 @@ public class VotingHandler implements ConnectionHandler {
                         break;
                     }
                     
-                    Request lastReq = lastAck.getRequest();
-                    if (op.getPath().equals(Config.EMPTY_STRING)) {
-                        req = lastReq;
-                        break;
-                    }
+                    Operation lastOP = lastAck.getRequest().getOperation();
                     
-                    switch (lastReq.getOperation().getType()) {
+                    MerkleTree_mem prevMerkleTree = new MerkleTree_mem(merkleTree);
+                    prevMerkleTree.update(lastOP.getPath(), digestBeforeUpdate);
+                    
+                    switch (lastOP.getType()) {
                         case DOWNLOAD:
-                            Utils.write(ATTESTATION, merkleTreeOld.getRootHash());
+                            Utils.write(ATTESTATION, prevMerkleTree.getRootHash());
                             break;
                         case UPLOAD:
-                            merkleTreeOld.Serialize(ATTESTATION);
+                            prevMerkleTree.Serialize(ATTESTATION);
                             break;
                         default:
                             System.err.println(Config.AUDIT_FAIL);
@@ -120,19 +131,6 @@ public class VotingHandler implements ConnectionHandler {
                     result = Utils.digest(file);
                     
                     sendFileAfterAck = true;
-                    
-                    break;
-                case DOWNLOAD:
-                    file = new File(Config.DATA_DIR_PATH + op.getPath());
-                    
-                    if (!op.getMessage().equals(Config.EMPTY_STRING)) {
-                        sendFileAfterAck = op.getMessage().equals(result);
-                        if (!sendFileAfterAck) {
-                            result = Config.DOWNLOAD_FAIL;
-                        }
-                    } else {
-                        updateLastAck = true;
-                    }
                     
                     break;
                 default:
@@ -150,8 +148,7 @@ public class VotingHandler implements ConnectionHandler {
             }
             
             if (updateLastAck) {
-                lastAck = thisAck;
-                thisAck = ack;
+                lastAck = ack;
             }
             
             socket.close();

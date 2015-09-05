@@ -33,24 +33,24 @@ public class Experiment {
         List<Operation> ops = new ArrayList<>();
         
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
-        String testFileName = //File.separator + "folder1" + File.separator + "small_1.txt";
+        String testFileName = File.separator + "folder1" + File.separator + "small_1.txt";
                 
 //                File.separator + "testing result" + 
 //                File.separator + "DeadLock1" + 
 //                File.separator + "DeadLock" + 
 //                File.separator + "DeadLock(0).txt";
         
-                File.separator + "My courses" +
-                File.separator + "System Software" +
-                File.separator + "Slice from NCU" +
-                File.separator + "chap_01.pps";
+//                File.separator + "My courses" +
+//                File.separator + "System Software" +
+//                File.separator + "Slice from NCU" +
+//                File.separator + "chap_01.pps";
         for (service.File file : files) {
-            ops.add(new Operation(OperationType.DOWNLOAD,
-                                  testFileName,
-                                  Config.EMPTY_STRING));
-//            ops.add(new Operation(OperationType.UPLOAD,
-//                    testFileName,
-//                    Utils.digest(new File(Config.DATA_DIR_PATH + testFileName))));
+//            ops.add(new Operation(OperationType.DOWNLOAD,
+//                                  testFileName,
+//                                  Config.EMPTY_STRING));
+            ops.add(new Operation(OperationType.UPLOAD,
+                    testFileName,
+                    Utils.digest(new File(Config.DATA_DIR_PATH + testFileName))));
         }
         
         for (Map.Entry<String, Client> client : clients.entrySet()) {

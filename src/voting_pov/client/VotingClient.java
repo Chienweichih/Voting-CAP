@@ -40,6 +40,7 @@ public class VotingClient extends Client {
     
     private final Map<Integer, String> roothashs;
     private final Map<Integer, Acknowledgement> lastAcks;
+    private final Map<Integer, Acknowledgement> thisAcks;
     private String result;
     private Acknowledgement acknowledgement;
     
@@ -59,7 +60,8 @@ public class VotingClient extends Client {
         
         serverProcessTime = 0;
         
-        lastAcks = new HashMap<>();
+        lastAcks = new HashMap<>(); //get From sync server
+        thisAcks = new HashMap<>(); //get From sync server
         roothashs = new HashMap<>();
         for (int p : ports) {
             roothashs.put(p, null);
@@ -94,7 +96,7 @@ public class VotingClient extends Client {
             System.err.println(result);
         }
         
-        acknowledgement = null;
+        acknowledgement = ack;
         
         switch (op.getType()) {
             case DOWNLOAD:
@@ -102,10 +104,7 @@ public class VotingClient extends Client {
                     break;
                 }
             case AUDIT:
-                if (op.getPath().equals(Config.EMPTY_STRING)) {
-                    acknowledgement = ack;
-                    break;
-                }
+                acknowledgement = null;
                 
                 File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
 
@@ -141,7 +140,8 @@ public class VotingClient extends Client {
             }
                     
             if (acknowledgement != null) {
-                lastAcks.put(port, acknowledgement);
+                lastAcks.put(port, thisAcks.get(port));
+                thisAcks.put(port, acknowledgement);
             }
             
             socket.close();
@@ -164,28 +164,15 @@ public class VotingClient extends Client {
                 }
                 int diffPort = voting();
                 if (diffPort != -1) {
-                    for (int port_i : ports) {
-                        execute(new Operation(OperationType.AUDIT,
-                                              Config.EMPTY_STRING,
-                                              Config.EMPTY_STRING),
-                                hostname,
-                                port_i);
-                    }
-                    
-                    Acknowledgement ack = lastAcks.get(ports[0]);
-                    for (Acknowledgement a : lastAcks.values()) {
-                        if (!ack.equals(a)) {
-                            System.out.println(Config.AUDIT_FAIL);
-                        }
-                    }
-                    
                     execute(new Operation(OperationType.AUDIT,
                                           File.separator + "ATT_FOR_AUDIT",
                                           Config.EMPTY_STRING),
                             hostname,
                             diffPort);
-                    boolean audit = audit(lastAcks.get(diffPort));
+                    boolean audit = audit(lastAcks.get(diffPort), thisAcks.get(diffPort));
                     System.out.println("Audit: " + audit);
+                } else {
+                    // voting correct, update thisAcks to sync server.
                 }
                 if (op.getType() == OperationType.DOWNLOAD) {
                     // Download from one server
@@ -212,21 +199,6 @@ public class VotingClient extends Client {
         System.out.println("Auditing:");
         time = System.currentTimeMillis();
         
-        for (int port_i : ports) {
-            execute(new Operation(OperationType.AUDIT,
-                                  Config.EMPTY_STRING,
-                                  Config.EMPTY_STRING),
-                    hostname,
-                    port_i);
-        }
-
-        Acknowledgement ack = lastAcks.get(ports[0]);
-        for (Acknowledgement a : lastAcks.values()) {
-            if (!ack.equals(a)) {
-                System.out.println(Config.AUDIT_FAIL);
-            }
-        }
-
         execute(new Operation(OperationType.AUDIT,
                               File.separator + "ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
@@ -237,29 +209,29 @@ public class VotingClient extends Client {
         System.out.println("Download attestation, cost " + time + "ms");
         
         time = System.currentTimeMillis();
-        boolean audit = audit(lastAcks.get(ports[0]));
+        boolean audit = audit(lastAcks.get(ports[0]), thisAcks.get(ports[0]));
         time = System.currentTimeMillis() - time;
         System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
 
     @Override
     public String getHandlerAttestationPath() {
-        return "no used in this case";
+        return "NO_USED_IN_THIS_CASE";
     }
 
     @Override
     public boolean audit(File spFile) {
-        return audit((Acknowledgement) null);
+        return audit(null, null);
     }
     
-    public boolean audit(Acknowledgement ack) {
-        if (ack == null) {
+    public boolean audit(Acknowledgement lastAck, Acknowledgement thisAck) {
+        if (lastAck == null || thisAck == null) {
             System.err.println(Config.WRONG_OP);
             return false;
         }
         
         String calResult;
-        Operation op = ack.getRequest().getOperation();
+        Operation op = thisAck.getRequest().getOperation();
         
         String attFileName = Config.DOWNLOADS_DIR_PATH + File.separator + "ATT_FOR_AUDIT";
         switch (op.getType()) {
@@ -268,6 +240,11 @@ public class VotingClient extends Client {
                 break;
             case UPLOAD:
                 MerkleTree_mem merkleTree = Deserialize(attFileName);
+                
+                if (!lastAck.getResult().equals(merkleTree.getRootHash())) {
+                    return false;
+                }
+                
                 merkleTree.update(op.getPath(), op.getMessage());
                 calResult = merkleTree.getRootHash();
                 break;
@@ -275,7 +252,7 @@ public class VotingClient extends Client {
                 calResult = Config.WRONG_OP;
         }
         
-        return calResult.equals(ack.getResult());
+        return calResult.equals(thisAck.getResult());
     }
     
     private int voting() {

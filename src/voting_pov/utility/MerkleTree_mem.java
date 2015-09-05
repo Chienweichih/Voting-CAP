@@ -154,6 +154,10 @@ public class MerkleTree_mem {
         return root.digest;
     }
     
+    public String getDigest(String path) {
+        return getNodeFromPath(path).digest;
+    }
+    
     private static List<File> sortedFiles(File[] unSortedFiles) {
         List<File> files = Arrays.asList(unSortedFiles);
         Collections.sort(files, (File lhs, File rhs) -> {
