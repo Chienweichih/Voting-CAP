@@ -17,7 +17,7 @@ import service.handler.ConnectionHandler;
 import voting_pov.utility.Utils;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
-import voting_pov.utility.MerkleTree_mem;
+import voting_pov.utility.MerkleTree;
 
 /**
  *
@@ -27,7 +27,7 @@ public class VotingHandler implements ConnectionHandler {
     public static final File ATTESTATION;
     private static final ReentrantLock LOCK;
     
-    private static final MerkleTree_mem merkleTree;
+    private static final MerkleTree merkleTree;
     private static String digestBeforeUpdate;
     private static Acknowledgement lastAck;
     
@@ -39,7 +39,7 @@ public class VotingHandler implements ConnectionHandler {
         
         LOCK = new ReentrantLock();
         
-        merkleTree = new MerkleTree_mem(new File(Config.DATA_DIR_PATH));
+        merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
         digestBeforeUpdate = "";
         
         lastAck = null;
@@ -113,7 +113,7 @@ public class VotingHandler implements ConnectionHandler {
                     
                     Operation lastOP = lastAck.getRequest().getOperation();
                     
-                    MerkleTree_mem prevMerkleTree = new MerkleTree_mem(merkleTree);
+                    MerkleTree prevMerkleTree = new MerkleTree(merkleTree);
                     prevMerkleTree.update(lastOP.getPath(), digestBeforeUpdate);
                     
                     switch (lastOP.getType()) {

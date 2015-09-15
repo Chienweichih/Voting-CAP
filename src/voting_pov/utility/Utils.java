@@ -1,11 +1,6 @@
 package voting_pov.utility;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.security.MessageDigest;
@@ -20,7 +15,6 @@ import voting_pov.service.Config;
  * @author chienweichih
  */
 public class Utils extends utility.Utils {
-    private static final int BUF_SIZE = 8192;
     
     public static String digest(byte[] message) {
         return digest(message, Config.DIGEST_ALGORITHM);
@@ -57,36 +51,5 @@ public class Utils extends utility.Utils {
         }
         
         return digest;
-    }
-    
-    public static void copyFolder(File src, File dest) {
-        if (src.isDirectory()) {
-            if(!dest.exists()) {
-               dest.mkdir();
-            }
-
-            for (String file : src.list()) {
-               File srcFile = new File(src, file);
-               File destFile = new File(dest, file);
-               
-               copyFolder(srcFile, destFile);
-            }
-        } else {
-            try (FileOutputStream fos = new FileOutputStream(dest);
-                 BufferedOutputStream bos = new BufferedOutputStream(fos);
-                 FileInputStream fis = new FileInputStream(src);
-                 BufferedInputStream bin = new BufferedInputStream(fis)) {
-                byte[] buf = new byte[BUF_SIZE];
-                int n;
-
-                while ((n = bin.read(buf)) > 0) {
-                    bos.write(buf, 0, n);
-                }
-
-                bos.flush();
-            } catch (IOException ex) {
-                Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
     }
 }

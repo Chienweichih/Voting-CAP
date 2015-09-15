@@ -19,8 +19,8 @@ import message.Operation;
 import message.OperationType;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
-import voting_pov.utility.MerkleTree_mem;
-import static voting_pov.utility.MerkleTree_mem.Deserialize;
+import voting_pov.utility.MerkleTree;
+import static voting_pov.utility.MerkleTree.Deserialize;
 import voting_pov.utility.Utils;
 
 /**
@@ -239,7 +239,7 @@ public class VotingClient extends Client {
                 calResult = Utils.read(attFileName);
                 break;
             case UPLOAD:
-                MerkleTree_mem merkleTree = Deserialize(attFileName);
+                MerkleTree merkleTree = Deserialize(attFileName);
                 
                 if (!lastAck.getResult().equals(merkleTree.getRootHash())) {
                     return false;
