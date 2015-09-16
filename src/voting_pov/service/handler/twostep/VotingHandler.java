@@ -25,11 +25,11 @@ import voting_pov.utility.MerkleTree;
  */
 public class VotingHandler implements ConnectionHandler {
     public static final File ATTESTATION;
-    private static final ReentrantLock LOCK;
-    
+        
     private static final MerkleTree merkleTree;
     private static String digestBeforeUpdate;
-    private static Acknowledgement lastAck;
+    private static Operation lastOP;
+    private static final ReentrantLock LOCK;
     
     private final Socket socket;
     private final KeyPair keyPair;
@@ -37,12 +37,10 @@ public class VotingHandler implements ConnectionHandler {
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "voting");
         
-        LOCK = new ReentrantLock();
-        
         merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
         digestBeforeUpdate = "";
-        
-        lastAck = null;
+        lastOP = null;
+        LOCK = new ReentrantLock();
     }
     
     public VotingHandler(Socket socket, KeyPair keyPair) {
@@ -70,20 +68,21 @@ public class VotingHandler implements ConnectionHandler {
             
             File file = null;
             boolean sendFileAfterAck = false;
-            boolean updateLastAck = false;
+            boolean updateLastOP = false;
             
             switch (op.getType()) {
                 case DOWNLOAD:
                     file = new File(Config.DATA_DIR_PATH + op.getPath());
                     
-                    if (!op.getMessage().equals(Config.EMPTY_STRING)) {
-                        sendFileAfterAck = op.getMessage().equals(result);
-                        if (!sendFileAfterAck) {
-                            result = Config.DOWNLOAD_FAIL;
-                        }
-                    } else {
-                        updateLastAck = true;
-                        digestBeforeUpdate = merkleTree.getDigest(op.getPath());
+                    if (op.getMessage().equals(Config.EMPTY_STRING)) {
+                       updateLastOP = true;
+                       digestBeforeUpdate = merkleTree.getDigest(op.getPath());
+                       break;
+                    }
+                    
+                    sendFileAfterAck = op.getMessage().equals(result);
+                    if (!sendFileAfterAck) {
+                        result = Config.DOWNLOAD_FAIL;
                     }
                     
                     break;
@@ -99,20 +98,18 @@ public class VotingHandler implements ConnectionHandler {
                         digestBeforeUpdate = merkleTree.getDigest(op.getPath());
                         merkleTree.update(op.getPath(), digest);
                         result = merkleTree.getRootHash();
-                        updateLastAck = true;
+                        updateLastOP = true;
                     } else {
                         result = Config.UPLOAD_FAIL;
                     }
                     
                     break;
                 case AUDIT:
-                    if (lastAck == null) {
+                    if (lastOP == null) {
                         result = Config.AUDIT_FAIL;
                         break;
                     }
-                    
-                    Operation lastOP = lastAck.getRequest().getOperation();
-                    
+                                        
                     MerkleTree prevMerkleTree = new MerkleTree(merkleTree);
                     prevMerkleTree.update(lastOP.getPath(), digestBeforeUpdate);
                     
@@ -147,8 +144,8 @@ public class VotingHandler implements ConnectionHandler {
                 Utils.send(out, file);
             }
             
-            if (updateLastAck) {
-                lastAck = ack;
+            if (updateLastOP) {
+                lastOP = req.getOperation();
             }
             
             socket.close();

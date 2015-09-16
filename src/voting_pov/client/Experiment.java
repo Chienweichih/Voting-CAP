@@ -22,7 +22,8 @@ public class Experiment {
         Utils.cleanAllAttestations();
         
         final int runTimes = 100;
-        final String testFileName = File.separator + "folder1" + File.separator + "small_1.txt";
+        final String testFileName = //File.separator + "folder1" + File.separator + "small_1.txt";
+                                    File.separator + "folder3" + File.separator + "2011.rmvb";
                 
 //                                    File.separator + "testing result" + 
 //                                    File.separator + "DeadLock1" + 
@@ -35,6 +36,7 @@ public class Experiment {
 //                                    File.separator + "chap_01.pps";
 
         System.out.println("\nVoting");
+        System.out.println(Config.DATA_DIR_PATH);
         
         List<Operation> ops = new ArrayList<>();
         ops.add(new Operation(OperationType.DOWNLOAD,

@@ -29,21 +29,25 @@ import voting_pov.utility.Utils;
  */
 public class VotingClient extends Client {
     private static final Logger LOGGER;
+    private static final int[] PORTS;
     
     static {
         LOGGER = Logger.getLogger(VotingClient.class.getName());
+        PORTS = new int[]{Config.VOTING_SERVICE_PORT_1,
+                          Config.VOTING_SERVICE_PORT_2,
+                          Config.VOTING_SERVICE_PORT_3,
+                          Config.VOTING_SERVICE_PORT_4,
+                          Config.VOTING_SERVICE_PORT_5};
     }
     
-    
-    private final int[] ports;
     private long serverProcessTime;
+    private long excuteTime;
     
     private final Map<Integer, String> roothashs;
     private final Map<Integer, Acknowledgement> lastAcks;
     private final Map<Integer, Acknowledgement> thisAcks;
     private String result;
     private Acknowledgement acknowledgement;
-    
     
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
@@ -52,18 +56,13 @@ public class VotingClient extends Client {
               spKeyPair,
               Config.NUM_PROCESSORS);
         
-        ports = new int[]{Config.VOTING_SERVICE_PORT_1,
-                          Config.VOTING_SERVICE_PORT_2,
-                          Config.VOTING_SERVICE_PORT_3,
-                          Config.VOTING_SERVICE_PORT_4,
-                          Config.VOTING_SERVICE_PORT_5};
-        
         serverProcessTime = 0;
+        excuteTime = 0;
         
         lastAcks = new HashMap<>(); //get From sync server
         thisAcks = new HashMap<>(); //get From sync server
         roothashs = new HashMap<>();
-        for (int p : ports) {
+        for (int p : PORTS) {
             roothashs.put(p, null);
         }
     }
@@ -84,6 +83,7 @@ public class VotingClient extends Client {
         
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
         serverProcessTime += System.currentTimeMillis() - start;
+        ++excuteTime;
 
         if (!ack.validate(spKeyPair.getPublic())) {
             throw new SignatureException("ACK validation failure");
@@ -159,7 +159,7 @@ public class VotingClient extends Client {
             final int x = i; 
             pool.execute(() -> {
                 Operation op = operations.get(x % operations.size());
-                for (int port_i : ports) {
+                for (int port_i : PORTS) {
                     execute(op, hostname, port_i);
                 }
                 int diffPort = voting();
@@ -178,9 +178,9 @@ public class VotingClient extends Client {
                     // Download from one server
                     execute(new Operation(OperationType.DOWNLOAD,
                                           op.getPath(),
-                                          roothashs.get(ports[0])),
+                                          roothashs.get(PORTS[0])),
                             hostname,
-                            ports[0]);
+                            PORTS[0]);
                 }
             });
         }
@@ -194,7 +194,7 @@ public class VotingClient extends Client {
         time = System.currentTimeMillis() - time;
         
         System.out.println(runTimes + " times cost " + time + "ms");
-        System.out.println("server average process cost " + serverProcessTime / runTimes + "ms");
+        System.out.println("server average process cost " + serverProcessTime / excuteTime + "ms");
         
         System.out.println("Auditing:");
         time = System.currentTimeMillis();
@@ -203,13 +203,13 @@ public class VotingClient extends Client {
                               File.separator + "ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
                 hostname,
-                ports[0]);
+                PORTS[0]);
         
         time = System.currentTimeMillis() - time;
         System.out.println("Download attestation, cost " + time + "ms");
         
         time = System.currentTimeMillis();
-        boolean audit = audit(lastAcks.get(ports[0]), thisAcks.get(ports[0]));
+        boolean audit = audit(lastAcks.get(PORTS[0]), thisAcks.get(PORTS[0]));
         time = System.currentTimeMillis() - time;
         System.out.println("Audit: " + audit + ", cost " + time + "ms");
     }
@@ -257,7 +257,7 @@ public class VotingClient extends Client {
     
     private int voting() {
         HashMap<String, Integer> occurrenceCount = new HashMap<>();
-        String currentMaxElement = (String) roothashs.get(ports[0]);
+        String currentMaxElement = (String) roothashs.get(PORTS[0]);
 
         for (String element : roothashs.values()) {
             Integer elementCount = occurrenceCount.get(element);
