@@ -1,6 +1,5 @@
-package voting_pov.utility;
+package real_time_pov.utility;
 
-import real_time_pov.utility.Utils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;

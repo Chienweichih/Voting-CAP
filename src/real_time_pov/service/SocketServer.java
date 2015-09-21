@@ -1,4 +1,4 @@
-package voting_pov.service;
+package real_time_pov.service;
 
 import service.handler.ConnectionHandler;
 import real_time_pov.utility.Utils;

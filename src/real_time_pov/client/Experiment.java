@@ -1,4 +1,4 @@
-package voting_pov.client;
+package real_time_pov.client;
 
 import java.security.KeyPair;
 import java.io.File;
