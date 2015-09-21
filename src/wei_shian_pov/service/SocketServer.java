@@ -1,8 +1,8 @@
 package wei_shian_pov.service;
 
 import service.handler.ConnectionHandler;
-import wei_shian_pov.utility.Utils;
-import voting_pov.service.handler.twostep.VotingHandler;
+import voting_pov.utility.Utils;
+import wei_shian_pov.service.handler.twostep.*;
 
 /**
  *
@@ -18,11 +18,8 @@ public class SocketServer extends service.SocketServer {
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
                         
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_1).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_2).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_3).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_4).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_5).start();
+        new SocketServer(WeiShianHandler.class, Config.WEI_SHIAN_SERVICE_PORT).start();
+        new SocketServer(WeiShianSyncHandler.class, Config.WEI_SHIAN_SYNC_PORT).start();
         
         System.out.println("Ready to go!");
     }

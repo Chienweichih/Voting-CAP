@@ -11,15 +11,18 @@ public class Acknowledgement extends SOAPMessage {
     private static final long serialVersionUID = 20141006L;
     private final String result;
     private final Request request;
+    private final String lastChainHash;
     
-    public Acknowledgement(String result, Request req) {
+    public Acknowledgement(String result, Request req, String hash) {
         super("acknowledgement");
         
         this.result = result;
         this.request = req;
+        this.lastChainHash = hash;
         
         add2Body("result", result);
         add2Body("request", request.toString());
+        add2Body("chainhash", lastChainHash);
     }
     
     private Acknowledgement(javax.xml.soap.SOAPMessage message) {
@@ -29,6 +32,7 @@ public class Acknowledgement extends SOAPMessage {
         
         this.result = body.item(0).getTextContent();
         this.request = Request.parse(body.item(1).getTextContent());
+        this.lastChainHash = body.item(2).getTextContent();
     }
     
     public String getResult() {
@@ -39,29 +43,11 @@ public class Acknowledgement extends SOAPMessage {
         return request;
     }
     
+    public String getChainHash() {
+        return lastChainHash;
+    }
+    
     public static Acknowledgement parse(String receive) {
         return new Acknowledgement(SOAPMessage.parseSOAP(receive));
-    }
-    
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == null) {
-            return false;
-        }
-        if (getClass() != obj.getClass()) {
-            return false;
-        }
-        
-        final Acknowledgement objAck = (Acknowledgement) obj;
-        
-        return this.result.equals(objAck.result) && this.request.equals(objAck.request);
-    }
-    
-    @Override
-    public int hashCode() {
-        int hash = 3;
-        hash = 53 * hash + (this.result != null ? this.result.hashCode() : 0);
-        hash = 53 * hash + (this.request != null ? this.request.hashCode() : 0);
-        return hash;
     }
 }
