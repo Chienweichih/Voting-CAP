@@ -20,8 +20,8 @@ import message.OperationType;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
 import voting_pov.utility.MerkleTree;
+import voting_pov.utility.Utils;
 import static voting_pov.utility.MerkleTree.Deserialize;
-import real_time_pov.utility.Utils;
 
 /**
  *
@@ -117,6 +117,8 @@ public class VotingClient extends Client {
                 } else {
                     result = "download file digest mismatch";
                 }
+                
+                System.out.println(result);
             break;
             default:
         }

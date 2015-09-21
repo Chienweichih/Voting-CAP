@@ -1,4 +1,4 @@
-package real_time_pov.client;
+package wei_shian_pov.client;
 
 import java.security.KeyPair;
 import java.io.File;
@@ -7,7 +7,7 @@ import java.util.List;
 
 import message.Operation;
 import message.OperationType;
-import real_time_pov.utility.Utils;
+import wei_shian_pov.utility.Utils;
 import voting_pov.service.Config;
 
 /**

@@ -14,10 +14,10 @@ import java.util.logging.Logger;
 
 import message.Operation;
 import service.handler.ConnectionHandler;
-import real_time_pov.utility.Utils;
 import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
 import voting_pov.utility.MerkleTree;
+import voting_pov.utility.Utils;
 
 /**
  *
@@ -81,6 +81,7 @@ public class VotingHandler implements ConnectionHandler {
                     }
                     
                     sendFileAfterAck = op.getMessage().equals(result);
+                    result = Utils.digest(file);
                     if (!sendFileAfterAck) {
                         result = Config.DOWNLOAD_FAIL;
                     }

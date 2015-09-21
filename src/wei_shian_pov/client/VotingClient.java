@@ -1,4 +1,4 @@
-package real_time_pov.client;
+package wei_shian_pov.client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -21,7 +21,7 @@ import voting_pov.message.twostep.voting.*;
 import voting_pov.service.Config;
 import voting_pov.utility.MerkleTree;
 import static voting_pov.utility.MerkleTree.Deserialize;
-import real_time_pov.utility.Utils;
+import wei_shian_pov.utility.Utils;
 
 /**
  *
