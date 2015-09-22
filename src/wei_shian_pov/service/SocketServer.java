@@ -19,7 +19,7 @@ public class SocketServer extends service.SocketServer {
         Utils.cleanAllAttestations();
                         
         new SocketServer(WeiShianHandler.class, Config.WEI_SHIAN_SERVICE_PORT).start();
-        new SocketServer(WeiShianSyncHandler.class, Config.WEI_SHIAN_SYNC_PORT).start();
+        new SocketServer(SyncServer.class, Config.WEI_SHIAN_SYNC_PORT).start();
         
         System.out.println("Ready to go!");
     }

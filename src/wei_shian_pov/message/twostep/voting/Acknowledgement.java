@@ -9,18 +9,21 @@ import org.w3c.dom.NodeList;
  */
 public class Acknowledgement extends SOAPMessage {
     private static final long serialVersionUID = 20141006L;
-    private final String result;
+    private final String roothash;
+    private final String fileHash;
     private final Request request;
     private final String lastChainHash;
     
-    public Acknowledgement(String result, Request req, String hash) {
+    public Acknowledgement(String roothash, String fileHash, Request req, String hash) {
         super("acknowledgement");
         
-        this.result = result;
+        this.roothash = roothash;
+        this.fileHash = fileHash;
         this.request = req;
         this.lastChainHash = hash;
         
-        add2Body("result", result);
+        add2Body("roothash", roothash);
+        add2Body("fileHash", fileHash);
         add2Body("request", request.toString());
         add2Body("chainhash", lastChainHash);
     }
@@ -30,13 +33,18 @@ public class Acknowledgement extends SOAPMessage {
         
         NodeList body = getBody();
         
-        this.result = body.item(0).getTextContent();
-        this.request = Request.parse(body.item(1).getTextContent());
-        this.lastChainHash = body.item(2).getTextContent();
+        this.roothash = body.item(0).getTextContent();
+        this.fileHash = body.item(1).getTextContent();
+        this.request = Request.parse(body.item(2).getTextContent());
+        this.lastChainHash = body.item(3).getTextContent();
     }
     
-    public String getResult() {
-        return result;
+    public String getRoothash() {
+        return roothash;
+    }
+    
+    public String getFileHash() {
+        return fileHash;
     }
     
     public Request getRequest() {

@@ -9,22 +9,25 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.Operation;
 import service.handler.ConnectionHandler;
-import utility.Utils;
+import voting_pov.utility.MerkleTree;
+import voting_pov.utility.Utils;
 import wei_shian_pov.message.twostep.voting.*;
+import wei_shian_pov.service.Config;
 
 /**
  *
  * @author Chienweichih
  */
 public class WeiShianHandler implements ConnectionHandler {
-    public static final File ATTESTATION;
     
+    private static final MerkleTree merkleTree;
     private static final LinkedList<String> HashingChain;
     private static final ReentrantLock LOCK;
     
@@ -32,8 +35,7 @@ public class WeiShianHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        ATTESTATION = new File(service.Config.ATTESTATION_DIR_PATH + "/service-provider/WeiShian");
-        
+        merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
         HashingChain = new LinkedList<>();
         HashingChain.add(service.Config.DEFAULT_CHAINHASH);
         
@@ -59,62 +61,78 @@ public class WeiShianHandler implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            String result;
+            String result, digest;
             
             Operation op = req.getOperation();
             
-            File file = new File(service.Config.DATA_DIR_PATH + File.separator + op.getPath());
+            File file = null;
             boolean sendFileAfterAck = false;
             
             switch (op.getType()) {
+                case DOWNLOAD:
+                    file = new File(service.Config.DATA_DIR_PATH + op.getPath());
+                    
+                    result = merkleTree.getRootHash();
+                    digest = Utils.digest(file);
+                    
+                    sendFileAfterAck = true;
+
+                    break;
                 case UPLOAD:
-                    file = new File(service.Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath());
+                    file = new File(service.Config.DOWNLOADS_DIR_PATH + op.getPath());
                     
                     Utils.receive(in, file);
 
-                    String digest = Utils.digest(file);
+                    digest = Utils.digest(file);
 
                     if (op.getMessage().equals(digest)) {
-                        result = "ok";
+                        // write file
+                        merkleTree.update(op.getPath(), digest);
+                        result = merkleTree.getRootHash();
                     } else {
-                        result = "upload fail";
+                        result = Config.UPLOAD_FAIL;
                     }
                     
-                    Utils.writeDigest(file.getPath(), digest);
-
                     break;
                 case AUDIT:
-                    file = new File(op.getPath());
+                    file = new File(service.Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "WeiShian");
                     
-                    result = Utils.readDigest(file.getPath());
+                    String attP = op.getMessage();
+                    
+                    ListIterator li = HashingChain.listIterator(HashingChain.size());
+                    while (li.hasPrevious()) {
+                        if (attP.equals(li.previous())) {
+                            break;
+                        }
+                    }
+                    Utils.write(file, Config.EMPTY_STRING);
+                    while (li.hasNext()) {
+                        Utils.append(file, (String) li.next());
+                    }
+                    
+                    result = merkleTree.getRootHash();
+                    digest = Utils.digest(file);
                     
                     sendFileAfterAck = true;
                     
-                    break;
-                case DOWNLOAD:
-                    result = Utils.readDigest(file.getPath());
-                    
-                    sendFileAfterAck = true;
-
                     break;
                 default:
-                    result = "operation type mismatch";
+                    result = Config.OP_TYPE_MISMATCH;
+                    digest = Config.OP_TYPE_MISMATCH;
             }
             
-            Acknowledgement ack = new Acknowledgement(result, req, HashingChain.getLast());
+            Acknowledgement ack = new Acknowledgement(result, digest, req, Utils.digest(HashingChain.getLast()));
             
             ack.sign(keyPair);
             
             Utils.send(out, ack.toString());
             
-            HashingChain.add(Utils.digest(ack.toString()));
+            HashingChain.add(ack.toString());
             
             if (sendFileAfterAck) {
                 Utils.send(out, file);
             }
-            
-            Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
-            
+             
             socket.close();
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(WeiShianHandler.class.getName()).log(Level.SEVERE, null, ex);

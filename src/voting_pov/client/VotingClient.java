@@ -218,7 +218,7 @@ public class VotingClient extends Client {
 
     @Override
     public String getHandlerAttestationPath() {
-        return "NO_USED_IN_THIS_CASE";
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
