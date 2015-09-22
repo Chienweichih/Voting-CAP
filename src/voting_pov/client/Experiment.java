@@ -22,13 +22,13 @@ public class Experiment {
         Utils.cleanAllAttestations();
         
         final int runTimes = 100;
-        final String testFileName = //File.separator + "folder1" + File.separator + "small_1.txt";
+        final String testFileName = File.separator + "folder1" + File.separator + "small_1.txt";
 //                                    File.separator + "folder3" + File.separator + "2011.rmvb";
                 
-                                    File.separator + "testing result" + 
-                                    File.separator + "DeadLock1" + 
-                                    File.separator + "DeadLock" + 
-                                    File.separator + "DeadLock(0).txt";
+//                                    File.separator + "testing result" + 
+//                                    File.separator + "DeadLock1" + 
+//                                    File.separator + "DeadLock" + 
+//                                    File.separator + "DeadLock(0).txt";
 //
 //                                    File.separator + "My courses" +
 //                                    File.separator + "System Software" +

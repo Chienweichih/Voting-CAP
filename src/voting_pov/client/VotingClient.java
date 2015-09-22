@@ -116,9 +116,8 @@ public class VotingClient extends Client {
                     result = "download success";
                 } else {
                     result = "download file digest mismatch";
+                    System.err.println(result);
                 }
-                
-                System.out.println(result);
             break;
             default:
         }

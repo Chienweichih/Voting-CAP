@@ -24,8 +24,6 @@ import voting_pov.utility.Utils;
  * @author Chienweichih
  */
 public class VotingHandler implements ConnectionHandler {
-    public static final File ATTESTATION;
-        
     private static final MerkleTree merkleTree;
     private static String digestBeforeUpdate;
     private static Operation lastOP;
@@ -35,8 +33,6 @@ public class VotingHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "voting");
-        
         merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
         digestBeforeUpdate = "";
         lastOP = null;
@@ -106,6 +102,8 @@ public class VotingHandler implements ConnectionHandler {
                     
                     break;
                 case AUDIT:
+                    file = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "voting");
+                    
                     if (lastOP == null) {
                         result = Config.AUDIT_FAIL;
                         break;
@@ -116,16 +114,15 @@ public class VotingHandler implements ConnectionHandler {
                     
                     switch (lastOP.getType()) {
                         case DOWNLOAD:
-                            Utils.write(ATTESTATION, prevMerkleTree.getRootHash());
+                            Utils.write(file, prevMerkleTree.getRootHash());
                             break;
                         case UPLOAD:
-                            prevMerkleTree.Serialize(ATTESTATION);
+                            prevMerkleTree.Serialize(file);
                             break;
                         default:
                             System.err.println(Config.AUDIT_FAIL);
                     }
                     
-                    file = ATTESTATION;
                     result = Utils.digest(file);
                     
                     sendFileAfterAck = true;
