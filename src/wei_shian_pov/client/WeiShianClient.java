@@ -17,25 +17,23 @@ import client.Client;
 import message.Operation;
 import message.OperationType;
 import utility.Utils;
+import voting_pov.utility.MerkleTree;
 import wei_shian_pov.message.twostep.voting.*;
 import wei_shian_pov.service.Config;
-import wei_shian_pov.service.handler.twostep.WeiShianHandler;
 
 /**
  *
  * @author Chienweichih
- * //! is what need to change
  */
 public class WeiShianClient extends Client {
-    private static final File ATTESTATION;
     private static final Logger LOGGER;
     
     static {
-        ATTESTATION = new File(service.Config.ATTESTATION_DIR_PATH + "/client/WeiShian");
         LOGGER = Logger.getLogger(WeiShianClient.class.getName());
     }
     
     private String lastChainHash;
+    private final MerkleTree merkleTree;
     
     public WeiShianClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
@@ -45,16 +43,50 @@ public class WeiShianClient extends Client {
               Config.NUM_PROCESSORS);
         
         this.lastChainHash = Config.DEFAULT_CHAINHASH;
+        this.merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
     }
-    
-    public String getLastChainHash() {
-        return lastChainHash;
+        
+    private boolean syncAttestation(Operation op) {
+        boolean success = true;
+        try (Socket socket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+            
+            Request req = new Request(op);
+
+            req.sign(keyPair);
+
+            Utils.send(out, req.toString());
+            
+            String roothash = Utils.receive(in);
+            
+            if ( roothash.equals(Config.EMPTY_STRING) ) {
+                return false;
+            }
+            
+            
+            
+            
+            
+            String lastCH = Utils.receive(in);
+            
+            
+
+            socket.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        return success;
     }
     
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException, IllegalAccessException {
-        //! update roothash and last attestation from sync. server
+        if (op.getType() == OperationType.AUDIT) {
+            return;
+        }
+        
+        syncAttestation(new Operation(OperationType.DOWNLOAD,"",""));
         
         Request req = new Request(op);
 
@@ -72,9 +104,9 @@ public class WeiShianClient extends Client {
             throw new SignatureException("ACK validation failure");
         }
 
-        String result = ack.getResult();
+        String roothash = ack.getRoothash();
+        String fileHash = ack.getFileHash();
         String chainHash = ack.getChainHash();
-        String fname = "";
 
         if (!chainHash.equals(lastChainHash)) {
             throw new IllegalAccessException("Chain hash mismatch");
@@ -86,18 +118,13 @@ public class WeiShianClient extends Client {
         
         switch (op.getType()) {
             case UPLOAD:
-                //! update merkletree
-                //! check roothash
+                merkleTree.update(op.getPath(), fileHash);
+                if (!roothash.equals(merkleTree.getRootHash())) {
+                    System.err.println(Config.UPLOAD_FAIL);
+                }
                 break;
             case DOWNLOAD:
-                //! check roothash
-                //! check file hash
-                fname = "-" + System.currentTimeMillis();
-            case AUDIT:
-                fname = String.format("%s/%s%s",
-                            service.Config.DOWNLOADS_DIR_PATH,
-                            op.getPath(),
-                            fname);
+                String fname = service.Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath() + "-" + System.currentTimeMillis();
 
                 File file = new File(fname);
 
@@ -105,28 +132,31 @@ public class WeiShianClient extends Client {
 
                 String digest = Utils.digest(file);
 
-                if (result.equals(digest)) {
-                    result = "download success";
-                } else {
-                    result = "download file digest mismatch";
+                if (!(roothash.equals(merkleTree.getRootHash()) && 
+                      fileHash.equals(digest))) {
+                    System.err.println(Config.DOWNLOAD_FAIL);
                 }
 
                 break;
+            default:
+                System.err.println(Config.OP_TYPE_MISMATCH);
         }
 
         long start = System.currentTimeMillis();
-        //! update sync. to last attestation and roothash
-        Utils.write(ATTESTATION, ack.toString());
+        syncAttestation(new Operation(OperationType.UPLOAD,"",""));
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
 
     @Override
     public String getHandlerAttestationPath() {
-        return WeiShianHandler.ATTESTATION.getPath();
+        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
     public boolean audit(File spFile) {
+        return syncAttestation(new Operation(OperationType.DOWNLOAD,"",""));
+        
+        
         boolean success = true;
         PublicKey spKey = spKeyPair.getPublic();
         PublicKey cliKey = keyPair.getPublic();

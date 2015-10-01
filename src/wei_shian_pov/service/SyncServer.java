@@ -21,15 +21,15 @@ import wei_shian_pov.message.twostep.voting.*;
  * @author chienweichih
  */
 public class SyncServer implements ConnectionHandler {
-    private static Acknowledgement lastAck;
     private static String roothash;
+    private static String lastChainHash;
     private static final ReentrantLock LOCK;
         
     private final Socket socket;
     
     static {
-        lastAck = null;
         roothash = null;
+        lastChainHash = null;
         LOCK = new ReentrantLock();
     }
     
@@ -51,7 +51,7 @@ public class SyncServer implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            if (lastAck == null || roothash == null) {
+            if (lastChainHash == null || roothash == null) {
                 Utils.send(out, Config.EMPTY_STRING);
                 socket.close();
                 return;
@@ -61,12 +61,12 @@ public class SyncServer implements ConnectionHandler {
             
             switch (op.getType()) {
                 case DOWNLOAD:
-                    Utils.send(out, lastAck.toString());
                     Utils.send(out, roothash);
+                    Utils.send(out, lastChainHash);
                     break;
                 case UPLOAD:
-                    lastAck = Acknowledgement.parse(Utils.receive(in));
                     roothash = Utils.receive(in);
+                    lastChainHash = Utils.receive(in);
                 default:
                     Utils.send(out, Config.EMPTY_STRING);
             }
