@@ -3,7 +3,9 @@ package wei_shian_pov.service.handler.twostep;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -37,7 +39,7 @@ public class WeiShianHandler implements ConnectionHandler {
     static {
         merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
         HashingChain = new LinkedList<>();
-        HashingChain.add(service.Config.DEFAULT_CHAINHASH);
+        HashingChain.add(Config.DEFAULT_CHAINHASH);
         
         LOCK = new ReentrantLock();
     }
@@ -70,7 +72,7 @@ public class WeiShianHandler implements ConnectionHandler {
             
             switch (op.getType()) {
                 case DOWNLOAD:
-                    file = new File(service.Config.DATA_DIR_PATH + op.getPath());
+                    file = new File(Config.DATA_DIR_PATH + op.getPath());
                     
                     result = merkleTree.getRootHash();
                     digest = Utils.digest(file);
@@ -79,7 +81,7 @@ public class WeiShianHandler implements ConnectionHandler {
 
                     break;
                 case UPLOAD:
-                    file = new File(service.Config.DOWNLOADS_DIR_PATH + op.getPath());
+                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     
                     Utils.receive(in, file);
 
@@ -95,7 +97,7 @@ public class WeiShianHandler implements ConnectionHandler {
                     
                     break;
                 case AUDIT:
-                    file = new File(service.Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "WeiShian");
+                    file = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "WeiShian");
                     
                     String attP = op.getMessage();
                     
@@ -105,9 +107,18 @@ public class WeiShianHandler implements ConnectionHandler {
                             break;
                         }
                     }
-                    Utils.write(file, Config.EMPTY_STRING);
+                    
+                    LinkedList<String> tempCH = new LinkedList<>();
                     while (li.hasNext()) {
-                        Utils.append(file, (String) li.next());
+                        tempCH.add((String) li.next());
+                    }
+                    
+                    try (FileOutputStream fout = new FileOutputStream(file);
+                         ObjectOutputStream oos = new ObjectOutputStream(fout)) {   
+                        oos.writeObject(tempCH);
+                        oos.close();
+                    } catch (IOException ex) {
+                        Logger.getLogger(MerkleTree.class.getName()).log(Level.SEVERE, null, ex);
                     }
                     
                     result = merkleTree.getRootHash();

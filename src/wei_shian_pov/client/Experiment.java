@@ -7,9 +7,11 @@ import java.util.List;
 import java.util.Map;
 
 import client.Client;
+import java.io.File;
 import message.Operation;
 import message.OperationType;
 import utility.Utils;
+import wei_shian_pov.service.Config;
 
 /**
  *
@@ -32,12 +34,26 @@ public class Experiment {
         List<Operation> ops = new ArrayList<>();
         
         service.File[] files = new service.File[] { service.File.HUNDRED_KB };
+        final String testFileName = //File.separator + "folder1" + File.separator + "small_1.txt";
+//                                    File.separator + "folder3" + File.separator + "2011.rmvb";
+                
+                                    File.separator + "testing result" + 
+                                    File.separator + "DeadLock1" + 
+                                    File.separator + "DeadLock" + 
+                                    File.separator + "DeadLock(0).txt";
+//
+//                                    File.separator + "My courses" +
+//                                    File.separator + "System Software" +
+//                                    File.separator + "Slice from NCU" +
+//                                    File.separator + "chap_01.pps";
         
         for (service.File file : files) {
-            ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), ""));
+            ops.add(new Operation(OperationType.DOWNLOAD,
+                                  testFileName,
+                                  Config.EMPTY_STRING));
 //            ops.add(new Operation(OperationType.UPLOAD,
-//                    file.getName(),
-//                    Utils.readDigest(file.getPath())));
+//                                  testFileName,
+//                                  Utils.digest(new File(Config.DATA_DIR_PATH + testFileName))));
         }
         
         for (Map.Entry<String, Client> client : clients.entrySet()) {

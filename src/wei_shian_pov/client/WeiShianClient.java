@@ -1,19 +1,21 @@
 package wei_shian_pov.client;
 
-import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
-import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import client.Client;
+import java.io.FileInputStream;
+import java.io.ObjectInputStream;
+import java.security.PublicKey;
+import java.util.LinkedList;
+import java.util.ListIterator;
 import message.Operation;
 import message.OperationType;
 import utility.Utils;
@@ -46,7 +48,7 @@ public class WeiShianClient extends Client {
         this.merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
     }
         
-    private boolean syncAttestation(Operation op) {
+    private boolean syncAtts(Operation op) {
         boolean success = true;
         try (Socket socket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
              DataOutputStream out = new DataOutputStream(socket.getOutputStream());
@@ -58,19 +60,31 @@ public class WeiShianClient extends Client {
 
             Utils.send(out, req.toString());
             
+            if (op.getType() == OperationType.UPLOAD) {
+                Utils.send(out, this.merkleTree.getRootHash());
+                Utils.send(out, this.lastChainHash);
+            }
+            
             String roothash = Utils.receive(in);
             
-            if ( roothash.equals(Config.EMPTY_STRING) ) {
+            if (roothash.equals(Config.EMPTY_STRING)) {
+                if (op.getType() == OperationType.UPLOAD) {
+                    return true;
+                }
                 return false;
             }
             
-            
-            
-            
-            
             String lastCH = Utils.receive(in);
             
+            if (!lastCH.equals(this.lastChainHash)) {
+                File updateFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + getHandlerAttestationPath());
+                execute(new Operation(OperationType.AUDIT, Config.EMPTY_STRING, Config.EMPTY_STRING));
+                success &= updateAtts(updateFile);
+            }
             
+            if (!roothash.equals(this.merkleTree.getRootHash())) {
+                System.err.println("Sync Error");
+            }
 
             socket.close();
         } catch (IOException ex) {
@@ -79,14 +93,54 @@ public class WeiShianClient extends Client {
         return success;
     }
     
+    private boolean updateAtts(File spFile) {
+        boolean success = true;
+        PublicKey spKey = spKeyPair.getPublic();
+        PublicKey cliKey = keyPair.getPublic();
+        
+        try (FileInputStream fin = new FileInputStream(spFile);
+             ObjectInputStream ois = new ObjectInputStream(fin)) {
+            LinkedList<String> tempCH = (LinkedList<String>) ois.readObject();
+            ois.close();
+            
+            ListIterator li = tempCH.listIterator();
+            while (success && li.hasNext()) {
+                Acknowledgement ack = Acknowledgement.parse((String) li.next());
+                Request req = ack.getRequest();
+                
+                if (lastChainHash.equals(ack.getChainHash())) {
+                    lastChainHash = Utils.digest(ack.toString());
+                } else {
+                    success = false;
+                }
+
+                if (req.getOperation().getType() == OperationType.UPLOAD) {
+                    Operation op = req.getOperation();
+                    this.merkleTree.update(op.getPath(), op.getMessage());
+                }
+                
+                success &= ack.validate(spKey) & req.validate(cliKey);
+            }
+        } catch (IOException | ClassNotFoundException ex) {
+            success = false;
+            
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+
+        return success;
+    }
+    
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException, IllegalAccessException {
         if (op.getType() == OperationType.AUDIT) {
-            return;
+            op = new Operation(op.getType(), op.getPath(), this.lastChainHash);
+        } else {
+            boolean success = syncAtts(new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING));
+            if (!success) {
+                System.err.println("Sync Error");
+            }
         }
-        
-        syncAttestation(new Operation(OperationType.DOWNLOAD,"",""));
         
         Request req = new Request(op);
 
@@ -107,6 +161,7 @@ public class WeiShianClient extends Client {
         String roothash = ack.getRoothash();
         String fileHash = ack.getFileHash();
         String chainHash = ack.getChainHash();
+        String fname = "";
 
         if (!chainHash.equals(lastChainHash)) {
             throw new IllegalAccessException("Chain hash mismatch");
@@ -124,7 +179,13 @@ public class WeiShianClient extends Client {
                 }
                 break;
             case DOWNLOAD:
-                String fname = service.Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath() + "-" + System.currentTimeMillis();
+                fname = "-" + System.currentTimeMillis();
+            case AUDIT:
+                fname = String.format("%s%s%s%s",
+                            Config.DOWNLOADS_DIR_PATH,
+                            File.separator,
+                            op.getPath(),
+                            fname);
 
                 File file = new File(fname);
 
@@ -132,8 +193,7 @@ public class WeiShianClient extends Client {
 
                 String digest = Utils.digest(file);
 
-                if (!(roothash.equals(merkleTree.getRootHash()) && 
-                      fileHash.equals(digest))) {
+                if (!fileHash.equals(digest)) {
                     System.err.println(Config.DOWNLOAD_FAIL);
                 }
 
@@ -143,49 +203,22 @@ public class WeiShianClient extends Client {
         }
 
         long start = System.currentTimeMillis();
-        syncAttestation(new Operation(OperationType.UPLOAD,"",""));
+        if (op.getType() != OperationType.AUDIT) {
+            boolean success = syncAtts(new Operation(OperationType.UPLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING));
+            if (!success) {
+                System.err.println("Sync Error");
+            }
+        }
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
 
     @Override
     public String getHandlerAttestationPath() {
-        throw new UnsupportedOperationException("Not supported.");
+        return "WeiShianUpdate";
     }
 
     @Override
     public boolean audit(File spFile) {
-        return syncAttestation(new Operation(OperationType.DOWNLOAD,"",""));
-        
-        
-        boolean success = true;
-        PublicKey spKey = spKeyPair.getPublic();
-        PublicKey cliKey = keyPair.getPublic();
-        
-        //! need to change, wei shian's different.
-        try (FileReader fr = new FileReader(spFile);
-             BufferedReader br = new BufferedReader(fr)) {
-            String chainhash = service.Config.DEFAULT_CHAINHASH;
-            
-            do {
-                String s = br.readLine();
-                
-                Acknowledgement ack = Acknowledgement.parse(s);
-                Request req = ack.getRequest();
-                
-                if (chainhash.compareTo(ack.getChainHash()) == 0) {
-                    chainhash = Utils.digest(ack.toString());
-                } else {
-                    success = false;
-                }
-                
-                success &= ack.validate(spKey) & req.validate(cliKey);
-            } while (success && chainhash.compareTo(lastChainHash) != 0);
-        } catch (NullPointerException | IOException ex) {
-            success = false;
-            
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        
-        return success;
+        return syncAtts(new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING));
     }
 }
