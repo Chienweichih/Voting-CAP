@@ -31,7 +31,7 @@ public class SyncServer implements ConnectionHandler {
     
     static {
         roothash = new MerkleTree(new File(Config.DATA_DIR_PATH)).getRootHash();
-        lastChainHash = Config.DEFAULT_CHAINHASH;
+        lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
         LOCK = new ReentrantLock();
     }
     
@@ -48,7 +48,6 @@ public class SyncServer implements ConnectionHandler {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
-            System.out.println("LOCK");
             
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
@@ -83,7 +82,6 @@ public class SyncServer implements ConnectionHandler {
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();
-                System.out.println("UNLOCK");
             }
         }
     }

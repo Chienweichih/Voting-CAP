@@ -17,6 +17,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.Operation;
+import message.OperationType;
 import service.handler.ConnectionHandler;
 import voting_pov.utility.MerkleTree;
 import voting_pov.utility.Utils;
@@ -103,7 +104,9 @@ public class WeiShianHandler implements ConnectionHandler {
                     
                     ListIterator li = ACKChain.listIterator(ACKChain.size());
                     while (li.hasPrevious()) {
-                        if (attP.equals(li.previous())) {
+                        String prevHash = Utils.digest((String) li.previous());
+                        if (attP.equals(prevHash)) {
+                            li.next();
                             break;
                         }
                     }
@@ -138,7 +141,10 @@ public class WeiShianHandler implements ConnectionHandler {
             
             Utils.send(out, ack.toString());
             
-            ACKChain.add(ack.toString());
+            if (op.getType() == OperationType.DOWNLOAD ||
+                op.getType() == OperationType.UPLOAD) {
+                ACKChain.add(ack.toString());
+            }
             
             if (sendFileAfterAck) {
                 Utils.send(out, file);
