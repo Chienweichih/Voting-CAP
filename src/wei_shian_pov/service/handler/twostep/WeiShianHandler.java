@@ -30,7 +30,7 @@ import wei_shian_pov.service.Config;
 public class WeiShianHandler implements ConnectionHandler {
     
     private static final MerkleTree merkleTree;
-    private static final LinkedList<String> HashingChain;
+    private static final LinkedList<String> ACKChain;
     private static final ReentrantLock LOCK;
     
     private final Socket socket;
@@ -38,8 +38,8 @@ public class WeiShianHandler implements ConnectionHandler {
     
     static {
         merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
-        HashingChain = new LinkedList<>();
-        HashingChain.add(Config.DEFAULT_CHAINHASH);
+        ACKChain = new LinkedList<>();
+        ACKChain.add(Config.DEFAULT_CHAINHASH);
         
         LOCK = new ReentrantLock();
     }
@@ -101,7 +101,7 @@ public class WeiShianHandler implements ConnectionHandler {
                     
                     String attP = op.getMessage();
                     
-                    ListIterator li = HashingChain.listIterator(HashingChain.size());
+                    ListIterator li = ACKChain.listIterator(ACKChain.size());
                     while (li.hasPrevious()) {
                         if (attP.equals(li.previous())) {
                             break;
@@ -132,13 +132,13 @@ public class WeiShianHandler implements ConnectionHandler {
                     digest = Config.OP_TYPE_MISMATCH;
             }
             
-            Acknowledgement ack = new Acknowledgement(result, digest, req, Utils.digest(HashingChain.getLast()));
+            Acknowledgement ack = new Acknowledgement(result, digest, req, Utils.digest(ACKChain.getLast()));
             
             ack.sign(keyPair);
             
             Utils.send(out, ack.toString());
             
-            HashingChain.add(ack.toString());
+            ACKChain.add(ack.toString());
             
             if (sendFileAfterAck) {
                 Utils.send(out, file);

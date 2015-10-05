@@ -29,13 +29,20 @@ import wei_shian_pov.service.Config;
  */
 public class WeiShianClient extends Client {
     private static final Logger LOGGER;
+    private static final Operation DOWNLOAD;
+    private static final Operation UPLOAD;
+    
+    private static String lastChainHash;
+    private static final MerkleTree merkleTree;
     
     static {
         LOGGER = Logger.getLogger(WeiShianClient.class.getName());
+        DOWNLOAD = new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
+        UPLOAD = new Operation(OperationType.UPLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
+        
+        lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+        merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
     }
-    
-    private String lastChainHash;
-    private final MerkleTree merkleTree;
     
     public WeiShianClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
@@ -43,9 +50,6 @@ public class WeiShianClient extends Client {
               keyPair,
               spKeyPair,
               Config.NUM_PROCESSORS);
-        
-        this.lastChainHash = Config.DEFAULT_CHAINHASH;
-        this.merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
     }
         
     private boolean syncAtts(Operation op) {
@@ -67,18 +71,20 @@ public class WeiShianClient extends Client {
             
             String roothash = Utils.receive(in);
             
-            if (roothash.equals(Config.EMPTY_STRING)) {
-                if (op.getType() == OperationType.UPLOAD) {
+            switch (roothash) {
+                case Config.EMPTY_STRING:
                     return true;
-                }
-                return false;
+                case Config.OP_TYPE_MISMATCH:
+                    return false;
             }
             
             String lastCH = Utils.receive(in);
             
             if (!lastCH.equals(this.lastChainHash)) {
+                Operation auditOP = new Operation(OperationType.AUDIT, Config.EMPTY_STRING, Config.EMPTY_STRING);
+                execute(auditOP);
+                
                 File updateFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + getHandlerAttestationPath());
-                execute(new Operation(OperationType.AUDIT, Config.EMPTY_STRING, Config.EMPTY_STRING));
                 success &= updateAtts(updateFile);
             }
             
@@ -133,21 +139,21 @@ public class WeiShianClient extends Client {
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException, IllegalAccessException {
-        if (op.getType() == OperationType.AUDIT) {
-            op = new Operation(op.getType(), op.getPath(), this.lastChainHash);
-        } else {
-            boolean success = syncAtts(new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING));
-            if (!success) {
-                System.err.println("Sync Error");
-            }
-        }
+//        if (op.getType() == OperationType.AUDIT) {
+//            op = new Operation(op.getType(), op.getPath(), this.lastChainHash);
+//        } else {
+//            boolean success = syncAtts(DOWNLOAD);
+//            if (!success) {
+//                System.err.println("Sync Error");
+//            }
+//        }
         
         Request req = new Request(op);
 
         req.sign(keyPair);
-
+        
         Utils.send(out, req.toString());
-
+        
         if (op.getType() == OperationType.UPLOAD) {
             Utils.send(out, new File(Config.DATA_DIR_PATH + File.separator + op.getPath()));
         }
@@ -164,6 +170,8 @@ public class WeiShianClient extends Client {
         String fname = "";
 
         if (!chainHash.equals(lastChainHash)) {
+            System.out.println(chainHash);
+            System.out.println(lastChainHash);
             throw new IllegalAccessException("Chain hash mismatch");
         }
 
@@ -203,12 +211,12 @@ public class WeiShianClient extends Client {
         }
 
         long start = System.currentTimeMillis();
-        if (op.getType() != OperationType.AUDIT) {
-            boolean success = syncAtts(new Operation(OperationType.UPLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING));
-            if (!success) {
-                System.err.println("Sync Error");
-            }
-        }
+//        if (op.getType() != OperationType.AUDIT) {
+//            boolean success = syncAtts(UPLOAD);
+//            if (!success) {
+//                System.err.println("Sync Error");
+//            }
+//        }
         this.attestationCollectTime += System.currentTimeMillis() - start;
     }
 
@@ -219,6 +227,9 @@ public class WeiShianClient extends Client {
 
     @Override
     public boolean audit(File spFile) {
-        return syncAtts(new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING));
+        boolean success = true;
+//        success &= syncAtts(DOWNLOAD);
+//        success &= syncAtts(UPLOAD);
+        return success;
     }
 }

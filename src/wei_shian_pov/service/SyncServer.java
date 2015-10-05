@@ -2,6 +2,7 @@ package wei_shian_pov.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
@@ -11,9 +12,10 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import message.Operation;
+import message.OperationType;
 import service.handler.ConnectionHandler;
 import utility.Utils;
+import voting_pov.utility.MerkleTree;
 import wei_shian_pov.message.twostep.voting.*;
 
 /**
@@ -28,8 +30,8 @@ public class SyncServer implements ConnectionHandler {
     private final Socket socket;
     
     static {
-        roothash = null;
-        lastChainHash = null;
+        roothash = new MerkleTree(new File(Config.DATA_DIR_PATH)).getRootHash();
+        lastChainHash = Config.DEFAULT_CHAINHASH;
         LOCK = new ReentrantLock();
     }
     
@@ -46,30 +48,34 @@ public class SyncServer implements ConnectionHandler {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
+            System.out.println("LOCK");
             
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
             }
             
-            if (lastChainHash == null || roothash == null) {
-                Utils.send(out, Config.EMPTY_STRING);
-                socket.close();
+            if (req.getOperation().getType() != OperationType.DOWNLOAD) {
+                Utils.send(out, Config.OP_TYPE_MISMATCH);
                 return;
             }
             
-            Operation op = req.getOperation();
+            Utils.send(out, roothash);
+            Utils.send(out, lastChainHash);
             
-            switch (op.getType()) {
-                case DOWNLOAD:
-                    Utils.send(out, roothash);
-                    Utils.send(out, lastChainHash);
-                    break;
-                case UPLOAD:
-                    roothash = Utils.receive(in);
-                    lastChainHash = Utils.receive(in);
-                default:
-                    Utils.send(out, Config.EMPTY_STRING);
+            req = Request.parse(Utils.receive(in));
+            
+            if (!req.validate(clientPubKey)) {
+                throw new SignatureException("REQ validation failure");
             }
+            
+            if (req.getOperation().getType() != OperationType.UPLOAD) {
+                Utils.send(out, Config.OP_TYPE_MISMATCH);
+                return;
+            }
+            
+            roothash = Utils.receive(in);
+            lastChainHash = Utils.receive(in);
+            Utils.send(out, Config.EMPTY_STRING);
             
             socket.close();
         } catch (IOException | SignatureException ex) {
@@ -77,6 +83,7 @@ public class SyncServer implements ConnectionHandler {
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();
+                System.out.println("UNLOCK");
             }
         }
     }
