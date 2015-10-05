@@ -283,8 +283,18 @@ public class WeiShianClient extends Client {
     @Override
     public boolean audit(File spFile) {
         boolean success = true;
-//        success &= syncAtts(DOWNLOAD);
-//        success &= syncAtts(UPLOAD);
+        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+            
+            //lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+            success &= syncAtts(DOWNLOAD, syncOut, SyncIn);
+            success &= syncAtts(UPLOAD, syncOut, SyncIn);
+            
+            syncSocket.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
         return success;
     }
 }
