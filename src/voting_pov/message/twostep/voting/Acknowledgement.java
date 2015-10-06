@@ -1,5 +1,6 @@
 package voting_pov.message.twostep.voting;
 
+import java.io.Serializable;
 import message.SOAPMessage;
 import org.w3c.dom.NodeList;
 

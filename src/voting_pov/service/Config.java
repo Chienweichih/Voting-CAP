@@ -7,11 +7,15 @@ import java.io.File;
  * @author chienweichih
  */
 public interface Config extends service.Config {
+    public String SYNC_HOSTNAME = "localhost";
+    
     public int VOTING_SERVICE_PORT_1 = 3011;
     public int VOTING_SERVICE_PORT_2 = 3012;
     public int VOTING_SERVICE_PORT_3 = 3013;
     public int VOTING_SERVICE_PORT_4 = 3014;
     public int VOTING_SERVICE_PORT_5 = 3015;
+    
+    public int VOTING_SYNC_PORT = 3016;
     
     public String DATA_DIR_PATH = ".." + File.separator + "Accounts" + File.separator + "Account A";
     

@@ -85,5 +85,4 @@ public class SyncServer implements ConnectionHandler {
             }
         }
     }
-    
 }

@@ -24,6 +24,8 @@ public class SocketServer extends service.SocketServer {
         new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_4).start();
         new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_5).start();
         
+        new SocketServer(SyncServer.class, Config.VOTING_SYNC_PORT).start();
+        
         System.out.println("Ready to go!");
     }
 }
