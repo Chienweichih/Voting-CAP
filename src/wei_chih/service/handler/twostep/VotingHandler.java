@@ -16,6 +16,7 @@ import message.Operation;
 import service.handler.ConnectionHandler;
 import wei_chih.message.twostep.voting.*;
 import wei_chih.service.Config;
+import wei_chih.service.SocketServer;
 import wei_chih.utility.*;
 
 /**
@@ -32,7 +33,7 @@ public class VotingHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
+        merkleTree = new MerkleTree(new File(SocketServer.dataDirPath));
         digestBeforeUpdate = "";
         lastOP = null;
         LOCK = new ReentrantLock();
@@ -67,7 +68,7 @@ public class VotingHandler implements ConnectionHandler {
             
             switch (op.getType()) {
                 case DOWNLOAD:
-                    file = new File(Config.DATA_DIR_PATH + op.getPath());
+                    file = new File(SocketServer.dataDirPath + op.getPath());
                     
                     if (op.getMessage().equals(Config.EMPTY_STRING)) {
                        updateLastOP = true;

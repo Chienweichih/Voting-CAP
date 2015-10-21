@@ -22,6 +22,7 @@ import message.Operation;
 import message.OperationType;
 import wei_shian.message.twostep.voting.*;
 import wei_shian.service.Config;
+import wei_shian.service.SocketServer;
 
 /**
  *
@@ -50,7 +51,7 @@ public class WeiShianClient extends Client {
         
         lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
         long time = System.currentTimeMillis();
-        merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
+        merkleTree = new MerkleTree(new File(SocketServer.dataDirPath));
         System.out.println("MerkleTree Construct Time: " + (System.currentTimeMillis() - time));
     }
         
@@ -165,7 +166,7 @@ public class WeiShianClient extends Client {
             Utils.send(out, req.toString());
 
             if (op.getType() == OperationType.UPLOAD) {
-                Utils.send(out, new File(Config.DATA_DIR_PATH + File.separator + op.getPath()));
+                Utils.send(out, new File(SocketServer.dataDirPath + File.separator + op.getPath()));
             }
 
             Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
