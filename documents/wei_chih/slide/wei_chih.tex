@@ -83,7 +83,7 @@
 \graphicspath{{fig/}}
 
 %First page
-\title[Progress Report]{Title need to change}
+\title[Progress Report]{Instant Auditing of Cloud Storage Access without Accumulating Attestations}
 
 \author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang\\ Student : Wei-Chih Chien}
 
@@ -116,7 +116,7 @@
 	\end{center}
 \end{frame}
 
-\begin{frame}{Scenario (CON'T)}{Why Real-time Auditing?}
+\begin{frame}{Scenario (CON'T)}{Problems}
 	\begin{minipage}{.49\hsize}
 	\begin{center}
 	\includegraphics[width=.75\textwidth]{Scenario2.png}
@@ -259,58 +259,24 @@
 \section{Experimental Results}
 \begin{frame}{Create Merkle Tree}
 	\begin{center}
-	Do it again.\\
 	\begin{tabu}{cccc}
-	\rowfont{\color{blue} \scriptsize} {Account A} & {666 MB}  & {42 files}     & {6 directories}    \\
-	\rowfont{\color{blue} \scriptsize} {Account B} & {34 MB}   & {54192 files}  & {188 directories}  \\
-	\rowfont{\color{blue} \scriptsize} {Account C} & {6.54 GB} & {58484 files}  & {1718 directories} \\
-	\rowfont{\color{blue} \scriptsize} {Account D} & {20.6 GB} & {175389 files} & {5154 directories} \\
+	\rowfont{\color{blue} \scriptsize} {Account A} & {666 MB}  & {42 files}     & {6 directories} \\
 	\end{tabu}
 	\end{center}
 	\begin{table}[]
 	\centering
 	\captionsetup{justification=centering}
-	\caption{\tiny TIMES REQUIRED TO GENERATE THE ROOT HASH FROM NOT-HASHED FILES (IN SECONDS)}
-	\begin{tabular}{|c|c|c|c|}
+	\caption{\tiny THE EXECUTION TIME OF FOLLOWING OPERATIONS (IN MS)}
+	\begin{tabular}{|l|c|c|c|}
 	\hline
-	{\bf Account} & {\bf Senior}  & {\bf My}      & {\bf MerkleTree Size} \\ \hline
-	{\bf A}       & {\it 3.404}   & {\it 3.645}   & {3.74 KB}             \\ \hline
-	{\bf B}       & {\it 16.618}  & {\it 7.669}   & {3.77 MB}             \\ \hline
-	{\bf C}       & {\it 229.351} & {\it 242.198} & {4.30 MB}             \\ \hline
-	{\bf D}       & {\it }        & {\it 815.408} & {12.9 MB}             \\ \hline
+	{\bf Operations}			  		  & {\bf Senior} & {\bf My}   \\ \hline
+	{\bf Request 100 times DOWNLOAD}	  & {\it 6332}   & {\it 6609} \\ \hline
+	{\bf Request 100 times UPLOAD}	  & {\it 4271}   & {\it 3054} \\ \hline
+	{\bf Audit after Download}		  & {\it 48}     & {\it 12}   \\ \hline
+	{\bf Audit after Upload}			  & {\it 46}     & {\it 5}    \\ \hline
 	\end{tabular}\\
 	\end{table}
-\end{frame}
-\begin{frame}{Operation Processing Time}
-	\begin{table}[]
-	\makebox[0pt][c]{\parbox{\textwidth}{%
-	\begin{minipage}{.47\hsize}
-	\captionsetup{justification=centering}
-	\caption{DOWNLOAD TIME (ms)}
-	\begin{tabu}{|c|c|c|}
-	\hline
-	\rowfont{\color{blue}} {\bf Account} & {\bf 100 times} & {\bf Audit$^*$} \\ \hline
-	\rowfont{\color{blue}} {\bf A}       & {\it 4635}      & {\it 34 + 0}    \\ \hline
-	\rowfont{\color{blue}} {\bf B}       & {\it 4660}      & {\it 33 + 0}    \\ \hline
-	\rowfont{\color{blue}} {\bf C}       & {\it 5429}      & {\it 31 + 0}    \\ \hline
-	\rowfont{\color{blue}} {\bf D}       & {\it 5554}      & {\it 31 + 0}    \\ \hline
-	\end{tabu}
-	\end{minipage}
-	\begin{minipage}{.53\hsize}
-	\captionsetup{justification=centering}
-	\caption{UPLOAD TIME (ms)}
-	\begin{tabular}{|c|c|c|}
-	\hline
-	{\bf Account} & {\bf 100 times} & {\bf Audit$^*$}   \\ \hline
-	{\bf A}       & {\it 4322}      & {\it 41  + 7}     \\ \hline
-	{\bf B}       & {\it 5643}      & {\it 421 + 997}   \\ \hline
-	{\bf C}       & {\it 9236}      & {\it 421 + 2621}  \\ \hline
-	{\bf D}       & {\it 11466}     & {\it 1263 + 8085} \\ \hline
-	\end{tabular}
-	\end{minipage}
-	}}
-	\footnote{* download attestations time + audit time}
-	\end{table}	
+	\footnote{Test File : 1644 byte}
 \end{frame}
 
 \section{Schedules}
@@ -329,7 +295,9 @@
 		\begin{itemize}
 			\item Attestation Chain Implements.
 		\end{itemize}
-	\item \alert{Design Different Experiments.}
+	\item \alert{Network Problems.}
+	\item \alert{VM Problems.}
+	\item Design Different Experiments.
 	\end{enumerate}
 \end{frame}
 
