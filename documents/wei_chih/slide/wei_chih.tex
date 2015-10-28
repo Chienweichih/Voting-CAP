@@ -83,13 +83,13 @@
 \graphicspath{{fig/}}
 
 %First page
-\title[Progress Report]{Instant Auditing of Cloud Storage Access without Accumulating Attestations}
+\title[Progress Report]{Title need to change}
 
 \author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang\\ Student : Wei-Chih Chien}
 
 \institute[NTNU CSIE CCLAB]{NTNU CSIE CCLAB}
 
-\date{2015.09.02}
+\date{2015.10.29}
 
 \AtBeginSection[]
 {
@@ -110,58 +110,66 @@
 \end{frame}
 
 \section{Scenario}
-\begin{frame}{Scenario}
+\begin{frame}{Scenario}{Why Real-time Auditing?}
 	\begin{center}
-	\includegraphics[width=.6\textwidth]{Scenario1.png}
+	\includegraphics[width=.4\textwidth]{Scenario1.png}
 	\end{center}
 \end{frame}
 
-\begin{frame}{Scenario - Backup}
+\begin{frame}{Scenario (CON'T)}{Why Real-time Auditing?}
+	\begin{minipage}{.49\hsize}
 	\begin{center}
-	\includegraphics[width=.9\textwidth]{Scenario2.png}
+	\includegraphics[width=.75\textwidth]{Scenario2.png}
 	\end{center}
-\end{frame}
-
-\begin{frame}{Scenario - POV}
+	\end{minipage}
+	\pause
+	\begin{minipage}{.49\hsize}
 	\begin{center}
 	\includegraphics[width=.95\textwidth]{Scenario3.png}
 	\end{center}
+	\end{minipage}
 \end{frame}
 
-\begin{frame}{Scenario - Problem \RNum{1} : Too Many Attestations}
+\section{Real-time Auditing Schemes}
+\subsection{\small{Intuitive Method}}
+\begin{frame}{Intuitive Method}
 	\begin{center}
-	\includegraphics[width=.7\textwidth]{Scenario4.png}
+	\includegraphics[width=.7\textwidth]{intuitive.png}
 	\end{center}
 \end{frame}
 
-\begin{frame}{Scenario - Problem \RNum{2} : Version Control is Difficult}
+\subsection{\small{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
+\begin{frame}{\normalsize{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
+{\tiny{2014 IEEE 6th International Conference on Cloud Computing Technology and Science}}
 	\begin{center}
-	\includegraphics[width=.8\textwidth]{Scenario5.png}
+	\includegraphics[width=.8\textwidth]{wei_shian.png}
 	\end{center}
+	\alert{Worst-case : 累積大量未更新的動作造成系統緩慢}
 \end{frame}
 
-\section{POV's Evolution}
-\subsection{Single Client and Service Provider}
-\begin{frame}{Single Client and Service Provider}
+\subsection{\small{My Method}}
+\begin{frame}{My Method}
 	\begin{center}
-	\includegraphics[width=.7\textwidth]{Case1.png}
+	\includegraphics[width=.8\textwidth]{wei_chih.png}
 	\end{center}
+	\color{blue} Assumption: $\text{同時有k個server上同一file出問題的機率} \approx 0$
 \end{frame}
 
-\subsection{Multiple Clients}
-\begin{frame}{Multiple Clients}{(\textit{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree})}
-	\begin{center}
-	\includegraphics[width=.8\textwidth]{Case2.png}
-	\end{center}
-	\alert{Worst-case : 很久沒更新而累積了大量的files update動作}
-\end{frame}
-
-\subsection{Reduce Device's Storage Usage}
-\begin{frame}{Reduce Device's Storage Usage}
-	\color{blue} Assumption: $\text{同時有k個server上同一file出問題的機率} \approx 0$\\\ \\
-	\begin{center}
-	\includegraphics[width=.8\textwidth]{Case3.png}
-	\end{center}
+\begin{frame}{Comparison}
+	\begin{itemize}
+		\item Pros
+			\begin{enumerate}
+				\item Service Provider 不用累積證據
+				\item Client 不用佔用空間儲存證據
+				\item 資料有多份備份
+				\item 花費較少的時間更新到最新的狀態
+			\end{enumerate}
+		\item Cons
+			\begin{enumerate}
+				\item 硬體成本較高
+				\item 需要處理多份 Response
+			\end{enumerate}
+	\end{itemize}
 \end{frame}
 
 \section{Protocol Detail}
@@ -198,33 +206,27 @@
 \begin{frame}{Initial}
 	\alert{File $\rightarrow$ Merkle Tree}\\
 	\begin{center}
-	\includegraphics[width=1\textwidth]{init.png}
+	\includegraphics[width=.8\textwidth]{init.png}
 	\end{center}
 \end{frame}
 
 \subsection{Read}
-\begin{frame}{READ}{\RNum{1}. 2-step Handshake}
+\begin{frame}{READ}{\RNum{1}. 2-step Handshake \& Voting}
 	\begin{center}
-	\includegraphics[width=.85\textwidth]{Read1.png}
+	\includegraphics[width=.8\textwidth]{Read1.png}
 	\end{center}
 \end{frame}
 
-\begin{frame}{READ}{\RNum{2}. Voting}
+\begin{frame}{READ}{\RNum{2}. Download}
 	\begin{center}
 	\includegraphics[width=.65\textwidth]{Read2.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{READ}{\RNum{3}. Download}
-	\begin{center}
-	\includegraphics[width=.85\textwidth]{Read3.png}
 	\end{center}
 \end{frame}
 
 \subsection{Write}
 \begin{frame}{WRITE}{\RNum{1}. Upload}
 	\begin{center}
-	\includegraphics[width=.95\textwidth]{Write1.png}
+	\includegraphics[width=.8\textwidth]{Write1.png}
 	\end{center}
 \end{frame}
 
@@ -236,56 +238,28 @@
 
 \begin{frame}{WRITE}{\RNum{3}. Voting}
 	\begin{center}
-	\includegraphics[width=.85\textwidth]{Write3.png}
+	\includegraphics[width=.7\textwidth]{Write3.png}
 	\end{center}
 \end{frame}
 
 \subsection{Audit}
-\begin{frame}{AUDIT}{\RNum{1}. Download and Check LastReq}
-	\begin{center}
-	\includegraphics[width=.85\textwidth]{Audit1.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{AUDIT}{\RNum{2}. Download Roothash or Merkle Tree}
-	\begin{center}
-	\includegraphics[width=.65\textwidth]{Audit2.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}[fragile]{AUDIT}{\RNum{3}. Auditing}
-	\begin{center}
-	\begin{minipage}{.9\hsize}
-	\begin{lstlisting}[mathescape, language=Java, caption=Audit algorithm]
-	AUDIT(lastAck)
-	$\tab{}$op $\leftarrow$ lastAck.req.op
-	$\tab{}$if op.type = DOWNLOAD
-	$\tab{}$$\tab{}$success $\leftarrow$ roothash.equals(lastAck.result)
-	$\tab{}$if op.type = UPLOAD
-	$\tab{}$$\tab{}$merkleTreeOld.update(op.msg)
-	$\tab{}$$\tab{}$success $\leftarrow$ roothash.equals(lastAck.result)
-	$\tab{}$return success
-	\end{lstlisting}
-	\end{minipage}
-	\end{center}
-\end{frame}
-
-\section{Implement Steps}
-\begin{frame}{Implement Steps}
+\begin{frame}{AUDIT}
 	\begin{enumerate}
-	{\color{blue}
-	\item Hash Handle : create, update, delete
-	\item Operation Handle : read, write, audit
-	\item File Transmit : send, receive
-	\item Merkle Tree Transmit : serialize}
-	\item \alert{\it Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}
-	\item Run on Real Cloud Environment (VM)
+		\item Device 向 \alert{Synchronization Server} 取得 Latest Ack.
+		\item Device 再向 \alert{Service Provider} 取得 前一版本的 Merkle Tree.
+		\item 使用 Step \RNum{1}. 的 Ack 包含的檔案 Hash 值\\
+			  來更新 Step \RNum{2}. 的 Merkle Tree.
+			  \begin{center}
+			  \includegraphics[width=.7\textwidth]{auditing.png}
+			  \end{center}
+		\item 比較 Device 自己算出的 Roothash 值是否和 Server 提供的相同.
 	\end{enumerate}
 \end{frame}
 
 \section{Experimental Results}
 \begin{frame}{Create Merkle Tree}
 	\begin{center}
+	Do it again.\\
 	\begin{tabu}{cccc}
 	\rowfont{\color{blue} \scriptsize} {Account A} & {666 MB}  & {42 files}     & {6 directories}    \\
 	\rowfont{\color{blue} \scriptsize} {Account B} & {34 MB}   & {54192 files}  & {188 directories}  \\
@@ -338,7 +312,27 @@
 	\footnote{* download attestations time + audit time}
 	\end{table}	
 \end{frame}
-	
+
+\section{Schedules}
+\begin{frame}{Schedules}
+	\begin{enumerate}
+	{\color{blue}
+	\item My Method Finished.
+		\begin{itemize}
+			\item Merkle Tree Implements.
+			\item Operation Handle (Read, Write and Audit).
+			\item File Transmit.
+			\item Object Transmit (Serialization).
+			\item Synchronization Server Implements.
+		\end{itemize}
+	\item Wei-Shian's Method Finished.}
+		\begin{itemize}
+			\item Attestation Chain Implements.
+		\end{itemize}
+	\item \alert{Design Different Experiments.}
+	\end{enumerate}
+\end{frame}
+
 \begin{frame}
 	\begin{center}
 	\includegraphics[width=\textwidth]{thank_you.jpg}
