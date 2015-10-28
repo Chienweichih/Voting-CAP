@@ -21,6 +21,7 @@ import message.OperationType;
 import service.handler.ConnectionHandler;
 import wei_shian.message.twostep.voting.*;
 import wei_shian.service.Config;
+import wei_shian.service.SocketServer;
 
 /**
  *
@@ -36,7 +37,7 @@ public class WeiShianHandler implements ConnectionHandler {
     private final KeyPair keyPair;
     
     static {
-        merkleTree = new MerkleTree(new File(Config.DATA_DIR_PATH));
+        merkleTree = new MerkleTree(new File(SocketServer.dataDirPath));
         ACKChain = new LinkedList<>();
         ACKChain.add(Config.DEFAULT_CHAINHASH);
         
@@ -71,7 +72,7 @@ public class WeiShianHandler implements ConnectionHandler {
             
             switch (op.getType()) {
                 case DOWNLOAD:
-                    file = new File(Config.DATA_DIR_PATH + op.getPath());
+                    file = new File(SocketServer.dataDirPath + op.getPath());
                     
                     result = merkleTree.getRootHash();
                     digest = Utils.digest(file);
