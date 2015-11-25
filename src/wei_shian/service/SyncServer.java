@@ -30,7 +30,7 @@ public class SyncServer implements ConnectionHandler {
     private final Socket socket;
     
     static {
-        roothash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
+        roothash = new MerkleTree(new File(Config.DATA_DIR_PATH)).getRootHash();
         lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
         LOCK = new ReentrantLock();
     }

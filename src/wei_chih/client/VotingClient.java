@@ -19,7 +19,6 @@ import message.Operation;
 import message.OperationType;
 import wei_chih.message.twostep.voting.*;
 import wei_chih.service.Config;
-import wei_chih.service.SocketServer;
 import wei_chih.service.SyncServer;
 import wei_chih.utility.*;
 
@@ -75,7 +74,7 @@ public class VotingClient extends Client {
         Utils.send(out, req.toString());
         
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
+            Utils.send(out, new File(Config.DATA_DIR_PATH + op.getPath()));
         }
         
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));

@@ -17,20 +17,20 @@ public interface Config extends service.Config {
     
     public final int VOTING_SYNC_PORT = 3016;
     
-    public String DATA_DIR_PATH = ".." + File.separator + "Accounts" + File.separator + "Account A";
+    public final String DATA_DIR_PATH = ".." + File.separator + "Accounts" + File.separator + "Account A";
     
-    public String TEST_FILE_NAME =  File.separator + "folder1" + File.separator + "small_1.txt";
-//                                    File.separator + "folder3" + File.separator + "2011.rmvb";
+    public final String TEST_FILE_NAME =    File.separator + "folder1" + File.separator + "small_1.txt";
+//                                            File.separator + "folder3" + File.separator + "2011.rmvb";
 //
-//                                    File.separator + "testing result" + 
-//                                    File.separator + "DeadLock1" + 
-//                                    File.separator + "DeadLock" + 
-//                                    File.separator + "DeadLock(0).txt";
-//
-//                                    File.separator + "My courses" +
-//                                    File.separator + "System Software" +
-//                                    File.separator + "Slice from NCU" +
-//                                    File.separator + "chap_01.pps";
+//                                            File.separator + "testing result" + 
+//                                            File.separator + "DeadLock1" + 
+//                                            File.separator + "DeadLock" + 
+//                                            File.separator + "DeadLock(0).txt";
+
+//                                            File.separator + "My courses" +
+//                                            File.separator + "System Software" +
+//                                            File.separator + "Slice from NCU" +
+//                                            File.separator + "chap_01.pps";
     
     public final String EMPTY_STRING = " ";
     public final String DOWNLOAD_FAIL = "download fail";
