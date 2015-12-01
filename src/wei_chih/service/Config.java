@@ -8,7 +8,7 @@ import java.io.File;
  */
 public interface Config extends service.Config {
     public String SERVICE_HOSTNAME = "localhost";
-    public String SYNC_HOSTNAME = "localhost";
+    public String SYNC_HOSTNAME = SERVICE_HOSTNAME;
     
     public int SERVICE_NUM = 3;
     public int SERVICE_PORT[] = {3000, 3001, 3002, 3003, 3004};

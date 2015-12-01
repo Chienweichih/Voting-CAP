@@ -38,13 +38,13 @@ public class Experiment {
                     testFileName = Config.DATA_D_TESTFILE;
                     break;
                 default:
-                    return;
             }
         }
         
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
         KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
         
+        Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
         final int runTimes = 100;
