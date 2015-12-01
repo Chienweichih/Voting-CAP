@@ -17,11 +17,32 @@ import wei_chih.utility.Utils;
  */
 public class Experiment {
     public static void main(String[] args) throws ClassNotFoundException {
-        String testFileName = Config.TEST_FILE_NAME;
-        if (args.length == 2) {
-            SocketServer.dataDirPath = args[0];
-            testFileName = args[1];
+        String testFileName = Config.DATA_TESTFILE;
+        
+        if (args.length == 1) {
+            switch (args[0].charAt(args[0].length() - 1)) {
+                case 'A':
+                    SocketServer.dataDirPath = Config.DATA_A_PATH;
+                    testFileName = Config.DATA_A_TESTFILE;
+                    break;
+                case 'B':
+                    SocketServer.dataDirPath = Config.DATA_B_PATH;
+                    testFileName = Config.DATA_B_TESTFILE;
+                    break;
+                case 'C':
+                    SocketServer.dataDirPath = Config.DATA_C_PATH;
+                    testFileName = Config.DATA_C_TESTFILE;
+                    break;
+                case 'D':
+                    SocketServer.dataDirPath = Config.DATA_D_PATH;
+                    testFileName = Config.DATA_D_TESTFILE;
+                    break;
+                default:
+                    return;
+            }
         }
+        
+        System.out.println(testFileName);
         
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
         KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
@@ -29,7 +50,6 @@ public class Experiment {
         Utils.cleanAllAttestations();
         
         final int runTimes = 100;
-
 
         System.out.println("\nVoting");
         System.out.println(SocketServer.dataDirPath);

@@ -17,7 +17,7 @@ import wei_shian.service.SocketServer;
  */
 public class Experiment {
     public static void main(String[] args) throws ClassNotFoundException {
-        String testFileName = Config.TEST_FILE_NAME;
+        String testFileName = Config.DATA_TESTFILE;
         if (args.length == 2) {
             SocketServer.dataDirPath = args[0];
             testFileName = args[1];
