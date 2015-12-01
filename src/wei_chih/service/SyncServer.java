@@ -29,8 +29,9 @@ public class SyncServer implements ConnectionHandler {
     public static final int[] SERVER_PORTS;
     public static final int SYNC_PORT;
     
-    private String rootHash;
-    private final Map<Integer, Acknowledgement> lastAcks;
+    private static String rootHash;
+    private static final Map<Integer, Acknowledgement> lastAcks;
+    
     private final Socket socket;
     
     static {
@@ -42,16 +43,16 @@ public class SyncServer implements ConnectionHandler {
         }
         
         SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
-    }
-    
-    public SyncServer(Socket socket, KeyPair keyPair) {
+        
         rootHash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
         
         lastAcks = new HashMap<>();
         for (int port : SERVER_PORTS) {
             lastAcks.put(port, null);
         }
-        
+    }
+    
+    public SyncServer(Socket socket, KeyPair keyPair) {
         this.socket = socket;
     }
     

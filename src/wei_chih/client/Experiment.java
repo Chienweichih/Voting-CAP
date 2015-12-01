@@ -42,8 +42,6 @@ public class Experiment {
             }
         }
         
-        System.out.println(testFileName);
-        
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
         KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
         
@@ -55,20 +53,20 @@ public class Experiment {
         System.out.println(SocketServer.dataDirPath);
         
         List<Operation> ops = new ArrayList<>();
-        ops.add(new Operation(OperationType.DOWNLOAD,
-                              testFileName,
-                              Config.EMPTY_STRING));
+        ops.add(new Operation(OperationType.UPLOAD,
+                testFileName,
+                Utils.digest(new File(SocketServer.dataDirPath + testFileName))));
         for (int i = 0;i < 4;++i) {
-            System.out.println("\nDOWNLOAD " + i);
+            System.out.println("\nUPLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(ops, runTimes);
         }
         
         ops = new ArrayList<>();
-        ops.add(new Operation(OperationType.UPLOAD,
-                testFileName,
-                Utils.digest(new File(SocketServer.dataDirPath + testFileName))));
+        ops.add(new Operation(OperationType.DOWNLOAD,
+                              testFileName,
+                              Config.EMPTY_STRING));
         for (int i = 0;i < 3;++i) {
-            System.out.println("\nUPLOAD " + i);
+            System.out.println("\nDOWNLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(ops, runTimes);
         }
     }
