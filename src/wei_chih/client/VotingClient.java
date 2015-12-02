@@ -19,6 +19,7 @@ import message.Operation;
 import message.OperationType;
 import wei_chih.message.twostep.voting.*;
 import wei_chih.service.Config;
+import wei_chih.service.SocketServer;
 import wei_chih.service.SyncServer;
 import wei_chih.utility.*;
 
@@ -33,33 +34,26 @@ public class VotingClient extends Client {
         LOGGER = Logger.getLogger(VotingClient.class.getName());
     }
     
-    private long serverProcessTime;
-    private long excuteTime;
-    
-    private final Map<Integer, String> roothashs;
-    private final Map<Integer, Acknowledgement> lastAcks;
-    private final Map<Integer, Acknowledgement> thisAcks;
-    private String result;
     private Acknowledgement acknowledgement;
+    
+    private String syncRootHash;
+    private final Map<Integer, Acknowledgement> syncAcks;
+    private final Map<Integer, Acknowledgement> acks;
     
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
-              Config.VOTING_SERVICE_PORT_1,
+              SyncServer.SYNC_PORT,
               keyPair,
               spKeyPair,
               Config.NUM_PROCESSORS);
         
-        serverProcessTime = 0;
-        excuteTime = 0;
+        syncRootHash = null;
+        syncAcks = new HashMap<>();
+        acks = new HashMap<>();
         
-        lastAcks = new HashMap<>();
-        thisAcks = new HashMap<>();
-        roothashs = new HashMap<>();
-        
-        for (int p : SyncServer.PORTS) {
-            lastAcks.put(p, null);
-            thisAcks.put(p, null);
-            roothashs.put(p, null);
+        for (int p : SyncServer.SERVER_PORTS) {
+            syncAcks.put(p, null);
+            acks.put(p, null);
         }
     }
         
@@ -67,32 +61,27 @@ public class VotingClient extends Client {
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
            throws SignatureException {
         Request req = new Request(op);
-
         req.sign(keyPair);
-
-        long start = System.currentTimeMillis();
         Utils.send(out, req.toString());
         
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(Config.DATA_DIR_PATH + op.getPath()));
+            Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
         }
         
-        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-        serverProcessTime += System.currentTimeMillis() - start;
-        ++excuteTime;
+        Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
 
-        if (!ack.validate(spKeyPair.getPublic())) {
+        if (!ackTemp.validate(spKeyPair.getPublic())) {
             throw new SignatureException("ACK validation failure");
         }
 
-        result = ack.getResult();
+        String result = ackTemp.getResult();
         if (result.equals(Config.AUDIT_FAIL) || 
             result.equals(Config.DOWNLOAD_FAIL) ||
             result.equals(Config.UPLOAD_FAIL)) {
             System.err.println(result);
         }
         
-        acknowledgement = ack;
+        acknowledgement = ackTemp;
         
         switch (op.getType()) {
             case DOWNLOAD:
@@ -100,51 +89,51 @@ public class VotingClient extends Client {
                     break;
                 }
             case AUDIT:
-                acknowledgement = null;
-                
                 File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-
                 Utils.receive(in, file);
-
-                String digest = Utils.digest(file);
-
-                if (result.equals(digest)) {
-                    result = "download success";
-                } else {
-                    result = "download file digest mismatch";
-                    System.err.println(result);
-                }
             break;
             default:
         }
     }
     
-    public final void execute(Operation op, String hostname, int port) {
-        try (Socket socket = new Socket(hostname, port);
-             DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
-            hook(op, socket, out, in);
-
-            switch (op.getType()) {
-                case DOWNLOAD:
-                    if (!op.getMessage().equals(Config.EMPTY_STRING)) {
-                        break;
-                    }
-                case UPLOAD:
-                    roothashs.replace(port, result);
-                    break;
-                default:
+    public final int execute(Operation op, int auditPort) {
+        if (op.getType() == OperationType.AUDIT) {
+            try (Socket socket = new Socket(hostname, auditPort);
+                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
+                hook(op, socket, out, in);
+                socket.close();
+            } catch (IOException | SignatureException ex) {
+                LOGGER.log(Level.SEVERE, null, ex);
             }
-
-            if (acknowledgement != null) {
-                lastAcks.replace(port, thisAcks.get(port));
-                thisAcks.replace(port, acknowledgement);
-            }
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
+            return -1;
         }
+        
+        Map<Integer, String> results = new HashMap<>();
+                
+        for (int p : SyncServer.SERVER_PORTS) {
+            try (Socket socket = new Socket(hostname, p);
+                 DataOutputStream out = new DataOutputStream(socket.getOutputStream());
+                 DataInputStream in = new DataInputStream(socket.getInputStream())) {
+                if (op.getType() == OperationType.DOWNLOAD &&
+                    p == SyncServer.SERVER_PORTS[0]) {
+                    // Download from one server
+                    op = new Operation(OperationType.DOWNLOAD,
+                                       op.getPath(),
+                                       syncRootHash);
+                }
+                hook(op, socket, out, in);
+
+                acks.replace(p, acknowledgement);
+                results.put(p, acknowledgement.getResult());
+                
+                socket.close();
+            } catch (IOException | SignatureException ex) {
+                LOGGER.log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        return voting(results);
     }
     
     @Override
@@ -155,42 +144,38 @@ public class VotingClient extends Client {
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
-                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.VOTING_SYNC_PORT);
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, SyncServer.SYNC_PORT);
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-                    Operation DOWNLOAD = new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
-                    Operation UPLOAD = new Operation(OperationType.UPLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
-                    boolean success = syncAtts(DOWNLOAD, syncOut, SyncIn);
-                    if (!success) {
+                    Operation op = operations.get(x % operations.size());
+                    
+                    boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
+                                                                 Config.EMPTY_STRING,
+                                                                 (op.getType() == OperationType.UPLOAD)? Config.EMPTY_STRING: "Download Please"), 
+                                                   syncOut, 
+                                                   SyncIn);
+                    if (!syncSuccess) {
                         System.err.println("Sync Error");
                     }
                     
-                    Operation op = operations.get(x % operations.size());
-                    for (int port_i : SyncServer.PORTS) {
-                        execute(op, hostname, port_i);
-                    }
-                    int diffPort = voting();
+                    int diffPort = execute(op, SyncServer.SERVER_PORTS[0]);
                     if (diffPort != -1) {
                         execute(new Operation(OperationType.AUDIT,
                                               File.separator + "ATT_FOR_AUDIT",
                                               Config.EMPTY_STRING),
-                                hostname,
                                 diffPort);
-                        boolean audit = audit(lastAcks.get(diffPort), thisAcks.get(diffPort));
+                        boolean audit = audit(diffPort, op, acks.get(diffPort).getResult());
                         System.out.println("Audit: " + audit);
                     }
                     
-                    if (op.getType() == OperationType.DOWNLOAD) {
-                        // Download from one server
-                        execute(new Operation(OperationType.DOWNLOAD,
-                                              op.getPath(),
-                                              roothashs.get(SyncServer.PORTS[0])),
-                                hostname,
-                                SyncServer.PORTS[0]);
-                    }
+                    syncRootHash = acks.get(SyncServer.SERVER_PORTS[0]).getResult();
                     
-                    success = syncAtts(UPLOAD, syncOut, SyncIn);
-                    if (!success) {
+                    syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
+                                                         Config.EMPTY_STRING,
+                                                         (op.getType() == OperationType.UPLOAD)? "Upload Please" : Config.EMPTY_STRING), 
+                                           syncOut, 
+                                           SyncIn);
+                    if (!syncSuccess) {
                         System.err.println("Sync Error");
                     }
 
@@ -210,7 +195,6 @@ public class VotingClient extends Client {
         time = System.currentTimeMillis() - time;
         
         System.out.println(runTimes + " times cost " + time + "ms");
-        System.out.println("server average process cost " + serverProcessTime / excuteTime + "ms");
         
         System.out.println("Auditing:");
         time = System.currentTimeMillis();
@@ -218,29 +202,36 @@ public class VotingClient extends Client {
         execute(new Operation(OperationType.AUDIT,
                               File.separator + "ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
-                hostname,
-                SyncServer.PORTS[0]);
+                SyncServer.SERVER_PORTS[0]);
         
         time = System.currentTimeMillis() - time;
         System.out.println("Download attestation, cost " + time + "ms");
         
-        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.VOTING_SYNC_PORT);
+        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, SyncServer.SYNC_PORT);
              DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
              DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-            Operation DOWNLOAD = new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
-            Operation UPLOAD = new Operation(OperationType.UPLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
-            boolean success = syncAtts(DOWNLOAD, syncOut, SyncIn);
-            if (!success) {
+            
+            boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
+                                                         Config.EMPTY_STRING,
+                                                         "Download Please"), 
+                                           syncOut, 
+                                           SyncIn);
+            if (!syncSuccess) {
                 System.err.println("Sync Error");
             }
 
             time = System.currentTimeMillis();
-            boolean audit = audit(lastAcks.get(SyncServer.PORTS[0]), thisAcks.get(SyncServer.PORTS[0]));
+            int testPort = SyncServer.SERVER_PORTS[0];
+            boolean audit = audit(testPort, acks.get(testPort).getRequest().getOperation(), acks.get(testPort).getResult());
             time = System.currentTimeMillis() - time;
             System.out.println("Audit: " + audit + ", cost " + time + "ms");
-
-            success = syncAtts(UPLOAD, syncOut, SyncIn);
-            if (!success) {
+            
+            syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
+                                                 Config.EMPTY_STRING,
+                                                 Config.EMPTY_STRING), 
+                                   syncOut, 
+                                   SyncIn);
+            if (!syncSuccess) {
                 System.err.println("Sync Error");
             }
 
@@ -257,19 +248,17 @@ public class VotingClient extends Client {
 
     @Override
     public boolean audit(File spFile) {
-        return audit(null, null);
+        return audit(0, null, null);
     }
     
-    public boolean audit(Acknowledgement lastAck, Acknowledgement thisAck) {
-        if (lastAck == null || thisAck == null) {
-            System.err.println(Config.WRONG_OP);
+    public boolean audit(int port, Operation op, String roothash) {
+        if (op == null || roothash == null) {
             return false;
         }
         
         String calResult;
-        Operation op = thisAck.getRequest().getOperation();
-        
         String attFileName = Config.DOWNLOADS_DIR_PATH + File.separator + "ATT_FOR_AUDIT";
+        
         switch (op.getType()) {
             case DOWNLOAD:
                 calResult = Utils.read(attFileName);
@@ -277,7 +266,7 @@ public class VotingClient extends Client {
             case UPLOAD:
                 MerkleTree merkleTree = Utils.Deserialize(attFileName);
                 
-                if (!lastAck.getResult().equals(merkleTree.getRootHash())) {
+                if (!syncRootHash.equals(merkleTree.getRootHash())) {
                     return false;
                 }
                 
@@ -288,14 +277,14 @@ public class VotingClient extends Client {
                 calResult = Config.WRONG_OP;
         }
         
-        return calResult.equals(thisAck.getResult());
+        return calResult.equals(roothash);
     }
     
-    private int voting() {
-        HashMap<String, Integer> occurrenceCount = new HashMap<>();
-        String currentMaxElement = (String) roothashs.get(SyncServer.PORTS[0]);
+    private int voting(Map<Integer, String> inputs) {
+        Map<String, Integer> occurrenceCount = new HashMap<>();
+        String currentMaxElement = (String) inputs.get(SyncServer.SERVER_PORTS[0]);
 
-        for (String element : roothashs.values()) {
+        for (String element : inputs.values()) {
             Integer elementCount = occurrenceCount.get(element);
             if (elementCount != null) {
                 occurrenceCount.put(element, elementCount + 1);
@@ -307,8 +296,8 @@ public class VotingClient extends Client {
             }
         }
         
-        for (Integer port_i : roothashs.keySet()) {
-            if (!currentMaxElement.equals(roothashs.get(port_i))) {
+        for (Integer port_i : inputs.keySet()) {
+            if (!currentMaxElement.equals(inputs.get(port_i))) {
                 return port_i;
             }
         }
@@ -317,49 +306,40 @@ public class VotingClient extends Client {
     }
     
     private boolean syncAtts(Operation op, DataOutputStream out, DataInputStream in) {
-        File lastFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "clientLast");
-        File thisFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "clientThis");
-        Map<Integer, String> lastAcksStr = new HashMap<>();
-        Map<Integer, String> thisAcksStr = new HashMap<>();
-                
+        File syncAck = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "syncAck");
+        Map<Integer, String> syncAckStrs = new HashMap<>();
+        
         Request req = new Request(op);
-
         req.sign(keyPair);
-
         Utils.send(out, req.toString());
+        
+        if (op.getMessage().equals(Config.EMPTY_STRING)) {
+            return true;
+        }
         
         switch (op.getType()){
             case DOWNLOAD:
-                Utils.receive(in, lastFile);
-                Utils.receive(in, thisFile);
+                Utils.receive(in, syncAck);
+                syncRootHash = Utils.receive(in);
+                
+                syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
 
-                lastAcksStr = Utils.Deserialize(lastFile.getAbsolutePath());
-                thisAcksStr = Utils.Deserialize(thisFile.getAbsolutePath());
-
-                for (int p : SyncServer.PORTS) {
-                    if (lastAcksStr.get(p) != null) {
-                        lastAcks.replace(p, Acknowledgement.parse(lastAcksStr.get(p)));
-                    }
-                    
-                    if (thisAcksStr.get(p) != null) {
-                        thisAcks.replace(p, Acknowledgement.parse(thisAcksStr.get(p)));
+                for (int p : SyncServer.SERVER_PORTS) {
+                    if (syncAckStrs.get(p) != null) {
+                        syncAcks.replace(p, Acknowledgement.parse(syncAckStrs.get(p)));
                     }
                 }
                 break;
             case UPLOAD:
-                for (int p : SyncServer.PORTS) {
-                    String lastStr = (lastAcks.get(p) == null) ? null : lastAcks.get(p).toString();
-                    String thisStr = (thisAcks.get(p) == null) ? null : thisAcks.get(p).toString();
-
-                    lastAcksStr.put(p, lastStr);
-                    thisAcksStr.put(p, thisStr);
+                for (int p : SyncServer.SERVER_PORTS) {
+                    String lastStr = (syncAcks.get(p) == null) ? null : syncAcks.get(p).toString();
+                    syncAckStrs.put(p, lastStr);
                 }
 
-                Utils.Serialize(lastFile, lastAcksStr);
-                Utils.Serialize(thisFile, thisAcksStr);
+                Utils.Serialize(syncAck, syncAckStrs);
 
-                Utils.send(out, lastFile);
-                Utils.send(out, thisFile);
+                Utils.send(out, syncAck);
+                Utils.send(out, syncRootHash);
                 break;
             default:
                 return false;

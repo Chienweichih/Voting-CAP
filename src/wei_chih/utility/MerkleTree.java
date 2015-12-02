@@ -144,6 +144,9 @@ public class MerkleTree implements Serializable {
     }
     
     private static List<File> sortedFiles(File[] unSortedFiles) {
+        if (unSortedFiles == null) {
+            System.err.println("exceptionininitializererror?");
+        }
         List<File> files = Arrays.asList(unSortedFiles);
         Collections.sort(files, (File lhs, File rhs) -> {
             return lhs.getName().compareTo(rhs.getName());

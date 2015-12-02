@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 import message.OperationType;
 import service.handler.ConnectionHandler;
 import wei_chih.message.twostep.voting.*;
-import wei_chih.utility.Utils;
+import wei_chih.utility.*;
 
 /**
  *
@@ -25,31 +25,34 @@ import wei_chih.utility.Utils;
  */
 public class SyncServer implements ConnectionHandler {
     private static final ReentrantLock LOCK;
-    public static final int[] PORTS;
     
-    private final Map<Integer, Acknowledgement> lastAcks;
-    private final Map<Integer, Acknowledgement> thisAcks;
+    public static final int[] SERVER_PORTS;
+    public static final int SYNC_PORT;
+    
+    private static String rootHash;
+    private static final Map<Integer, Acknowledgement> lastAcks;
+    
     private final Socket socket;
     
     static {
         LOCK = new ReentrantLock();
         
-        PORTS = new int[]{Config.VOTING_SERVICE_PORT_1,
-                          Config.VOTING_SERVICE_PORT_2,
-                          Config.VOTING_SERVICE_PORT_3,
-                          Config.VOTING_SERVICE_PORT_4,
-                          Config.VOTING_SERVICE_PORT_5};
+        SERVER_PORTS = new int[Config.SERVICE_NUM];
+        for (int i = 0; i < Config.SERVICE_NUM; ++i) {
+            SERVER_PORTS[i] = Config.SERVICE_PORT[i];
+        }
+        
+        SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
+        
+        rootHash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
+        
+        lastAcks = new HashMap<>();
+        for (int port : SERVER_PORTS) {
+            lastAcks.put(port, null);
+        }
     }
     
     public SyncServer(Socket socket, KeyPair keyPair) {
-        lastAcks = new HashMap<>();
-        thisAcks = new HashMap<>();
-        
-        for (int port : PORTS) {
-            lastAcks.put(port, null);
-            thisAcks.put(port, null);
-        }
-        
         this.socket = socket;
     }
     
@@ -63,6 +66,9 @@ public class SyncServer implements ConnectionHandler {
             
             LOCK.lock();
             
+            File syncAck = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "syncLast");
+            Map<Integer, String> syncAckStrs = new HashMap<>();
+            
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
             }
@@ -71,25 +77,19 @@ public class SyncServer implements ConnectionHandler {
                 return;
             }
             
-            File lastFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "syncLast");
-            File thisFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "syncThis");
-            
-            Map<Integer, String> lastAcksStr = new HashMap<>();
-            Map<Integer, String> thisAcksStr = new HashMap<>();
-            
-            for (int port : PORTS) {
-                String lastStr = (lastAcks.get(port) == null) ? null : lastAcks.get(port).toString();
-                String thisStr = (thisAcks.get(port) == null) ? null : thisAcks.get(port).toString();
-                
-                lastAcksStr.put(port, lastStr);
-                thisAcksStr.put(port, thisStr);
+            if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
+                for (int port : SERVER_PORTS) {
+                    String lastStr = (lastAcks.get(port) == null) ? null : lastAcks.get(port).toString();
+                    syncAckStrs.put(port, lastStr);
+                }
+
+                Utils.Serialize(syncAck, syncAckStrs);
+
+                Utils.send(out, syncAck);
+                Utils.send(out, rootHash);
             }
             
-            Utils.Serialize(lastFile, lastAcksStr);
-            Utils.Serialize(thisFile, thisAcksStr);
-            
-            Utils.send(out, lastFile);
-            Utils.send(out, thisFile);
+            // wait until client finish
             
             req = Request.parse(Utils.receive(in));
             
@@ -101,19 +101,16 @@ public class SyncServer implements ConnectionHandler {
                 return;
             }
             
-            Utils.receive(in, lastFile);
-            Utils.receive(in, thisFile);
-            
-            lastAcksStr = Utils.Deserialize(lastFile.getAbsolutePath());
-            thisAcksStr = Utils.Deserialize(thisFile.getAbsolutePath());
-            
-            for (int port : PORTS) {
-                if (lastAcksStr.get(port) != null) {
-                    lastAcks.replace(port, Acknowledgement.parse(lastAcksStr.get(port)));
-                }
+            if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
+                Utils.receive(in, syncAck);
+                rootHash = Utils.receive(in);
                 
-                if (thisAcksStr.get(port) != null) {
-                    thisAcks.replace(port, Acknowledgement.parse(thisAcksStr.get(port)));
+                syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
+
+                for (int port : SERVER_PORTS) {
+                    if (syncAckStrs.get(port) != null) {
+                        lastAcks.replace(port, Acknowledgement.parse(syncAckStrs.get(port)));
+                    }
                 }
             }
             

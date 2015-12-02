@@ -9,22 +9,44 @@ import wei_chih.utility.Utils;
  * @author chienweichih
  */
 public class SocketServer extends service.SocketServer {
+    public static String dataDirPath;
+    
+    static {
+        dataDirPath = Config.DATA_DIR_PATH;
+    }
  
     public SocketServer(Class<? extends ConnectionHandler> handler, int port) {
         super(handler, port);
     }
     
     public static void main(String[] args) {
+        if (args.length == 1) {
+            switch (args[0].charAt(args[0].length() - 1)) {
+                case 'A':
+                    dataDirPath = Config.DATA_A_PATH;
+                    break;
+                case 'B':
+                    dataDirPath = Config.DATA_B_PATH;
+                    break;
+                case 'C':
+                    dataDirPath = Config.DATA_C_PATH;
+                    break;
+                case 'D':
+                    dataDirPath = Config.DATA_D_PATH;
+                    break;
+                default:
+                    return;
+            }            
+        }
+                
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
-                        
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_1).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_2).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_3).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_4).start();
-        new SocketServer(VotingHandler.class, Config.VOTING_SERVICE_PORT_5).start();
         
-        new SocketServer(SyncServer.class, Config.VOTING_SYNC_PORT).start();
+        for (int p : SyncServer.SERVER_PORTS) {
+            new SocketServer(VotingHandler.class, p).start();
+        }
+        
+        new SocketServer(SyncServer.class, SyncServer.SYNC_PORT).start();
         
         System.out.println("Ready to go!");
     }
