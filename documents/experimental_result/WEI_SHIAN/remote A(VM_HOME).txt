@@ -1,0 +1,46 @@
+chienweichih@NB:~/NetBeansProjects/jar$ java -cp remote.jar wei_shian.client.Experiment 
+
+WeiShain
+../Accounts/Account A
+
+UPLOAD 0
+Running:
+100 times cost 25316ms
+Auditing:
+Audit: true, cost 79ms
+
+UPLOAD 1
+Running:
+100 times cost 15295ms
+Auditing:
+Audit: true, cost 77ms
+
+UPLOAD 2
+Running:
+100 times cost 14774ms
+Auditing:
+Audit: true, cost 76ms
+
+UPLOAD 3
+Running:
+100 times cost 14849ms
+Auditing:
+Audit: true, cost 75ms
+
+DOWNLOAD 0
+Running:
+100 times cost 15553ms
+Auditing:
+Audit: true, cost 74ms
+
+DOWNLOAD 1
+Running:
+100 times cost 15852ms
+Auditing:
+Audit: true, cost 74ms
+
+DOWNLOAD 2
+Running:
+100 times cost 15766ms
+Auditing:
+Audit: true, cost 74ms

@@ -14,7 +14,7 @@ import java.util.logging.Logger;
 
 import message.OperationType;
 import service.handler.ConnectionHandler;
-import utility.Utils;
+import wei_chih.utility.Utils;
 import wei_chih.utility.MerkleTree;
 import wei_shian.message.twostep.voting.Request;
 
@@ -23,16 +23,18 @@ import wei_shian.message.twostep.voting.Request;
  * @author chienweichih
  */
 public class SyncServer implements ConnectionHandler {
-    private static String roothash;
-    private static String lastChainHash;
     private static final ReentrantLock LOCK;
+    
+    private static String roothash;
+    private static String lastAck;
         
     private final Socket socket;
     
     static {
-        roothash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
-        lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
         LOCK = new ReentrantLock();
+        
+        roothash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
+        lastAck = Utils.digest(Config.DEFAULT_CHAINHASH);
     }
     
     public SyncServer(Socket socket, KeyPair keyPair) {
@@ -54,12 +56,13 @@ public class SyncServer implements ConnectionHandler {
             }
             
             if (req.getOperation().getType() != OperationType.DOWNLOAD) {
-                Utils.send(out, Config.OP_TYPE_MISMATCH);
                 return;
             }
             
             Utils.send(out, roothash);
-            Utils.send(out, lastChainHash);
+            Utils.send(out, lastAck);
+            
+            // wait until client finish
             
             req = Request.parse(Utils.receive(in));
             
@@ -68,13 +71,11 @@ public class SyncServer implements ConnectionHandler {
             }
             
             if (req.getOperation().getType() != OperationType.UPLOAD) {
-                Utils.send(out, Config.OP_TYPE_MISMATCH);
                 return;
             }
             
             roothash = Utils.receive(in);
-            lastChainHash = Utils.receive(in);
-            Utils.send(out, Config.EMPTY_STRING);
+            lastAck = Utils.receive(in);
             
             socket.close();
         } catch (IOException | SignatureException ex) {

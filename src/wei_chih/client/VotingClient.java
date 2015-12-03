@@ -59,7 +59,7 @@ public class VotingClient extends Client {
         
     @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
-           throws SignatureException {
+            throws SignatureException {
         Request req = new Request(op);
         req.sign(keyPair);
         Utils.send(out, req.toString());

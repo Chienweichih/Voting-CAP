@@ -1,0 +1,53 @@
+chienweichih@NB:~/NetBeansProjects/jar$ java -cp remote.jar wei_chih.client.Experiment 
+
+Voting
+../Accounts/Account A
+
+UPLOAD 0
+Running:
+100 times cost 28465ms
+Auditing:
+Download attestation, cost 99ms
+Audit: true, cost 16ms
+
+UPLOAD 1
+Running:
+100 times cost 21267ms
+Auditing:
+Download attestation, cost 72ms
+Audit: true, cost 8ms
+
+UPLOAD 2
+Running:
+100 times cost 20964ms
+Auditing:
+Download attestation, cost 70ms
+Audit: true, cost 5ms
+
+UPLOAD 3
+Running:
+100 times cost 21287ms
+Auditing:
+Download attestation, cost 73ms
+Audit: true, cost 5ms
+
+DOWNLOAD 0
+Running:
+100 times cost 25857ms
+Auditing:
+Download attestation, cost 62ms
+Audit: true, cost 0ms
+
+DOWNLOAD 1
+Running:
+100 times cost 25601ms
+Auditing:
+Download attestation, cost 63ms
+Audit: true, cost 0ms
+
+DOWNLOAD 2
+Running:
+100 times cost 25490ms
+Auditing:
+Download attestation, cost 63ms
+Audit: true, cost 0ms

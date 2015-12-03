@@ -1,7 +1,5 @@
 package wei_shian.client;
 
-import wei_chih.utility.MerkleTree;
-import wei_chih.utility.Utils;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -20,6 +18,8 @@ import java.util.logging.Logger;
 import client.Client;
 import message.Operation;
 import message.OperationType;
+import wei_chih.utility.MerkleTree;
+import wei_chih.utility.Utils;
 import wei_shian.message.twostep.voting.*;
 import wei_shian.service.Config;
 import wei_shian.service.SocketServer;
@@ -30,17 +30,19 @@ import wei_shian.service.SocketServer;
  */
 public class WeiShianClient extends Client {
     private static final Logger LOGGER;
+    
     private static final Operation DOWNLOAD;
     private static final Operation UPLOAD;
     
-    private String lastChainHash;
-    private final MerkleTree merkleTree;
-    
     static {
         LOGGER = Logger.getLogger(WeiShianClient.class.getName());
+        
         DOWNLOAD = new Operation(OperationType.DOWNLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
         UPLOAD = new Operation(OperationType.UPLOAD, Config.EMPTY_STRING, Config.EMPTY_STRING);
     }
+    
+    private String lastChainHash;
+    private final MerkleTree merkleTree;
     
     public WeiShianClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
@@ -50,48 +52,174 @@ public class WeiShianClient extends Client {
               Config.NUM_PROCESSORS);
         
         lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
-        long time = System.currentTimeMillis();
         merkleTree = new MerkleTree(new File(SocketServer.dataDirPath));
-        System.out.println("MerkleTree Construct Time: " + (System.currentTimeMillis() - time));
     }
+    
+    @Override
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
+            throws SignatureException, IllegalAccessException {
+        Request req = new Request(op);
+        req.sign(keyPair);
+        Utils.send(out, req.toString());
+
+        if (op.getType() == OperationType.UPLOAD) {
+            Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
+        }
+
+        Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
+
+        if (!ack.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
+        }
+
+        String roothash = ack.getRoothash();
+        String fileHash = ack.getFileHash();
+        String chainHash = ack.getChainHash();
+
+        if (!chainHash.equals(lastChainHash)) {
+            System.out.println(chainHash);
+            System.out.println(lastChainHash);
+            throw new IllegalAccessException("Chain hash mismatch");
+        }
+
+        lastChainHash = Utils.digest(ack.toString());
+
+        switch (op.getType()) {
+            case UPLOAD:
+                merkleTree.update(op.getPath(), fileHash);
+                if (!roothash.equals(merkleTree.getRootHash())) {
+                    System.err.println(Config.UPLOAD_FAIL);
+                }
+
+                break;
+            case DOWNLOAD:
+                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+
+                Utils.receive(in, file);
+
+                String digest = Utils.digest(file);
+
+                if (!fileHash.equals(digest)) {
+                    System.err.println(Config.DOWNLOAD_FAIL);
+                }
+
+                break;
+            default:
+                System.err.println(Config.OP_TYPE_MISMATCH);
+        }
+    }
+    
+    @Override
+    public void run(final List<Operation> operations, int runTimes) {
+        System.out.println("Running:");
         
+        long time = System.currentTimeMillis();
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i;
+            pool.execute(() -> {
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+
+                    boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+
+                    execute(operations.get(x % operations.size()));
+                    
+                    long start = System.currentTimeMillis();
+                    syncSuccess = syncAtts(UPLOAD, syncOut, SyncIn);
+                    this.attestationCollectTime += System.currentTimeMillis() - start;
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+                    
+                    syncSocket.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            });
+        }
+        
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println(runTimes + " times cost " + time + "ms");
+        
+        System.out.println("Auditing:");
+        
+        time = System.currentTimeMillis();
+        boolean audit = audit();
+        time = System.currentTimeMillis() - time;
+        
+        System.out.println("Audit: " + audit + ", cost " + time + "ms");
+    }
+
+    @Override
+    public String getHandlerAttestationPath() {
+        return "WeiShianUpdate";
+    }
+
+    @Override
+    public boolean audit(File spFile) {
+        return audit();
+    }
+    
+    public boolean audit() {
+        boolean success = true;
+        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+            
+            //lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+            success &= syncAtts(DOWNLOAD, syncOut, SyncIn);
+            success &= syncAtts(UPLOAD, syncOut, SyncIn);
+            
+            syncSocket.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        return success;
+    }
+    
     private boolean syncAtts(Operation op, DataOutputStream out, DataInputStream in) {
         boolean success = true;
 
         Request req = new Request(op);
-
         req.sign(keyPair);
-
         Utils.send(out, req.toString());
-            
-        if (op == UPLOAD) {
-            Utils.send(out, this.merkleTree.getRootHash());
-            Utils.send(out, this.lastChainHash);
-        }
         
-        String roothash = Utils.receive(in);
-        
-        switch (roothash) {
-            case Config.EMPTY_STRING:
-                return true;
-            case Config.OP_TYPE_MISMATCH:
+        switch (op.getType()){
+            case DOWNLOAD:
+                String roothash = Utils.receive(in);
+                String lastCH = Utils.receive(in);
+                
+                if (!lastCH.equals(this.lastChainHash)) {
+                    File spFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + getHandlerAttestationPath());
+
+                    downloadAtts(spFile);
+
+                    success &= updateAtts(spFile);
+                }
+
+                if (!roothash.equals(this.merkleTree.getRootHash())) {
+                    System.err.println("Sync Error");
+                }
+                break;
+            case UPLOAD:
+                Utils.send(out, this.merkleTree.getRootHash());
+                Utils.send(out, this.lastChainHash);
+                break;
+            default:
                 return false;
         }
         
-        String lastCH = Utils.receive(in);
-        
-        if (!lastCH.equals(this.lastChainHash)) {
-            File spFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + getHandlerAttestationPath());
-            
-            downloadAtts(spFile);
-            
-            success &= updateAtts(spFile);
-        }
-        
-        if (!roothash.equals(this.merkleTree.getRootHash())) {
-            System.err.println("Sync Error");
-        }
-       
         return success;
     }
     
@@ -127,6 +255,7 @@ public class WeiShianClient extends Client {
     
     private boolean updateAtts(File spFile) {
         boolean success = true;
+        
         PublicKey spKey = spKeyPair.getPublic();
         PublicKey cliKey = keyPair.getPublic();
         
@@ -143,6 +272,7 @@ public class WeiShianClient extends Client {
                 lastChainHash = Utils.digest(ack.toString());
             } else {
                 success = false;
+                break;
             }
 
             // update merkleTree if op is upload
@@ -153,141 +283,6 @@ public class WeiShianClient extends Client {
             success &= ack.validate(spKey) & req.validate(cliKey);
         }
         
-        return success;
-    }
-    
-    @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
-            throws SignatureException, IllegalAccessException {
-            Request req = new Request(op);
-
-            req.sign(keyPair);
-
-            Utils.send(out, req.toString());
-
-            if (op.getType() == OperationType.UPLOAD) {
-                Utils.send(out, new File(SocketServer.dataDirPath + File.separator + op.getPath()));
-            }
-
-            Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
-
-            if (!ack.validate(spKeyPair.getPublic())) {
-                throw new SignatureException("ACK validation failure");
-            }
-
-            String roothash = ack.getRoothash();
-            String fileHash = ack.getFileHash();
-            String chainHash = ack.getChainHash();
-            
-            if (!chainHash.equals(lastChainHash)) {
-                System.out.println(chainHash);
-                System.out.println(lastChainHash);
-                throw new IllegalAccessException("Chain hash mismatch");
-            }
-            
-            lastChainHash = Utils.digest(ack.toString());
-            
-            switch (op.getType()) {
-                case UPLOAD:
-                    merkleTree.update(op.getPath(), fileHash);
-                    if (!roothash.equals(merkleTree.getRootHash())) {
-                        System.err.println(Config.UPLOAD_FAIL);
-                    }
-                    
-                    break;
-                case DOWNLOAD:
-                    String fname = Config.DOWNLOADS_DIR_PATH + File.separator + op.getPath();
-                    
-                    File file = new File(fname);
-
-                    Utils.receive(in, file);
-
-                    String digest = Utils.digest(file);
-
-                    if (!fileHash.equals(digest)) {
-                        System.err.println(Config.DOWNLOAD_FAIL);
-                    }
-                    
-                    break;
-                default:
-                    System.err.println(Config.OP_TYPE_MISMATCH);
-            }
-    }
-    
-    @Override
-    public void run(final List<Operation> operations, int runTimes) {
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= runTimes; i++) {
-            final int x = i;
-            pool.execute(() -> {
-                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
-                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-
-                    boolean success = syncAtts(DOWNLOAD, syncOut, SyncIn);
-                    if (!success) {
-                        System.err.println("Sync Error");
-                    }
-
-                    execute(operations.get(x % operations.size()));
-                    
-                    long start = System.currentTimeMillis();
-                    success = syncAtts(UPLOAD, syncOut, SyncIn);
-                    if (!success) {
-                        System.err.println("Sync Error");
-                    }
-                    this.attestationCollectTime += System.currentTimeMillis() - start;
-
-                    syncSocket.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
-                }
-            });
-        }
-        
-        pool.shutdown();
-        try {
-            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(runTimes + " times cost " + time + "ms");
-        
-        System.out.println("Auditing:");
-        
-        File auditFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + getHandlerAttestationPath());
-        
-        time = System.currentTimeMillis();
-        boolean audit = audit(auditFile);
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Audit: " + audit + ", cost " + time + "ms");
-    }
-
-    @Override
-    public String getHandlerAttestationPath() {
-        return "WeiShianUpdate";
-    }
-
-    @Override
-    public boolean audit(File spFile) {
-        boolean success = true;
-        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
-             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-            
-            //lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
-            success &= syncAtts(DOWNLOAD, syncOut, SyncIn);
-            success &= syncAtts(UPLOAD, syncOut, SyncIn);
-            
-            syncSocket.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
         return success;
     }
 }

@@ -1,7 +1,5 @@
 package wei_shian.service.handler.twostep;
 
-import wei_chih.utility.MerkleTree;
-import wei_chih.utility.Utils;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -17,9 +15,11 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.Operation;
-import message.OperationType;
 import service.handler.ConnectionHandler;
-import wei_shian.message.twostep.voting.*;
+import wei_chih.utility.MerkleTree;
+import wei_chih.utility.Utils;
+import wei_shian.message.twostep.voting.Acknowledgement;
+import wei_shian.message.twostep.voting.Request;
 import wei_shian.service.Config;
 import wei_shian.service.SocketServer;
 
@@ -28,10 +28,10 @@ import wei_shian.service.SocketServer;
  * @author Chienweichih
  */
 public class WeiShianHandler implements ConnectionHandler {
+    private static final ReentrantLock LOCK;
     
     private static final MerkleTree merkleTree;
     private static final LinkedList<String> ACKChain;
-    private static final ReentrantLock LOCK;
     
     private final Socket socket;
     private final KeyPair keyPair;
@@ -63,24 +63,27 @@ public class WeiShianHandler implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            String result, digest;
-            
             Operation op = req.getOperation();
             
             File file = null;
+            String result, digest;
+            boolean addAckToChian = false;
             boolean sendFileAfterAck = false;
             
             switch (op.getType()) {
                 case DOWNLOAD:
-                    file = new File(SocketServer.dataDirPath + op.getPath());
+                    addAckToChian = true;
+                    sendFileAfterAck = true;
                     
-                    result = merkleTree.getRootHash();
+                    file = new File(SocketServer.dataDirPath + op.getPath());
                     digest = Utils.digest(file);
                     
-                    sendFileAfterAck = true;
-
+                    result = merkleTree.getRootHash();
+                    
                     break;
                 case UPLOAD:
+                    addAckToChian = true;
+                    
                     file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     
                     Utils.receive(in, file);
@@ -97,30 +100,30 @@ public class WeiShianHandler implements ConnectionHandler {
                     
                     break;
                 case AUDIT:
-                    file = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "WeiShian");
-                    
-                    String attP = op.getMessage();
+                    String clientLastAttHash = op.getMessage();
                     
                     ListIterator li = ACKChain.listIterator(ACKChain.size());
+                    // find client's last attestation
                     while (li.hasPrevious()) {
                         String prevHash = Utils.digest((String) li.previous());
-                        if (attP.equals(prevHash)) {
+                        if (clientLastAttHash.equals(prevHash)) {
                             li.next();
                             break;
                         }
                     }
                     
-                    LinkedList<String> tempCH = new LinkedList<>();
+                    LinkedList<String> clientWanted = new LinkedList<>();
                     while (li.hasNext()) {
-                        tempCH.add((String) li.next());
+                        clientWanted.add((String) li.next());
                     }
                     
-                    Utils.Serialize(file, tempCH);
+                    sendFileAfterAck = true;
                     
-                    result = merkleTree.getRootHash();
+                    file = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "WeiShian");
+                    Utils.Serialize(file, clientWanted);
                     digest = Utils.digest(file);
                     
-                    sendFileAfterAck = true;
+                    result = merkleTree.getRootHash();
                     
                     break;
                 default:
@@ -129,13 +132,10 @@ public class WeiShianHandler implements ConnectionHandler {
             }
             
             Acknowledgement ack = new Acknowledgement(result, digest, req, Utils.digest(ACKChain.getLast()));
-            
             ack.sign(keyPair);
-            
             Utils.send(out, ack.toString());
             
-            if (op.getType() == OperationType.DOWNLOAD ||
-                op.getType() == OperationType.UPLOAD) {
+            if (addAckToChian) {
                 ACKChain.add(ack.toString());
             }
             

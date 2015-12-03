@@ -1,7 +1,7 @@
 package wei_chih.client;
 
-import java.security.KeyPair;
 import java.io.File;
+import java.security.KeyPair;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -54,8 +54,8 @@ public class Experiment {
         
         List<Operation> ops = new ArrayList<>();
         ops.add(new Operation(OperationType.UPLOAD,
-                testFileName,
-                Utils.digest(new File(SocketServer.dataDirPath + testFileName))));
+                              testFileName,
+                              Utils.digest(new File(SocketServer.dataDirPath + testFileName))));
         for (int i = 0;i < 4;++i) {
             System.out.println("\nUPLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(ops, runTimes);
