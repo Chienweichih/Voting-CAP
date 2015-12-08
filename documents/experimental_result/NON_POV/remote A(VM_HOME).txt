@@ -1,0 +1,35 @@
+wcc@wcc-NB:~/NetBeansProjects/jar$ java -cp remote.jar wei_chih.client.ExperimentNonPOV 
+
+NonPOV
+../Accounts/Account A
+
+UPLOAD 0
+Running:
+100 times cost 23377ms
+Audit not supported.
+
+UPLOAD 1
+Running:
+100 times cost 20277ms
+Audit not supported.
+
+UPLOAD 2
+Running:
+100 times cost 19932ms
+Audit not supported.
+
+DOWNLOAD 0
+Running:
+100 times cost 20928ms
+Audit not supported.
+
+DOWNLOAD 1
+Running:
+100 times cost 20401ms
+Audit not supported.
+
+DOWNLOAD 2
+Running:
+100 times cost 20540ms
+Audit not supported.
+
