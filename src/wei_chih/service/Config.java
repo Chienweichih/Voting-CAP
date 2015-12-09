@@ -7,7 +7,7 @@ import java.io.File;
  * @author chienweichih
  */
 public interface Config extends service.Config {
-    public String SERVICE_HOSTNAME = "localhost";//"140.122.184.105";
+    public String SERVICE_HOSTNAME = "140.122.184.105";
     public String SYNC_HOSTNAME = SERVICE_HOSTNAME;
     
     public int SERVICE_NUM = 3;

@@ -7,6 +7,7 @@ import java.util.List;
 
 import message.Operation;
 import message.OperationType;
+import wei_chih.service.SyncServer;
 import wei_chih.utility.Utils;
 import wei_shian.service.Config;
 import wei_shian.service.SocketServer;
@@ -51,6 +52,11 @@ public class Experiment {
 
         System.out.println("\nWeiShain");
         System.out.println(SocketServer.dataDirPath);
+        System.out.print(Config.SERVICE_HOSTNAME);
+        for (int p : SyncServer.SERVER_PORTS) {
+            System.out.print(" " + p);
+        }
+        System.out.println(" " + SyncServer.SYNC_PORT);
         
         List<Operation> ops = new ArrayList<>();
         ops.add(new Operation(OperationType.UPLOAD,

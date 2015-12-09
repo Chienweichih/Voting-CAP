@@ -177,7 +177,7 @@ public class WeiShianClient extends Client {
              DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
              DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
             
-            //lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+            lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
             success &= syncAtts(DOWNLOAD, syncOut, SyncIn);
             success &= syncAtts(UPLOAD, syncOut, SyncIn);
             

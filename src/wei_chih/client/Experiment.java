@@ -9,6 +9,7 @@ import message.Operation;
 import message.OperationType;
 import wei_chih.service.Config;
 import wei_chih.service.SocketServer;
+import wei_chih.service.SyncServer;
 import wei_chih.utility.Utils;
 
 /**
@@ -51,6 +52,11 @@ public class Experiment {
 
         System.out.println("\nVoting");
         System.out.println(SocketServer.dataDirPath);
+        System.out.print(Config.SERVICE_HOSTNAME);
+        for (int p : SyncServer.SERVER_PORTS) {
+            System.out.print(" " + p);
+        }
+        System.out.println(" " + SyncServer.SYNC_PORT);
         
         List<Operation> ops = new ArrayList<>();
         ops.add(new Operation(OperationType.UPLOAD,

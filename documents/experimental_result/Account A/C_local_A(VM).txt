@@ -1,0 +1,52 @@
+
+Voting
+../Accounts/Account A
+
+UPLOAD 0
+Running:
+100 times cost 8235ms
+Auditing:
+Download attestation, cost 25ms
+Audit: true, cost 18ms
+
+UPLOAD 1
+Running:
+100 times cost 3268ms
+Auditing:
+Download attestation, cost 17ms
+Audit: true, cost 7ms
+
+UPLOAD 2
+Running:
+100 times cost 3807ms
+Auditing:
+Download attestation, cost 15ms
+Audit: true, cost 6ms
+
+UPLOAD 3
+Running:
+100 times cost 3331ms
+Auditing:
+Download attestation, cost 12ms
+Audit: true, cost 4ms
+
+DOWNLOAD 0
+Running:
+100 times cost 3391ms
+Auditing:
+Download attestation, cost 8ms
+Audit: true, cost 0ms
+
+DOWNLOAD 1
+Running:
+100 times cost 3184ms
+Auditing:
+Download attestation, cost 9ms
+Audit: true, cost 0ms
+
+DOWNLOAD 2
+Running:
+100 times cost 2659ms
+Auditing:
+Download attestation, cost 7ms
+Audit: true, cost 1ms

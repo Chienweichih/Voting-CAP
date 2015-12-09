@@ -1,0 +1,46 @@
+
+WeiShain
+../Accounts/Account A
+140.122.184.105 3004 3003 3002 3001
+
+UPLOAD 0
+Running:
+100 times cost 23843ms
+Auditing:
+Audit: true, cost 1162ms
+
+UPLOAD 1
+Running:
+100 times cost 15263ms
+Auditing:
+Audit: true, cost 1016ms
+
+UPLOAD 2
+Running:
+100 times cost 14783ms
+Auditing:
+Audit: true, cost 1169ms
+
+UPLOAD 3
+Running:
+100 times cost 15040ms
+Auditing:
+Audit: true, cost 1456ms
+
+DOWNLOAD 0
+Running:
+100 times cost 15474ms
+Auditing:
+Audit: true, cost 1760ms
+
+DOWNLOAD 1
+Running:
+100 times cost 15220ms
+Auditing:
+Audit: true, cost 1801ms
+
+DOWNLOAD 2
+Running:
+100 times cost 15446ms
+Auditing:
+Audit: true, cost 1986ms

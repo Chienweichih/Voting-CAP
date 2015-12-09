@@ -1,34 +1,34 @@
-[wcc@4025s jar]$ java -cp localhost.jar wei_chih.client.ExperimentNonPOV
 
 NonPOV
 ../Accounts/Account A
+140.122.184.105 3004 3003 3002 3001
 
 UPLOAD 0
 Running:
-100 times cost 4212ms
+100 times cost 23468ms
 Audit not supported.
 
 UPLOAD 1
 Running:
-100 times cost 2053ms
+100 times cost 20543ms
 Audit not supported.
 
 UPLOAD 2
 Running:
-100 times cost 3564ms
+100 times cost 20119ms
 Audit not supported.
 
 DOWNLOAD 0
 Running:
-100 times cost 3219ms
+100 times cost 21014ms
 Audit not supported.
 
 DOWNLOAD 1
 Running:
-100 times cost 3020ms
+100 times cost 20918ms
 Audit not supported.
 
 DOWNLOAD 2
 Running:
-100 times cost 2918ms
+100 times cost 20821ms
 Audit not supported.
