@@ -8,8 +8,6 @@ import java.util.List;
 import message.Operation;
 import message.OperationType;
 import wei_chih.service.Config;
-import wei_chih.service.SocketServer;
-import wei_chih.service.SyncServer;
 import wei_chih.utility.Utils;
 
 /**
@@ -17,29 +15,28 @@ import wei_chih.utility.Utils;
  * @author chienweichih
  */
 public class Experiment {
-    public static void main(String[] args) throws ClassNotFoundException {
-        String testFileName = Config.DATA_TESTFILE;
+    protected static String dataDirPath;
+    
+    protected static final int[] SERVER_PORTS;
+    protected static final int SYNC_PORT;
+    
+    static {
+        dataDirPath = "";
         
-        if (args.length == 1) {
-            switch (args[0].charAt(args[0].length() - 1)) {
-                case 'A':
-                    SocketServer.dataDirPath = Config.DATA_A_PATH;
-                    testFileName = Config.DATA_A_TESTFILE;
-                    break;
-                case 'B':
-                    SocketServer.dataDirPath = Config.DATA_B_PATH;
-                    testFileName = Config.DATA_B_TESTFILE;
-                    break;
-                case 'C':
-                    SocketServer.dataDirPath = Config.DATA_C_PATH;
-                    testFileName = Config.DATA_C_TESTFILE;
-                    break;
-                case 'D':
-                    SocketServer.dataDirPath = Config.DATA_D_PATH;
-                    testFileName = Config.DATA_D_TESTFILE;
-                    break;
-                default:
-            }
+        SERVER_PORTS = new int[Config.SERVICE_NUM];
+        for (int i = 0; i < Config.SERVICE_NUM; ++i) {
+            SERVER_PORTS[i] = Config.SERVICE_PORT[i];
+        }
+        
+        SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
+    }
+    
+    public static void main(String[] args) throws ClassNotFoundException {
+        String[] testFileName = Utils.getTestFileName(args);
+        dataDirPath = testFileName[0];
+        if (dataDirPath.equals(Config.EMPTY_STRING)) {
+            System.err.println("ARGUMENT ERROR");
+            return;
         }
         
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
@@ -51,17 +48,17 @@ public class Experiment {
         final int runTimes = 100;
 
         System.out.println("\nVoting");
-        System.out.println(SocketServer.dataDirPath);
+        System.out.println(dataDirPath);
         System.out.print(Config.SERVICE_HOSTNAME);
-        for (int p : SyncServer.SERVER_PORTS) {
+        for (int p : SERVER_PORTS) {
             System.out.print(" " + p);
         }
-        System.out.println(" " + SyncServer.SYNC_PORT);
+        System.out.println(" " + SYNC_PORT);
         
         List<Operation> ops = new ArrayList<>();
         ops.add(new Operation(OperationType.UPLOAD,
-                              testFileName,
-                              Utils.digest(new File(SocketServer.dataDirPath + testFileName))));
+                              testFileName[1],
+                              Utils.digest(new File(dataDirPath + testFileName[1]))));
         for (int i = 0;i < 4;++i) {
             System.out.println("\nUPLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(ops, runTimes);
@@ -69,7 +66,7 @@ public class Experiment {
         
         ops = new ArrayList<>();
         ops.add(new Operation(OperationType.DOWNLOAD,
-                              testFileName,
+                              testFileName[1],
                               Config.EMPTY_STRING));
         for (int i = 0;i < 3;++i) {
             System.out.println("\nDOWNLOAD " + i);

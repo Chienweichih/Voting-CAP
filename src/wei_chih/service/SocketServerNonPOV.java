@@ -12,7 +12,7 @@ public class SocketServerNonPOV extends service.SocketServer {
     public static String dataDirPath;
     
     static {
-        dataDirPath = Config.DATA_DIR_PATH;
+        dataDirPath = "";
     }
  
     public SocketServerNonPOV(Class<? extends ConnectionHandler> handler, int port) {
@@ -20,33 +20,16 @@ public class SocketServerNonPOV extends service.SocketServer {
     }
     
     public static void main(String[] args) {
-        if (args.length == 1) {
-            switch (args[0].charAt(args[0].length() - 1)) {
-                case 'A':
-                    dataDirPath = Config.DATA_A_PATH;
-                    break;
-                case 'B':
-                    dataDirPath = Config.DATA_B_PATH;
-                    break;
-                case 'C':
-                    dataDirPath = Config.DATA_C_PATH;
-                    break;
-                case 'D':
-                    dataDirPath = Config.DATA_D_PATH;
-                    break;
-                default:
-                    return;
-            }            
+        if (args.length != 1) {
+            System.err.println("NEED ONE ARGUMENT");
+            return;
         }
+        dataDirPath = Utils.getDataDirPath(args[0]);
                 
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
-        for (int p : SyncServer.SERVER_PORTS) {
-            new SocketServer(NonPOVHandler.class, p).start();
-        }
-        
-        new SocketServer(SyncServer.class, SyncServer.SYNC_PORT).start();
+        new SocketServerNonPOV(NonPOVHandler.class, Config.SERVICE_PORT[0]).start();
         
         System.out.println("Ready to go!");
     }

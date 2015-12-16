@@ -19,8 +19,6 @@ import message.Operation;
 import message.OperationType;
 import wei_chih.message.twostep.voting.*;
 import wei_chih.service.Config;
-import wei_chih.service.SocketServer;
-import wei_chih.service.SyncServer;
 import wei_chih.utility.*;
 
 /**
@@ -42,7 +40,7 @@ public class VotingClient extends Client {
     
     public VotingClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
-              SyncServer.SYNC_PORT,
+              Experiment.SYNC_PORT,
               keyPair,
               spKeyPair,
               Config.NUM_PROCESSORS);
@@ -51,7 +49,7 @@ public class VotingClient extends Client {
         syncAcks = new HashMap<>();
         acks = new HashMap<>();
         
-        for (int p : SyncServer.SERVER_PORTS) {
+        for (int p : Experiment.SERVER_PORTS) {
             syncAcks.put(p, null);
             acks.put(p, null);
         }
@@ -65,7 +63,7 @@ public class VotingClient extends Client {
         Utils.send(out, req.toString());
         
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
+            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
         }
         
         Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
@@ -111,12 +109,12 @@ public class VotingClient extends Client {
         
         Map<Integer, String> results = new HashMap<>();
                 
-        for (int p : SyncServer.SERVER_PORTS) {
+        for (int p : Experiment.SERVER_PORTS) {
             try (Socket socket = new Socket(hostname, p);
                  DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                  DataInputStream in = new DataInputStream(socket.getInputStream())) {
                 if (op.getType() == OperationType.DOWNLOAD &&
-                    p == SyncServer.SERVER_PORTS[0]) {
+                    p == Experiment.SERVER_PORTS[0]) {
                     // Download from one server
                     op = new Operation(OperationType.DOWNLOAD,
                                        op.getPath(),
@@ -144,7 +142,7 @@ public class VotingClient extends Client {
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
-                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, SyncServer.SYNC_PORT);
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
                     Operation op = operations.get(x % operations.size());
@@ -158,7 +156,7 @@ public class VotingClient extends Client {
                         System.err.println("Sync Error");
                     }
                     
-                    int diffPort = execute(op, SyncServer.SERVER_PORTS[0]);
+                    int diffPort = execute(op, Experiment.SERVER_PORTS[0]);
                     if (diffPort != -1) {
                         execute(new Operation(OperationType.AUDIT,
                                               File.separator + "ATT_FOR_AUDIT",
@@ -168,7 +166,7 @@ public class VotingClient extends Client {
                         System.out.println("Audit: " + audit);
                     }
                     
-                    syncRootHash = acks.get(SyncServer.SERVER_PORTS[0]).getResult();
+                    syncRootHash = acks.get(Experiment.SERVER_PORTS[0]).getResult();
                     
                     syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
                                                          Config.EMPTY_STRING,
@@ -202,12 +200,12 @@ public class VotingClient extends Client {
         execute(new Operation(OperationType.AUDIT,
                               File.separator + "ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
-                SyncServer.SERVER_PORTS[0]);
+                Experiment.SERVER_PORTS[0]);
         
         time = System.currentTimeMillis() - time;
         System.out.println("Download attestation, cost " + time + "ms");
         
-        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, SyncServer.SYNC_PORT);
+        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
              DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
              DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
             
@@ -221,7 +219,7 @@ public class VotingClient extends Client {
             }
 
             time = System.currentTimeMillis();
-            int testPort = SyncServer.SERVER_PORTS[0];
+            int testPort = Experiment.SERVER_PORTS[0];
             boolean audit = audit(testPort, acks.get(testPort).getRequest().getOperation(), acks.get(testPort).getResult());
             time = System.currentTimeMillis() - time;
             System.out.println("Audit: " + audit + ", cost " + time + "ms");
@@ -282,7 +280,7 @@ public class VotingClient extends Client {
     
     private int voting(Map<Integer, String> inputs) {
         Map<String, Integer> occurrenceCount = new HashMap<>();
-        String currentMaxElement = (String) inputs.get(SyncServer.SERVER_PORTS[0]);
+        String currentMaxElement = (String) inputs.get(Experiment.SERVER_PORTS[0]);
 
         for (String element : inputs.values()) {
             Integer elementCount = occurrenceCount.get(element);
@@ -324,14 +322,14 @@ public class VotingClient extends Client {
                 
                 syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
 
-                for (int p : SyncServer.SERVER_PORTS) {
+                for (int p : Experiment.SERVER_PORTS) {
                     if (syncAckStrs.get(p) != null) {
                         syncAcks.replace(p, Acknowledgement.parse(syncAckStrs.get(p)));
                     }
                 }
                 break;
             case UPLOAD:
-                for (int p : SyncServer.SERVER_PORTS) {
+                for (int p : Experiment.SERVER_PORTS) {
                     String lastStr = (syncAcks.get(p) == null) ? null : syncAcks.get(p).toString();
                     syncAckStrs.put(p, lastStr);
                 }

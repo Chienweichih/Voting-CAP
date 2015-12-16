@@ -22,7 +22,6 @@ import wei_chih.utility.MerkleTree;
 import wei_chih.utility.Utils;
 import wei_shian.message.twostep.voting.*;
 import wei_shian.service.Config;
-import wei_shian.service.SocketServer;
 
 /**
  *
@@ -52,7 +51,7 @@ public class WeiShianClient extends Client {
               Config.NUM_PROCESSORS);
         
         lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
-        merkleTree = new MerkleTree(new File(SocketServer.dataDirPath));
+        merkleTree = new MerkleTree(new File(Experiment.dataDirPath));
     }
     
     @Override
@@ -63,7 +62,7 @@ public class WeiShianClient extends Client {
         Utils.send(out, req.toString());
 
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
+            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
         }
 
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));

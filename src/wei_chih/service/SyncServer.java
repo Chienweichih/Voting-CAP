@@ -26,8 +26,8 @@ import wei_chih.utility.*;
 public class SyncServer implements ConnectionHandler {
     private static final ReentrantLock LOCK;
     
-    public static final int[] SERVER_PORTS;
-    public static final int SYNC_PORT;
+    protected static final int[] SERVER_PORTS;
+    protected static final int SYNC_PORT;
     
     private static String rootHash;
     private static final Map<Integer, Acknowledgement> lastAcks;
