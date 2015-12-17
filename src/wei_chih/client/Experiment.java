@@ -46,7 +46,29 @@ public class Experiment {
         Utils.cleanAllAttestations();
         
         final int runTimes = 100;
-
+        List<Operation> ops = new ArrayList<>();
+        
+        System.out.println("\nNonPOV");
+        System.out.println(dataDirPath);
+        System.out.println(Config.SERVICE_HOSTNAME + " " + Config.SERVICE_PORT[0]);
+        
+        ops.add(new Operation(OperationType.UPLOAD,
+                              testFileName[1],
+                              Utils.digest(new File(dataDirPath + testFileName[1]))));
+        for (int i = 0;i < 3;++i) {
+            System.out.println("\nUPLOAD " + i);
+            new NonPOVClient(clientKeyPair, spKeyPair).run(ops, runTimes);
+        }
+        
+        ops = new ArrayList<>();
+        ops.add(new Operation(OperationType.DOWNLOAD,
+                              testFileName[1],
+                              Config.EMPTY_STRING));
+        for (int i = 0;i < 3;++i) {
+            System.out.println("\nDOWNLOAD " + i);
+            new NonPOVClient(clientKeyPair, spKeyPair).run(ops, runTimes);
+        }
+        
         System.out.println("\nVoting");
         System.out.println(dataDirPath);
         System.out.print(Config.SERVICE_HOSTNAME);
@@ -55,7 +77,7 @@ public class Experiment {
         }
         System.out.println(" " + SYNC_PORT);
         
-        List<Operation> ops = new ArrayList<>();
+        ops = new ArrayList<>();
         ops.add(new Operation(OperationType.UPLOAD,
                               testFileName[1],
                               Utils.digest(new File(dataDirPath + testFileName[1]))));

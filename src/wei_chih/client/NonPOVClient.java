@@ -32,7 +32,7 @@ public class NonPOVClient extends Client {
     
     public NonPOVClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
-              Config.SERVICE_PORT[0],
+              Config.SERVICE_PORT[Config.SERVICE_NUM + 1],
               keyPair,
               spKeyPair,
               Config.NUM_PROCESSORS);
@@ -46,7 +46,7 @@ public class NonPOVClient extends Client {
         Utils.send(out, req.toString());
         
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(ExperimentNonPOV.dataDirPath + op.getPath()));
+            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
         }
         
         Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));

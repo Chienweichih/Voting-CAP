@@ -1,6 +1,7 @@
 package wei_chih.service;
 
 import service.handler.ConnectionHandler;
+import wei_chih.service.handler.twostep.NonPOVHandler;
 import wei_chih.service.handler.twostep.VotingHandler;
 import wei_chih.utility.Utils;
 
@@ -34,6 +35,8 @@ public class SocketServer extends service.SocketServer {
         }
         
         new SocketServer(SyncServer.class, SyncServer.SYNC_PORT).start();
+        
+        new SocketServer(NonPOVHandler.class, Config.SERVICE_PORT[Config.SERVICE_NUM + 1]).start();
         
         System.out.println("Ready to go!");
     }

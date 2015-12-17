@@ -9,7 +9,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 import java.util.regex.Pattern;
-
 import wei_chih.service.Config;
 
 /**
@@ -169,64 +168,15 @@ public class MerkleTree implements Serializable {
     }
     
     public static void main(String[] args) {
-//        for (int i = 0; i < 10; ++i) {
-//            long time = System.currentTimeMillis();
-//            MerkleTree mt = new MerkleTree(new File(Config.DATA_DIR_PATH));
-//            time = System.currentTimeMillis() - time;
-//            System.out.println("Create cost : " + time + "ms");
-//        }
-//            mt.Serialize(new File("ACCOUNT_C"));
-//        
-//        String target = File.separator + "testing result.change";
-//        String digest = "0D7422AAE4B30F62603837F9B7AA26E1FBFDD6FF";
-//        
-//        long time = System.currentTimeMillis();
-//        for (int i = 0; i < 10; ++i) { 
-//            new MerkleTree(new File(".." + File.separator + "Accounts" + File.separator + "Account A"));
-//        }
-//        time = System.currentTimeMillis() - time;
-//        System.out.println("Create A cost : " + time / 10.0 + "ms");
-//        time = System.currentTimeMillis();
-//        for (int i = 0; i < 10; ++i) { 
-//            new MerkleTree(new File(".." + File.separator + "Accounts" + File.separator + "Account B"));
-//        }
-//        time = System.currentTimeMillis() - time;
-//        System.out.println("Create B cost : " + time / 10.0 + "ms");
-//        time = System.currentTimeMillis();
-//        for (int i = 0; i < 10; ++i) { 
-//            new MerkleTree(new File(".." + File.separator + "Accounts" + File.separator + "Account C"));
-//        }
-//        time = System.currentTimeMillis() - time;
-//        System.out.println("Create C cost : " + time / 10.0 + "ms");
-//        time = System.currentTimeMillis();
-//        for (int i = 0; i < 10; ++i) { 
-//            new MerkleTree(new File(".." + File.separator + "Accounts" + File.separator + "Account D"));
-//        }
-//        time = System.currentTimeMillis() - time;
-//        System.out.println("Create D cost : " + time / 10.0 + "ms");
-//        mt.print();
-//        
-//        long time = System.currentTimeMillis();
-//        mt.Serialize(new File(fname));
-//        
-//        System.out.println("============================ Create! ============================");
-//        long time = System.currentTimeMillis();
-//        for (int i = 0; i < 100000; ++i) {    
-//            mt.update(target, digest);
-//            mt.print();
-//        }
-//        time = System.currentTimeMillis() - time;
-//        System.out.println("Create cost : " + time / 100000.0 + "ms");
-//        System.out.println("============================ Update! ============================");
-//        MerkleTree mt2 = new MerkleTree(mt);
-//        mt.delete(target);
-//        mt.print();
-//        System.out.println("============================ Delete! ============================");
-//        mt2.print();
-//        
-//        mt2 = Deserialize(fname);
-//        mt2.print();
-//        time = System.currentTimeMillis() - time;
-//        System.out.println("All cost : " + time + "ms");
+        
+        String dataDirPath;
+        
+        if (args.length != 1) {
+            dataDirPath = Config.DATA_A_PATH;
+        } else {
+            dataDirPath = Utils.getDataDirPath(args[0]);
+        }
+        
+        System.out.println(new MerkleTree(new File(dataDirPath)).getRootHash());
     }
 }
