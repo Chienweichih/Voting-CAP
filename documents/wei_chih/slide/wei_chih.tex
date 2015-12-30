@@ -83,13 +83,13 @@
 \graphicspath{{fig/}}
 
 %First page
-\title[Progress Report]{Instant Auditing of Cloud Storage Access without Accumulating Attestations}
+\title[Progress Report]{Instant Auditing of Cloud Storage Access without Evidence Cached}
 
 \author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang\\ Student : Wei-Chih Chien}
 
 \institute[NTNU CSIE CCLAB]{NTNU CSIE CCLAB}
 
-\date{2015.10.29}
+\date{2015.12.31}
 
 \AtBeginSection[]
 {
@@ -112,22 +112,21 @@
 \section{Scenario}
 \begin{frame}{Scenario}{Why Real-time Auditing?}
 	\begin{center}
-	\includegraphics[width=.4\textwidth]{Scenario1.png}
+	\includegraphics[width=.7\textwidth]{Scenario1.png}
 	\end{center}
 \end{frame}
 
-\begin{frame}{Scenario (CON'T)}{Problems}
-	\begin{minipage}{.49\hsize}
+\begin{frame}{Scenario (CON'T)}{Version Control}
 	\begin{center}
-	\includegraphics[width=.75\textwidth]{Scenario2.png}
+	\includegraphics[width=.4\textwidth]{Scenario2.png}
 	\end{center}
-	\end{minipage}
-	\pause
-	\begin{minipage}{.49\hsize}
+\end{frame}
+
+\begin{frame}{Scenario (CON'T)}{Problem}
 	\begin{center}
-	\includegraphics[width=.95\textwidth]{Scenario3.png}
+	\includegraphics[width=.7\textwidth]{Scenario3.png}
 	\end{center}
-	\end{minipage}
+	\alert{Cryptography Proof Needed}
 \end{frame}
 
 \section{Real-time Auditing Schemes}
@@ -138,31 +137,44 @@
 	\end{center}
 \end{frame}
 
+\begin{frame}{Problem}
+	\begin{center}
+	\includegraphics[width=.5\textwidth]{Problem1.png}
+	\end{center}
+\end{frame}
+
 \subsection{\small{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
 \begin{frame}{\normalsize{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
 {\tiny{2014 IEEE 6th International Conference on Cloud Computing Technology and Science}}
 	\begin{center}
 	\includegraphics[width=.8\textwidth]{wei_shian.png}
 	\end{center}
-	\alert{Worst-case : 累積大量未更新的動作造成系統緩慢}
+\end{frame}
+
+\begin{frame}{Worse-case}
+	\begin{center}
+	\includegraphics[width=.7\textwidth]{Problem2.png}
+	\end{center}
+	\alert{因為要更新client端的Merkle Tree, 累積太多版本就需要很多時間來更新}
 \end{frame}
 
 \subsection{\small{My Method}}
 \begin{frame}{My Method}
-	\begin{center}
-	\includegraphics[width=.8\textwidth]{wei_chih.png}
-	\end{center}
 	\color{blue} Assumption: $\text{同時有k個server上同一file出問題的機率} \approx 0$
+	\begin{center}
+	\alert{Service Providers are Independent Cloud}
+	\includegraphics[width=.7\textwidth]{wei_chih.png}
+	\end{center}
 \end{frame}
 
 \begin{frame}{Comparison}
 	\begin{itemize}
 		\item Pros
 			\begin{enumerate}
-				\item Service Provider 不用累積證據
-				\item Client 不用佔用空間儲存證據
+				\item Device 不用存 Merkle Tree, 省空間
+				\item Device 也不用同步 Merkle Tree, 省時間
 				\item 資料有多份備份
-				\item 花費較少的時間更新到最新的狀態
+				\item 平均比之前的方法快速, 且沒有 Worse-case
 			\end{enumerate}
 		\item Cons
 			\begin{enumerate}
@@ -183,19 +195,27 @@
 		\node (init) [process] {Initial};
 		\node (lock) [process, below of=init] {Lock};
 		\node (twostep) [process, below of=lock] {2-step Handshake};
+		\node (twostep_left) [process, left of=twostep, xshift=-2cm] {2-step Handshake};
+		\node (twostep_right) [process, right of=twostep, xshift=2cm] {2-step Handshake};
 		\node (voting) [decision, below of=twostep] {Voting};
 		\node (update) [io, below of=voting, align=center, yshift=-0.5cm] {File \\ Transmit};
 		\node (auditing) [process, right of=voting, xshift=2.5cm] {Auditing};
-		\node (unlock) [process, left of=update, xshift=-2cm] {Unlock};
+		\node (unlock) [process, left of=update, xshift=-4cm] {Unlock};
 
 		%连接具体形状
 		\path [line](init) -- (lock);
 		\path [line](lock) -- (twostep);
+		\path [line](lock) -- (twostep_left);
+		\path [line](lock) -- (twostep_right);
 		\path [line](twostep) -- (voting);
-		\path [line](voting) -- node[anchor=east] {ok} (update);
-		\path [line](voting) -- node[anchor=south] {not ok} (auditing);
+		\path [line](twostep_left) -- (voting);
+		\path [line](twostep_right) -- (voting);
+		\path [line](voting) -- node[anchor=east] {k個以上的}
+							    node[anchor=west] {ACK相同} (update);
+		\path [line](voting) -- node[anchor=north] {else} (auditing);
 		\path [line](auditing) |- (update);
-		\path [line](update) -- (unlock);
+		\path [line](update) -- node[anchor=south] {check root hash}
+								node[anchor=north] {check file hash} (unlock);
 		\path [line](unlock) |- (lock);
 		\end{tikzpicture}%
 	}
@@ -204,9 +224,9 @@
 
 \subsection{Initial}
 \begin{frame}{Initial}
-	\alert{File $\rightarrow$ Merkle Tree}\\
+	Create Merkle Tree
 	\begin{center}
-	\includegraphics[width=.8\textwidth]{init.png}
+	\includegraphics[width=.85\textwidth]{init.png}
 	\end{center}
 \end{frame}
 
@@ -256,29 +276,6 @@
 	\end{enumerate}
 \end{frame}
 
-\section{Experimental Results}
-\begin{frame}{Create Merkle Tree}
-	\begin{center}
-	\begin{tabu}{cccc}
-	\rowfont{\color{blue} \scriptsize} {Account A} & {666 MB}  & {42 files}     & {6 directories} \\
-	\end{tabu}
-	\end{center}
-	\begin{table}[]
-	\centering
-	\captionsetup{justification=centering}
-	\caption{\tiny THE EXECUTION TIME OF FOLLOWING OPERATIONS (IN MS)}
-	\begin{tabular}{|l|c|c|c|}
-	\hline
-	{\bf Operations}			  		  & {\bf Senior} & {\bf My}   \\ \hline
-	{\bf Request 100 times DOWNLOAD}	  & {\it 6332}   & {\it 6609} \\ \hline
-	{\bf Request 100 times UPLOAD}	  & {\it 4271}   & {\it 3054} \\ \hline
-	{\bf Audit after Download}		  & {\it 48}     & {\it 12}   \\ \hline
-	{\bf Audit after Upload}			  & {\it 46}     & {\it 5}    \\ \hline
-	\end{tabular}\\
-	\end{table}
-	\footnote{Test File : 1644 byte}
-\end{frame}
-
 \section{Schedules}
 \begin{frame}{Schedules}
 	\begin{enumerate}
@@ -293,12 +290,37 @@
 		\end{itemize}
 	\item Wei-Shian's Method Finished.}
 		\begin{itemize}
-			\item Attestation Chain Implements.
+			\item Acknowledgement Chain Implements.
 		\end{itemize}
-	\item \alert{Network Problems.}
-	\item \alert{VM Problems.}
+	\item \alert{Question: Read Operation slower than Write Operation}
 	\item Design Different Experiments.
 	\end{enumerate}
+\end{frame}
+
+\section{Experimental Results}
+\begin{frame}{Experimental Results}
+	\begin{table}[]
+	\centering
+	\captionsetup{justification=centering}
+	\caption{\tiny THE EXECUTION TIME OF FOLLOWING OPERATIONS (IN MS)}
+	\begin{tabular}{|l|l|l|l|l|l|}
+	\hline
+	Account A          &       & 666MB & 42files & 6dirs. &        \\ \hline
+	Test Data          & 1KB   & 10KB  & 100KB   & 1MB    & 10MB   \\ \hline
+	\textbf{Non POV}   &       &       &         &        &        \\ \hline
+	READ               & 0.72  & 0.519 & 0.471   & 1.766  & 13.417 \\ \hline
+	WRITE              & 1.086 & 0.651 & 1.891   & 3.172  & 16.426 \\ \hline
+	                   &       &       &         &        &        \\ \hline
+	\textbf{Wei Chih}  &       &       &         &        &        \\ \hline
+	READ               & 2.575 & 13.94 & 3.047   & 5.353  & 40.18  \\ \hline
+	WRITE              & 3.354 & 2.79  & 3.608   & 9.376  & 65.731 \\ \hline
+	                   &       &       &         &        &        \\ \hline
+	\textbf{Wei Shain} &       &       &         &        &        \\ \hline
+	READ               & 1.982 & 1.756 & 3.325   & 6.477  & \alert{40.606} \\ \hline
+	WRITE              & 1.708 & 2.046 & 3.67    & 4.834  & \alert{16.574} \\ \hline
+	\end{tabular}
+	\end{table}
+	\footnote{Server and Client on the Same Machine}
 \end{frame}
 
 \begin{frame}
