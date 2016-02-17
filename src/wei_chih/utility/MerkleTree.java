@@ -169,14 +169,23 @@ public class MerkleTree implements Serializable {
     
     public static void main(String[] args) {
         
-        String dataDirPath;
+        long time;
         
-        if (args.length != 1) {
-            dataDirPath = Config.DATA_A_PATH;
-        } else {
-            dataDirPath = Utils.getDataDirPath(args[0]);
+        for(int i = 0; i < 3; ++i) {
+            time = System.currentTimeMillis();
+
+            String dataDirPath;
+            if (args.length != 1) {
+                dataDirPath = Config.DATA_A_PATH;
+            } else {
+                dataDirPath = Utils.getDataDirPath(args[0]);
+            }
+
+            String hashValue = new MerkleTree(new File(dataDirPath)).getRootHash();
+            System.out.println("RootHash Hash Value: " + hashValue);
+
+            time = System.currentTimeMillis() - time;
+            System.out.println("Generate Root Hash Cost: " + time/1000.0 + "s");
         }
-        
-        System.out.println(new MerkleTree(new File(dataDirPath)).getRootHash());
     }
 }
