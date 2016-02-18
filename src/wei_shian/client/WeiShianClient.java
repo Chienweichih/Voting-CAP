@@ -200,7 +200,7 @@ public class WeiShianClient extends Client {
                 String lastCH = Utils.receive(in);
                 
                 if (!lastCH.equals(this.lastChainHash)) {
-                    File spFile = new File(Config.DOWNLOADS_DIR_PATH + File.separator + getHandlerAttestationPath());
+                    File spFile = new File(Config.DOWNLOADS_DIR_PATH + "/" + getHandlerAttestationPath());
 
                     downloadAtts(spFile);
 

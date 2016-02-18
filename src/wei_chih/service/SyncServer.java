@@ -66,7 +66,7 @@ public class SyncServer implements ConnectionHandler {
             
             LOCK.lock();
             
-            File syncAck = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "syncLast");
+            File syncAck = new File(Config.DOWNLOADS_DIR_PATH + "/syncLast");
             Map<Integer, String> syncAckStrs = new HashMap<>();
             
             if (!req.validate(clientPubKey)) {

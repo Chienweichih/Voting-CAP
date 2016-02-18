@@ -48,7 +48,7 @@ public class MerkleTree implements Serializable {
         }
         
         private static Node getNode(String path, Node root) {
-            String pattern = Pattern.quote(File.separator);
+            String pattern = Pattern.quote("/");
             String[] splittedFileName = path.split(pattern);
 
             Node target = root;

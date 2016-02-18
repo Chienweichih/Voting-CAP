@@ -159,7 +159,7 @@ public class VotingClient extends Client {
                     int diffPort = execute(op, Experiment.SERVER_PORTS[0]);
                     if (diffPort != -1) {
                         execute(new Operation(OperationType.AUDIT,
-                                              File.separator + "ATT_FOR_AUDIT",
+                                              "/ATT_FOR_AUDIT",
                                               Config.EMPTY_STRING),
                                 diffPort);
                         boolean audit = audit(diffPort, op, acks.get(diffPort).getResult());
@@ -198,7 +198,7 @@ public class VotingClient extends Client {
         time = System.currentTimeMillis();
         
         execute(new Operation(OperationType.AUDIT,
-                              File.separator + "ATT_FOR_AUDIT",
+                              "/ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
                 Experiment.SERVER_PORTS[0]);
         
@@ -255,7 +255,7 @@ public class VotingClient extends Client {
         }
         
         String calResult;
-        String attFileName = Config.DOWNLOADS_DIR_PATH + File.separator + "ATT_FOR_AUDIT";
+        String attFileName = Config.DOWNLOADS_DIR_PATH + "/ATT_FOR_AUDIT";
         
         switch (op.getType()) {
             case DOWNLOAD:
@@ -304,7 +304,7 @@ public class VotingClient extends Client {
     }
     
     private boolean syncAtts(Operation op, DataOutputStream out, DataInputStream in) {
-        File syncAck = new File(Config.DOWNLOADS_DIR_PATH + File.separator + "syncAck");
+        File syncAck = new File(Config.DOWNLOADS_DIR_PATH + "/syncAck");
         Map<Integer, String> syncAckStrs = new HashMap<>();
         
         Request req = new Request(op);

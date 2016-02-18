@@ -103,7 +103,7 @@ public class VotingHandler implements ConnectionHandler {
                     }
                     
                     sendFileAfterAck = true;
-                    file = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "voting");
+                    file = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/voting");
                     
                     switch (lastOP.getType()) {
                         case DOWNLOAD:

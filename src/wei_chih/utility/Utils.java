@@ -132,11 +132,11 @@ public class Utils extends utility.Utils {
         }
                 
         if (args[1].charAt(2) == '0') {
-            testFileName += File.separator + "100";
+            testFileName += "/100";
         } else if (args[1].charAt(1) == '0') {
-            testFileName += File.separator + "10";
+            testFileName += "/10";
         } else if (args[1].charAt(0) == '1') {
-            testFileName += File.separator + "1";
+            testFileName += "/1";
         } else {
             System.err.println("ARGUMENT ERROR");
             return new String[]{Config.EMPTY_STRING};

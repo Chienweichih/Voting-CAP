@@ -119,7 +119,7 @@ public class WeiShianHandler implements ConnectionHandler {
                     
                     sendFileAfterAck = true;
                     
-                    file = new File(Config.ATTESTATION_DIR_PATH + File.separator + "service-provider" + File.separator + "WeiShian");
+                    file = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/WeiShian");
                     Utils.Serialize(file, clientWanted);
                     digest = Utils.digest(file);
                     
