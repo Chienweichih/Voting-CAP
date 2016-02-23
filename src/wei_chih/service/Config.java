@@ -27,4 +27,6 @@ public interface Config extends service.Config {
     public String AUDIT_FAIL = "audit fail";
     public String OP_TYPE_MISMATCH = "operation type mismatch";
     public String WRONG_OP = "wrong op";
+    
+    public String PATH_SEPARATOR = "/";
 }

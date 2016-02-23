@@ -8,6 +8,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import wei_chih.service.Config;
 
@@ -47,24 +49,46 @@ public class MerkleTree implements Serializable {
             return children != null;
         }
         
+        /**
+         * parameter path is substring of file path after root and start with PATH_SEPARATOR
+         */
         private static Node getNode(String path, Node root) {
-            String pattern = Pattern.quote("/");
-            String[] splittedFileName = path.split(pattern);
+            String pattern = Pattern.quote(Config.PATH_SEPARATOR);
+            String[] splittedFileNames = path.split(pattern);
 
             Node target = root;
-            if (splittedFileName.length <= 1) {
-                return target;
+            switch (splittedFileNames.length) {
+                case 0:
+                    return target;
+                case 1:
+                    try {
+                        throw new java.lang.IllegalAccessException("PATH NOT START WITH PATH_SEPARATOR");
+                    } catch (IllegalAccessException ex) {
+                        Logger.getLogger(MerkleTree.class.getName()).log(Level.SEVERE, null, ex);
+                        return null;
+                    }
             }
 
-            for (String token : Arrays.copyOfRange(splittedFileName, 1, splittedFileName.length)) {
-                int index = 0;
+            boolean isAllMatch = false;
+            for (int index = 1; index < splittedFileNames.length; ++index) {
+                boolean isTokenMatch = false;
                 for (Node node : target.children) {
-                    if (node.fname.equals(token)) {
+                    if (node.fname.equals(splittedFileNames[index])) {
+                        isAllMatch = true;
+                        isTokenMatch = true;
+                        target = node;
                         break;
                     }
-                    ++index;
                 }
-                target = target.children.get(index);
+                
+                if (isAllMatch && isTokenMatch == false) {
+                    try {
+                        throw new java.lang.IllegalAccessException("PATH NOT MATCH");
+                    } catch (IllegalAccessException ex) {
+                        Logger.getLogger(MerkleTree.class.getName()).log(Level.SEVERE, null, ex);
+                        return null;
+                    }
+                }
             }
             return target;
         }
@@ -144,7 +168,7 @@ public class MerkleTree implements Serializable {
     
     private static List<File> sortedFiles(File[] unSortedFiles) {
         if (unSortedFiles == null) {
-            System.err.println("exceptionininitializererror?");
+            throw new java.lang.NullPointerException();
         }
         List<File> files = Arrays.asList(unSortedFiles);
         Collections.sort(files, (File lhs, File rhs) -> {
@@ -168,12 +192,7 @@ public class MerkleTree implements Serializable {
     }
     
     public static void main(String[] args) {
-        
-        long time;
-        
         for(int i = 0; i < 3; ++i) {
-            time = System.currentTimeMillis();
-
             String dataDirPath;
             if (args.length != 1) {
                 dataDirPath = Config.DATA_A_PATH;
@@ -181,11 +200,15 @@ public class MerkleTree implements Serializable {
                 dataDirPath = Utils.getDataDirPath(args[0]);
             }
 
-            String hashValue = new MerkleTree(new File(dataDirPath)).getRootHash();
-            System.out.println("RootHash Hash Value: " + hashValue);
-
+            long time = System.currentTimeMillis();
+            MerkleTree merkleTree = new MerkleTree(new File(dataDirPath));
             time = System.currentTimeMillis() - time;
-            System.out.println("Generate Root Hash Cost: " + time/1000.0 + "s");
+            System.out.println("Generate Merkle Tree Cost: " + time/1000.0 + " s");
+            
+            System.out.println("RootHash Value: " + merkleTree.getRootHash());
+            
+            String testFileName = Config.DATA_A_TESTFILE;
+            System.out.println("Test File's Hash Value: " + merkleTree.getDigest(testFileName));            
         }
     }
 }
