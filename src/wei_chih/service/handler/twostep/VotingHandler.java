@@ -73,7 +73,7 @@ public class VotingHandler implements ConnectionHandler {
                     
                     if (op.getMessage().equals(result)) {
                         sendFileAfterAck = true;
-                        file = new File(SocketServer.dataDirPath + op.getPath());
+                        file = new File(op.getPath());
                     } else if (!op.getMessage().equals(Config.EMPTY_STRING)) {
                         result = Config.DOWNLOAD_FAIL;
                     }

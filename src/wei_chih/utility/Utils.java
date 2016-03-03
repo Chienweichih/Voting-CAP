@@ -3,6 +3,7 @@ package wei_chih.utility;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -10,9 +11,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+import java.util.concurrent.ThreadLocalRandom;
 
 import wei_chih.service.Config;
 
@@ -87,21 +90,25 @@ public class Utils extends utility.Utils {
     }
     
     public static String getDataDirPath(String args) {
-        String dataDirPath = "";
-        switch (args.charAt(args.length() - 1)) {
-            case 'A':
-                dataDirPath = Config.DATA_A_PATH;
-                break;
-            case 'B':
-                dataDirPath = Config.DATA_B_PATH;
-                break;
-            case 'C':
-                dataDirPath = Config.DATA_C_PATH;
-                break;
-            case 'D':
-                dataDirPath = Config.DATA_D_PATH;
-                break;
-            default:
+        String dataDirPath = Config.EMPTY_STRING;
+        try {
+            switch (args.charAt(args.length() - 1)) {
+                case 'A':            
+                    dataDirPath = new File(Config.DATA_A_PATH).getCanonicalPath();
+                    break;
+                case 'B':
+                    dataDirPath = new File(Config.DATA_B_PATH).getCanonicalPath();
+                    break;
+                case 'C':
+                    dataDirPath = new File(Config.DATA_C_PATH).getCanonicalPath();
+                    break;
+                case 'D':
+                    dataDirPath = new File(Config.DATA_D_PATH).getCanonicalPath();
+                    break;
+                default:
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
         }
         return dataDirPath;
     }
@@ -152,5 +159,28 @@ public class Utils extends utility.Utils {
         }
         
         return new String[]{dataDirPath, testFileName};
+    }
+    
+    public static ArrayList<String> randomPickupFiles(String folderPath, int number) throws FileNotFoundException {
+        System.out.println(folderPath);
+        if (new File(folderPath).length() == 0L) {
+            throw new java.io.FileNotFoundException();
+        }
+        
+        ArrayList<String> fileNames = new ArrayList<>();
+        
+        for (int i = 0; i < number; ++i) {
+            File filePointer = new File(folderPath);
+            while (filePointer.isDirectory()) {
+                String[] fileList = filePointer.list();
+                int childNum = fileList.length;
+                int randomNum = ThreadLocalRandom.current().nextInt(0, childNum);
+                
+                filePointer = new File(filePointer.getAbsoluteFile() + File.separator + fileList[randomNum]);
+            }
+            fileNames.add(filePointer.getAbsolutePath());
+        }
+                
+        return fileNames;
     }
 }

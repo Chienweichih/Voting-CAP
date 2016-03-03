@@ -46,7 +46,7 @@ public class NonPOVClient extends Client {
         Utils.send(out, req.toString());
         
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
+            Utils.send(out, new File(op.getPath()));
         }
         
         Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
