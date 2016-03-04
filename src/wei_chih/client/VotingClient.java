@@ -87,7 +87,7 @@ public class VotingClient extends Client {
                     break;
                 }
             case AUDIT:
-                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                File file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
                 Utils.receive(in, file);
             break;
             default:

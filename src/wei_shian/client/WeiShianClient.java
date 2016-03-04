@@ -62,7 +62,7 @@ public class WeiShianClient extends Client {
         Utils.send(out, req.toString());
 
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
+            Utils.send(out, new File(Experiment.dataDirPath + Utils.subPath(op.getPath())));
         }
 
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
@@ -92,7 +92,7 @@ public class WeiShianClient extends Client {
 
                 break;
             case DOWNLOAD:
-                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                File file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
 
                 Utils.receive(in, file);
 

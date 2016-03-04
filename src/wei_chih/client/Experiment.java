@@ -41,7 +41,7 @@ public class Experiment {
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
-        final int runTimes = 100;
+        final int runTimes = 1;
         
         dataDirPath = Utils.getDataDirPath(args[0]);
         if (dataDirPath.equals(Config.EMPTY_STRING)) {
@@ -54,12 +54,14 @@ public class Experiment {
         
         try {
             for(String fileName : Utils.randomPickupFiles(dataDirPath, runTimes)) {
+                String digest = Utils.digest(new File(fileName));
+                
                 downloadOPs.add(new Operation(OperationType.DOWNLOAD,
-                                      fileName,
-                                      Utils.digest(new File(fileName))));
+                                              fileName,
+                                              digest));
                 uploadOPs.add(new Operation(OperationType.UPLOAD,
-                                      fileName,
-                                      Utils.digest(new File(fileName))));
+                                            fileName,
+                                            digest));
             }
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Experiment.class.getName()).log(Level.SEVERE, null, ex);

@@ -56,7 +56,7 @@ public class NonPOVClient extends Client {
         }
 
         if (op.getType() == OperationType.DOWNLOAD) {
-            Utils.receive(in, new File(Config.DOWNLOADS_DIR_PATH + op.getPath()));
+            Utils.receive(in, new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath())));
         }
     }
 

@@ -18,6 +18,7 @@ import service.handler.ConnectionHandler;
 import wei_chih.message.twostep.voting.Acknowledgement;
 import wei_chih.message.twostep.voting.Request;
 import wei_chih.service.Config;
+import wei_chih.service.SocketServer;
 import wei_chih.utility.Utils;
 
 /**
@@ -57,7 +58,7 @@ public class NonPOVHandler implements ConnectionHandler {
             String result = Config.EMPTY_STRING;
             
             if (op.getType() == OperationType.UPLOAD) {
-                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                File file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
                 Utils.receive(in, file);
                 result = Utils.digest(file);
             }
@@ -67,7 +68,7 @@ public class NonPOVHandler implements ConnectionHandler {
             Utils.send(out, ack.toString());
             
             if (op.getType() == OperationType.DOWNLOAD) {
-                Utils.send(out, new File(op.getPath()));
+                Utils.send(out, new File(SocketServer.dataDirPath + Utils.subPath(op.getPath())));
             }
             
             socket.close();

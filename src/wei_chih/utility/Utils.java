@@ -162,7 +162,6 @@ public class Utils extends utility.Utils {
     }
     
     public static ArrayList<String> randomPickupFiles(String folderPath, int number) throws FileNotFoundException {
-        System.out.println(folderPath);
         if (new File(folderPath).length() == 0L) {
             throw new java.io.FileNotFoundException();
         }
@@ -182,5 +181,13 @@ public class Utils extends utility.Utils {
         }
                 
         return fileNames;
+    }
+    
+    public static String subPath(String path) {
+        int indexOfHead = path.indexOf("Accounts");
+        if (indexOfHead == -1) {
+            return path;
+        }
+        return path.substring(indexOfHead + "Accounts/Account A".length());
     }
 }
