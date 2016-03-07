@@ -73,7 +73,7 @@ public class VotingHandler implements ConnectionHandler {
                     
                     if (op.getMessage().equals(result)) {
                         sendFileAfterAck = true;
-                        file = new File(SocketServer.dataDirPath + Utils.subPath(op.getPath()));
+                        file = new File(SocketServer.dataDirPath + op.getPath());
                     } else if (!op.getMessage().equals(Config.EMPTY_STRING)) {
                         result = Config.DOWNLOAD_FAIL;
                     }
@@ -82,7 +82,7 @@ public class VotingHandler implements ConnectionHandler {
                 case UPLOAD:
                     updateLastOP = true;
                     
-                    file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
+                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     Utils.receive(in, file);
                     String digest = Utils.digest(file);
 

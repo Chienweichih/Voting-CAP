@@ -7,8 +7,10 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.SignatureException;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import client.Client;
@@ -24,18 +26,57 @@ import wei_chih.utility.Utils;
  * @author chienweichih
  */
 public class NonPOVClient extends Client {
-    private static final Logger LOGGER;
-    
-    static {
-        LOGGER = Logger.getLogger(NonPOVClient.class.getName());
-    }
-    
     public NonPOVClient(KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
               Config.SERVICE_PORT[Config.SERVICE_NUM + 1],
               keyPair,
               spKeyPair,
               Config.NUM_PROCESSORS);
+    }
+    
+    @Override
+    public void run(final List<Operation> operations, int runTimes) {
+        System.out.println("Running (" + runTimes + " times):");
+        
+        List<Double> results = new ArrayList<>(); 
+        
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i; 
+            pool.execute(() -> {
+                long time = System.currentTimeMillis();
+                execute(operations.get(x % operations.size()));
+                results.add((System.currentTimeMillis() - time) / 1000.0);
+            });
+        }
+        
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        Collections.sort(results);
+        
+        if (runTimes < 10) {
+            for (double time : results) {
+                System.out.printf("%.5f s\n", time);
+            }
+        } else {
+            for (int i = 0; i < 5; ++i) {
+                System.out.printf("%.5f s\n", results.get(i));
+            }
+            
+            System.out.println(".");
+            System.out.println(".");
+            System.out.println(".");
+            
+            for (int i = 5; i > 0; --i) {
+                System.out.printf("%.5f s\n", results.get(results.size() - i));
+            }
+        }
+                
+        System.out.println("Audit not supported.");
     }
 
     @Override
@@ -45,54 +86,35 @@ public class NonPOVClient extends Client {
         req.sign(keyPair);
         Utils.send(out, req.toString());
         
+        File file = new File(Experiment.dataDirPath + op.getPath());
+        
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(op.getPath()));
+            Utils.send(out, file);
         }
         
         Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
-
         if (!ackTemp.validate(spKeyPair.getPublic())) {
             throw new SignatureException("ACK validation failure");
         }
-
+        
         if (op.getType() == OperationType.DOWNLOAD) {
-            Utils.receive(in, new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath())));
+            file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+            Utils.receive(in, file);
+        }
+
+        if (ackTemp.getResult().equals(Utils.digest(file)) == false) {
+            System.err.println(Config.DOWNLOAD_FAIL + " " + Config.UPLOAD_FAIL);
         }
     }
-
-    @Override
-    public void run(final List<Operation> operations, int runTimes) {
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= runTimes; i++) {
-            final int x = i; 
-            pool.execute(() -> {
-                execute(operations.get(x % operations.size()));
-            });
-        }
-        
-        pool.shutdown();
-        try {
-            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(runTimes + " times cost " + time + "ms");
-        
-        System.out.println("Audit not supported.");
-    }
-
+    
     @Override
     public String getHandlerAttestationPath() {
-        throw new UnsupportedOperationException("Not supported.");
+        throw new java.lang.UnsupportedOperationException();
     }
 
     @Override
     public boolean audit(File spFile) {
-        throw new UnsupportedOperationException("Not supported.");
+        throw new java.lang.UnsupportedOperationException();
     }
     
 }

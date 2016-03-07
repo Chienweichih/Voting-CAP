@@ -24,27 +24,23 @@ public class Experiment {
         dataDirPath = "";
     }
     
-    public static void main(String[] args) throws ClassNotFoundException {
+    public static void main(String[] args) {
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
         KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
         
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
-        final int runTimes = 1;
+        final int runTimes = 100;
         
         dataDirPath = Utils.getDataDirPath(args[0]);
-        if (dataDirPath.equals(Config.EMPTY_STRING)) {
-            System.err.println("ARGUMENT ERROR");
-            return;
-        }
-        
+
         List<Operation> downloadOPs = new ArrayList<>();
         List<Operation> uploadOPs = new ArrayList<>();
         
         try {
             for(String fileName : Utils.randomPickupFiles(dataDirPath, runTimes)) {
-                String digest = Utils.digest(new File(fileName));
+                String digest = Utils.digest(new File(dataDirPath + fileName));
                 
                 downloadOPs.add(new Operation(OperationType.DOWNLOAD,
                                               fileName,
@@ -57,17 +53,17 @@ public class Experiment {
             Logger.getLogger(Experiment.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        System.out.println("\nWeiShain");
-        System.out.println(dataDirPath);
-        System.out.print(Config.SERVICE_HOSTNAME);
-        System.out.println(" " + Config.WEI_SHIAN_SERVICE_PORT + " " + Config.WEI_SHIAN_SYNC_PORT);
+        System.out.println("\n === WeiShainPOV ===");
+        System.out.println("Data Path: " + dataDirPath);
+        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SERVICE_PORT);
+        System.out.println("Sync. Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SYNC_PORT);
 
-        for (int i = 0;i < 4;++i) {
+        for (int i = 0; i < 2; ++i) {
             System.out.println("\nUPLOAD " + i);
             new WeiShianClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
         }
 
-        for (int i = 0;i < 3;++i) {
+        for (int i = 0; i < 2; ++i) {
             System.out.println("\nDOWNLOAD " + i);
             new WeiShianClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
         }

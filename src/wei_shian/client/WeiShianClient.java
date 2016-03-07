@@ -8,9 +8,11 @@ import java.net.Socket;
 import java.security.PublicKey;
 import java.security.KeyPair;
 import java.security.SignatureException;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.ListIterator;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,6 +57,79 @@ public class WeiShianClient extends Client {
     }
     
     @Override
+    public void run(final List<Operation> operations, int runTimes) {
+        System.out.println("Running:");
+        
+        List<Double> results = new ArrayList<>(); 
+        
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i;
+            pool.execute(() -> {
+                long time = System.currentTimeMillis();
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+
+                    boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    execute(operations.get(x % operations.size()));
+                    
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    syncSuccess = syncAtts(UPLOAD, syncOut, SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+                    
+                    syncSocket.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                } finally {
+                    results.add((System.currentTimeMillis() - time) / 1000.0);
+                }
+            });
+        }
+        
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        
+        Collections.sort(results);
+        
+        if (runTimes < 10) {
+            for (double time : results) {
+                System.out.printf("%.5f s\n", time);
+            }
+        } else {
+            for (int i = 0; i < 5; ++i) {
+                System.out.printf("%.5f s\n", results.get(i));
+            }
+            
+            System.out.println(".");
+            System.out.println(".");
+            System.out.println(".");
+            
+            for (int i = 5; i > 0; --i) {
+                System.out.printf("%.5f s\n", results.get(results.size() - i));
+            }
+        }
+        
+        System.out.println("Auditing:");
+        
+        long time = System.currentTimeMillis();
+        boolean audit = audit();
+        System.out.println("Audit: " + audit + ", cost " + ((System.currentTimeMillis() - time) / 1000.0) + " s");
+    }
+    
+    @Override
     protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException, IllegalAccessException {
         Request req = new Request(op);
@@ -62,7 +137,7 @@ public class WeiShianClient extends Client {
         Utils.send(out, req.toString());
 
         if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(Experiment.dataDirPath + Utils.subPath(op.getPath())));
+            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
         }
 
         Acknowledgement ack = Acknowledgement.parse(Utils.receive(in));
@@ -92,7 +167,7 @@ public class WeiShianClient extends Client {
 
                 break;
             case DOWNLOAD:
-                File file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
+                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
 
                 Utils.receive(in, file);
 
@@ -108,58 +183,6 @@ public class WeiShianClient extends Client {
         }
     }
     
-    @Override
-    public void run(final List<Operation> operations, int runTimes) {
-        System.out.println("Running:");
-        
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= runTimes; i++) {
-            final int x = i;
-            pool.execute(() -> {
-                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
-                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-
-                    boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
-                    if (!syncSuccess) {
-                        System.err.println("Sync Error");
-                    }
-
-                    execute(operations.get(x % operations.size()));
-                    
-                    long start = System.currentTimeMillis();
-                    syncSuccess = syncAtts(UPLOAD, syncOut, SyncIn);
-                    this.attestationCollectTime += System.currentTimeMillis() - start;
-                    if (!syncSuccess) {
-                        System.err.println("Sync Error");
-                    }
-                    
-                    syncSocket.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
-                }
-            });
-        }
-        
-        pool.shutdown();
-        try {
-            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(runTimes + " times cost " + time + "ms");
-        
-        System.out.println("Auditing:");
-        
-        time = System.currentTimeMillis();
-        boolean audit = audit();
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println("Audit: " + audit + ", cost " + time + "ms");
-    }
-
     @Override
     public String getHandlerAttestationPath() {
         return "WeiShianUpdate";

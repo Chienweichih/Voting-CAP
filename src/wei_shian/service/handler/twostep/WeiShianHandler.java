@@ -75,7 +75,7 @@ public class WeiShianHandler implements ConnectionHandler {
                     addAckToChian = true;
                     sendFileAfterAck = true;
                     
-                    file = new File(SocketServer.dataDirPath + Utils.subPath(op.getPath()));
+                    file = new File(SocketServer.dataDirPath + op.getPath());
                     digest = Utils.digest(file);
                     
                     result = merkleTree.getRootHash();
@@ -84,7 +84,7 @@ public class WeiShianHandler implements ConnectionHandler {
                 case UPLOAD:
                     addAckToChian = true;
                     
-                    file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
+                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     
                     Utils.receive(in, file);
 

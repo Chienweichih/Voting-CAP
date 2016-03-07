@@ -106,10 +106,12 @@ public class Utils extends utility.Utils {
                     dataDirPath = new File(Config.DATA_D_PATH).getCanonicalPath();
                     break;
                 default:
+                    throw new java.lang.IllegalArgumentException();
             }
         } catch (IOException ex) {
-            Logger.getLogger(Utils.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, null, ex);
         }
+        
         return dataDirPath;
     }
     
@@ -162,7 +164,7 @@ public class Utils extends utility.Utils {
     }
     
     public static ArrayList<String> randomPickupFiles(String folderPath, int number) throws FileNotFoundException {
-        if (new File(folderPath).length() == 0L) {
+        if (new File(folderPath).exists() == false) {
             throw new java.io.FileNotFoundException();
         }
         
@@ -177,13 +179,13 @@ public class Utils extends utility.Utils {
                 
                 filePointer = new File(filePointer.getAbsoluteFile() + File.separator + fileList[randomNum]);
             }
-            fileNames.add(filePointer.getAbsolutePath());
+            fileNames.add(subPath(filePointer.getAbsolutePath()));
         }
                 
         return fileNames;
     }
     
-    public static String subPath(String path) {
+    private static String subPath(String path) {
         int indexOfHead = path.indexOf("Accounts");
         if (indexOfHead == -1) {
             return path;

@@ -9,7 +9,7 @@ public interface Config extends service.Config {
     public String SYNC_HOSTNAME = SERVICE_HOSTNAME;
     
     public int SERVICE_NUM = 3;
-    public int SERVICE_PORT[] = {3004, 3003, 3002, 3001, 3000};
+    public int SERVICE_PORT[] = {3000, 3001, 3002, 3003, 3004, 3005, 3006};
     
     public String DATA_A_PATH = "../Accounts/Account A";
     public String DATA_B_PATH = "../Accounts/Account B";

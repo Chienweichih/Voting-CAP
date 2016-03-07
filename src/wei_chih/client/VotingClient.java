@@ -10,6 +10,8 @@ import java.security.SignatureException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -54,43 +56,139 @@ public class VotingClient extends Client {
             acks.put(p, null);
         }
     }
-        
+    
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
-            throws SignatureException {
-        Request req = new Request(op);
-        req.sign(keyPair);
-        Utils.send(out, req.toString());
+    public void run(final List<Operation> operations, int runTimes) {
+        System.out.println("Running (" + runTimes + " times):");
         
-        if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(op.getPath()));
-        }
+        List<Double> results = new ArrayList<>(); 
         
-        Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i; 
+            pool.execute(() -> {
+                long time = System.currentTimeMillis();
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
+                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+                    Operation op = operations.get(x % operations.size());
+                    
+                    boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
+                                                                 Config.EMPTY_STRING,
+                                                                 (op.getType() == OperationType.UPLOAD)? Config.EMPTY_STRING: "Download Please"), 
+                                                   syncOut, 
+                                                   SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+                    
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    int diffPort = execute(op, Experiment.SERVER_PORTS[0]);
+                    if (diffPort != -1) {
+                        execute(new Operation(OperationType.AUDIT,
+                                              "/ATT_FOR_AUDIT",
+                                              Config.EMPTY_STRING),
+                                diffPort);
+                        boolean audit = audit(diffPort, op, acks.get(diffPort).getResult());
+                        System.out.println("Audit: " + audit);
+                    }
+                    
+                    syncRootHash = acks.get(Experiment.SERVER_PORTS[0]).getResult();
+                    
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
+                                                         Config.EMPTY_STRING,
+                                                         (op.getType() == OperationType.UPLOAD)? "Upload Please" : Config.EMPTY_STRING), 
+                                           syncOut, 
+                                           SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
 
-        if (!ackTemp.validate(spKeyPair.getPublic())) {
-            throw new SignatureException("ACK validation failure");
+                    syncSocket.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                } finally {
+                    results.add((System.currentTimeMillis() - time) / 1000.0);
+                }                
+            });
         }
+        
+        pool.shutdown();
+        try {
+            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+        } catch (InterruptedException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
+        }
+        
+        Collections.sort(results);
+        
+        if (runTimes < 10) {
+            for (double time : results) {
+                System.out.printf("%.5f s\n", time);
+            }
+        } else {
+            for (int i = 0; i < 5; ++i) {
+                System.out.printf("%.5f s\n", results.get(i));
+            }
+            
+            System.out.println(".");
+            System.out.println(".");
+            System.out.println(".");
+            
+            for (int i = 5; i > 0; --i) {
+                System.out.printf("%.5f s\n", results.get(results.size() - i));
+            }
+        }
+        
+        runAudit();
+    }
+    
+    private void runAudit() {
+        System.out.println("Auditing:");
+        
+        long time = System.currentTimeMillis();
+        execute(new Operation(OperationType.AUDIT,
+                              "/ATT_FOR_AUDIT",
+                              Config.EMPTY_STRING),
+                Experiment.SERVER_PORTS[0]);
+        System.out.println("Download attestation, cost " + (System.currentTimeMillis() - time)/1000.0 + " s");
+        
+        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
+             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+            
+            boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
+                                                         Config.EMPTY_STRING,
+                                                         "Download Please"), 
+                                           syncOut, 
+                                           SyncIn);
+            if (!syncSuccess) {
+                System.err.println("Sync Error");
+            }
 
-        String result = ackTemp.getResult();
-        if (result.equals(Config.AUDIT_FAIL) || 
-            result.equals(Config.DOWNLOAD_FAIL) ||
-            result.equals(Config.UPLOAD_FAIL)) {
-            System.err.println(result);
-        }
-        
-        acknowledgement = ackTemp;
-        
-        switch (op.getType()) {
-            case DOWNLOAD:
-                if (op.getMessage().equals(Config.EMPTY_STRING)) {
-                    break;
-                }
-            case AUDIT:
-                File file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
-                Utils.receive(in, file);
-            break;
-            default:
+            ///////////////////////////////////////////////////////////////////////////////////////////////////
+            
+            time = System.currentTimeMillis();
+            int testPort = Experiment.SERVER_PORTS[0];
+            boolean audit = audit(testPort, acks.get(testPort).getRequest().getOperation(), acks.get(testPort).getResult());
+            System.out.println("Audit: " + audit + ", cost " + (System.currentTimeMillis() - time)/1000.0 + " s");
+            
+            ///////////////////////////////////////////////////////////////////////////////////////////////////
+            
+            syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
+                                                 Config.EMPTY_STRING,
+                                                 Config.EMPTY_STRING), 
+                                   syncOut, 
+                                   SyncIn);
+            if (!syncSuccess) {
+                System.err.println("Sync Error");
+            }
+
+            syncSocket.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
     
@@ -135,113 +233,42 @@ public class VotingClient extends Client {
     }
     
     @Override
-    public void run(final List<Operation> operations, int runTimes) {
-        System.out.println("Running:");
+    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
+            throws SignatureException {
+        Request req = new Request(op);
+        req.sign(keyPair);
+        Utils.send(out, req.toString());
         
-        long time = System.currentTimeMillis();
-        for (int i = 1; i <= runTimes; i++) {
-            final int x = i; 
-            pool.execute(() -> {
-                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
-                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-                    Operation op = operations.get(x % operations.size());
-                    
-                    boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
-                                                                 Config.EMPTY_STRING,
-                                                                 (op.getType() == OperationType.UPLOAD)? Config.EMPTY_STRING: "Download Please"), 
-                                                   syncOut, 
-                                                   SyncIn);
-                    if (!syncSuccess) {
-                        System.err.println("Sync Error");
-                    }
-                    
-                    int diffPort = execute(op, Experiment.SERVER_PORTS[0]);
-                    if (diffPort != -1) {
-                        execute(new Operation(OperationType.AUDIT,
-                                              "/ATT_FOR_AUDIT",
-                                              Config.EMPTY_STRING),
-                                diffPort);
-                        boolean audit = audit(diffPort, op, acks.get(diffPort).getResult());
-                        System.out.println("Audit: " + audit);
-                    }
-                    
-                    syncRootHash = acks.get(Experiment.SERVER_PORTS[0]).getResult();
-                    
-                    syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
-                                                         Config.EMPTY_STRING,
-                                                         (op.getType() == OperationType.UPLOAD)? "Upload Please" : Config.EMPTY_STRING), 
-                                           syncOut, 
-                                           SyncIn);
-                    if (!syncSuccess) {
-                        System.err.println("Sync Error");
-                    }
+        if (op.getType() == OperationType.UPLOAD) {
+            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
+        }
+        
+        Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
 
-                    syncSocket.close();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
+        if (!ackTemp.validate(spKeyPair.getPublic())) {
+            throw new SignatureException("ACK validation failure");
+        }
+
+        String result = ackTemp.getResult();
+        if (result.equals(Config.AUDIT_FAIL) || 
+            result.equals(Config.DOWNLOAD_FAIL) ||
+            result.equals(Config.UPLOAD_FAIL)) {
+            System.err.println(result);
+        }
+        
+        acknowledgement = ackTemp;
+        
+        switch (op.getType()) {
+            case DOWNLOAD:
+                if (op.getMessage().equals(Config.EMPTY_STRING)) {
+                    break;
                 }
-            });
+            case AUDIT:
+                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                Utils.receive(in, file);
+            break;
+            default:
         }
-        
-        pool.shutdown();
-        try {
-            pool.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-        } catch (InterruptedException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-        time = System.currentTimeMillis() - time;
-        
-        System.out.println(runTimes + " times cost " + time + "ms");
-        
-        System.out.println("Auditing:");
-        time = System.currentTimeMillis();
-        
-        execute(new Operation(OperationType.AUDIT,
-                              "/ATT_FOR_AUDIT",
-                              Config.EMPTY_STRING),
-                Experiment.SERVER_PORTS[0]);
-        
-        time = System.currentTimeMillis() - time;
-        System.out.println("Download attestation, cost " + time + "ms");
-        
-        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
-             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-            
-            boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
-                                                         Config.EMPTY_STRING,
-                                                         "Download Please"), 
-                                           syncOut, 
-                                           SyncIn);
-            if (!syncSuccess) {
-                System.err.println("Sync Error");
-            }
-
-            time = System.currentTimeMillis();
-            int testPort = Experiment.SERVER_PORTS[0];
-            boolean audit = audit(testPort, acks.get(testPort).getRequest().getOperation(), acks.get(testPort).getResult());
-            time = System.currentTimeMillis() - time;
-            System.out.println("Audit: " + audit + ", cost " + time + "ms");
-            
-            syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
-                                                 Config.EMPTY_STRING,
-                                                 Config.EMPTY_STRING), 
-                                   syncOut, 
-                                   SyncIn);
-            if (!syncSuccess) {
-                System.err.println("Sync Error");
-            }
-
-            syncSocket.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
-        }
-    }
-
-    @Override
-    public String getHandlerAttestationPath() {
-        throw new UnsupportedOperationException("Not supported.");
     }
 
     @Override
@@ -344,5 +371,10 @@ public class VotingClient extends Client {
         }
         
         return true;
+    }
+    
+    @Override
+    public String getHandlerAttestationPath() {
+        throw new java.lang.UnsupportedOperationException();
     }
 }

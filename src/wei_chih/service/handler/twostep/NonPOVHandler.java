@@ -55,10 +55,10 @@ public class NonPOVHandler implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            String result = Config.EMPTY_STRING;
+            String result = Utils.digest(new File(SocketServer.dataDirPath + op.getPath()));
             
             if (op.getType() == OperationType.UPLOAD) {
-                File file = new File(Config.DOWNLOADS_DIR_PATH + Utils.subPath(op.getPath()));
+                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                 Utils.receive(in, file);
                 result = Utils.digest(file);
             }
@@ -68,7 +68,7 @@ public class NonPOVHandler implements ConnectionHandler {
             Utils.send(out, ack.toString());
             
             if (op.getType() == OperationType.DOWNLOAD) {
-                Utils.send(out, new File(SocketServer.dataDirPath + Utils.subPath(op.getPath())));
+                Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
             }
             
             socket.close();
