@@ -3,6 +3,7 @@ package wei_chih.client;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.SignatureException;
@@ -15,7 +16,6 @@ import java.util.concurrent.TimeUnit;
 
 import client.Client;
 import message.Operation;
-import message.OperationType;
 import wei_chih.message.twostep.voting.Acknowledgement;
 import wei_chih.message.twostep.voting.Request;
 import wei_chih.service.Config;
@@ -86,25 +86,34 @@ public class NonPOVClient extends Client {
         req.sign(keyPair);
         Utils.send(out, req.toString());
         
-        File file = new File(Experiment.dataDirPath + op.getPath());
-        
-        if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, file);
-        }
-        
         Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
         if (!ackTemp.validate(spKeyPair.getPublic())) {
             throw new SignatureException("ACK validation failure");
         }
         
-        if (op.getType() == OperationType.DOWNLOAD) {
-            file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-            Utils.receive(in, file);
-        }
-
-        if (ackTemp.getResult().equals(Utils.digest(file)) == false) {
-            System.err.println(Config.DOWNLOAD_FAIL + " " + Config.UPLOAD_FAIL);
-        }
+        File file;
+        switch (op.getType()) {
+                case UPLOAD:
+                    file = new File(Experiment.dataDirPath + op.getPath());
+                    Utils.send(out, file);
+                    break;
+                case DOWNLOAD:
+                    // !!!!! this is for multi server (wei_chih)
+                    //if (socket.getPort() == Config.SERVICE_PORT[0] ||
+                    //    socket.getLocalPort() == Config.SERVICE_PORT[0]) {
+                        file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                        Utils.receive(in, file);
+                        if (ackTemp.getResult().equals(Utils.digest(file)) == false) {
+                            try {
+                                throw new java.io.IOException();
+                            } catch (IOException ex) {
+                                Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
+                            }
+                        }
+                    //}
+                    break;
+                default:
+            }
     }
     
     @Override

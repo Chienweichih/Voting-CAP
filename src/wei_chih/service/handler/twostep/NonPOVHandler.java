@@ -13,7 +13,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.Operation;
-import message.OperationType;
 import service.handler.ConnectionHandler;
 import wei_chih.message.twostep.voting.Acknowledgement;
 import wei_chih.message.twostep.voting.Request;
@@ -57,18 +56,28 @@ public class NonPOVHandler implements ConnectionHandler {
             
             String result = Utils.digest(new File(SocketServer.dataDirPath + op.getPath()));
             
-            if (op.getType() == OperationType.UPLOAD) {
-                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-                Utils.receive(in, file);
-                result = Utils.digest(file);
-            }
-            
             Acknowledgement ack = new Acknowledgement(result, req);
             ack.sign(keyPair);
             Utils.send(out, ack.toString());
             
-            if (op.getType() == OperationType.DOWNLOAD) {
-                Utils.send(out, new File(SocketServer.dataDirPath + op.getPath()));
+            File file;
+            switch (op.getType()) {
+                case UPLOAD:
+                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                    Utils.receive(in, file);
+                    if (op.getMessage().equals(Utils.digest(file)) == false) {
+                        throw new java.io.IOException();
+                    }
+                    break;
+                case DOWNLOAD:
+                    // !!!!! this is for multi server (wei_chih)
+                    //if (socket.getPort() == Config.SERVICE_PORT[0] ||
+                    //    socket.getLocalPort() == Config.SERVICE_PORT[0]) {
+                        file = new File(SocketServer.dataDirPath + op.getPath());
+                        Utils.send(out, file);
+                    //}
+                    break;
+                default:
             }
             
             socket.close();

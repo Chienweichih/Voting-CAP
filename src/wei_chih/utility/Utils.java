@@ -93,16 +93,16 @@ public class Utils extends utility.Utils {
         String dataDirPath = Config.EMPTY_STRING;
         try {
             switch (args.charAt(args.length() - 1)) {
-                case 'A':            
+                case 'A':case 'a':
                     dataDirPath = new File(Config.DATA_A_PATH).getCanonicalPath();
                     break;
-                case 'B':
+                case 'B':case 'b':
                     dataDirPath = new File(Config.DATA_B_PATH).getCanonicalPath();
                     break;
-                case 'C':
+                case 'C':case 'c':
                     dataDirPath = new File(Config.DATA_C_PATH).getCanonicalPath();
                     break;
-                case 'D':
+                case 'D':case 'd':
                     dataDirPath = new File(Config.DATA_D_PATH).getCanonicalPath();
                     break;
                 default:

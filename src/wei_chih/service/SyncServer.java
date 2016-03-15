@@ -38,9 +38,7 @@ public class SyncServer implements ConnectionHandler {
         LOCK = new ReentrantLock();
         
         SERVER_PORTS = new int[Config.SERVICE_NUM];
-        for (int i = 0; i < Config.SERVICE_NUM; ++i) {
-            SERVER_PORTS[i] = Config.SERVICE_PORT[i];
-        }
+        System.arraycopy(Config.SERVICE_PORT, 0, SERVER_PORTS, 0, Config.SERVICE_NUM);
         
         SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
         

@@ -37,7 +37,7 @@ public class Experiment {
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
-        final int runTimes = 100;
+        final int runTimes = 1;
         
         dataDirPath = Utils.getDataDirPath(args[0]);
 

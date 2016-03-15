@@ -5,8 +5,10 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -101,7 +103,16 @@ public class MerkleTree implements Serializable {
     }
     
     public MerkleTree(File rootPath) {
-        this.root = create(rootPath, null);
+        String filePath = rootPath.getAbsolutePath();
+        char lastWord = filePath.toUpperCase().charAt(filePath.length() - 1);
+        String dataDirPath = "merkletree" + File.separator + lastWord + ".merkletree";
+        
+        if (new File(dataDirPath).exists()) {
+            MerkleTree merkleTree = (MerkleTree)Utils.Deserialize(dataDirPath);
+            this.root = new Node(merkleTree.root, null);
+        } else {
+            this.root = create(rootPath, null);
+        }
     }
     
     private Node create(File file, Node parent) {
@@ -192,23 +203,27 @@ public class MerkleTree implements Serializable {
     }
     
     public static void main(String[] args) {
-        for(int i = 0; i < 3; ++i) {
-            String dataDirPath;
-            if (args.length != 1) {
-                dataDirPath = Config.DATA_A_PATH;
-            } else {
-                dataDirPath = Utils.getDataDirPath(args[0]);
-            }
-
+        
+        HashMap<String, String> filePath = new HashMap<>();
+        filePath.put("A", Config.DATA_A_PATH);
+        filePath.put("B", Config.DATA_B_PATH);
+        filePath.put("C", Config.DATA_C_PATH);
+        
+        for (Entry<String, String> entry : filePath.entrySet()) {
             long time = System.currentTimeMillis();
-            MerkleTree merkleTree = new MerkleTree(new File(dataDirPath));
+            MerkleTree merkleTree = new MerkleTree(new File(entry.getValue()));
             time = System.currentTimeMillis() - time;
-            System.out.println("Generate Merkle Tree Cost: " + time/1000.0 + " s");
-            
-            System.out.println("RootHash Value: " + merkleTree.getRootHash());
-            
-            String testFileName = Config.DATA_A_TESTFILE;
-            System.out.println("Test File's Hash Value: " + merkleTree.getDigest(testFileName));            
+            System.out.printf("Generate Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1000.0);
+
+            time = System.currentTimeMillis();
+            Utils.Serialize(new File(entry.getKey() + ".merkletree"), merkleTree);
+            time = System.currentTimeMillis() - time;
+            System.out.printf("Serialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1000.0);
+        
+            time = System.currentTimeMillis();
+            Utils.Deserialize(entry.getKey() + ".merkletree");
+            time = System.currentTimeMillis() - time;
+            System.out.printf("Deserialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1000.0);
         }
     }
 }
