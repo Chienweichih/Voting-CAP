@@ -36,7 +36,6 @@ public class VotingClient extends Client {
     
     private Acknowledgement acknowledgement;
     
-    private String syncRootHash;
     private final Map<Integer, Acknowledgement> syncAcks;
     private final Map<Integer, Acknowledgement> acks;
     
@@ -47,7 +46,6 @@ public class VotingClient extends Client {
               spKeyPair,
               Config.NUM_PROCESSORS);
         
-        syncRootHash = null;
         syncAcks = new HashMap<>();
         acks = new HashMap<>();
         
@@ -89,11 +87,9 @@ public class VotingClient extends Client {
                                               "/ATT_FOR_AUDIT",
                                               Config.EMPTY_STRING),
                                 diffPort);
-                        boolean audit = audit(diffPort, op, acks.get(diffPort).getResult());
+                        boolean audit = audit(diffPort);
                         System.out.println("Audit: " + audit);
                     }
-                    
-                    syncRootHash = acks.get(Experiment.SERVER_PORTS[0]).getResult();
                     
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
                     
@@ -172,7 +168,7 @@ public class VotingClient extends Client {
             
             time = System.currentTimeMillis();
             int testPort = Experiment.SERVER_PORTS[0];
-            boolean audit = audit(testPort, acks.get(testPort).getRequest().getOperation(), acks.get(testPort).getResult());
+            boolean audit = audit(testPort);
             System.out.println("Audit: " + audit + ", cost " + (System.currentTimeMillis() - time)/1000.0 + " s");
             
             ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -211,17 +207,15 @@ public class VotingClient extends Client {
             try (Socket socket = new Socket(hostname, p);
                  DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                  DataInputStream in = new DataInputStream(socket.getInputStream())) {
-                if (op.getType() == OperationType.DOWNLOAD &&
-                    p == Experiment.SERVER_PORTS[0]) {
-                    // Download from one server
-                    op = new Operation(OperationType.DOWNLOAD,
-                                       op.getPath(),
-                                       syncRootHash);
-                }
                 hook(op, socket, out, in);
 
                 acks.replace(p, acknowledgement);
-                results.put(p, acknowledgement.getResult());
+                switch (op.getType()) {
+                    case DOWNLOAD:
+                        results.put(p, acknowledgement.getFileHash());
+                    case UPLOAD:
+                        results.put(p, acknowledgement.getRoothash());
+                }
                 
                 socket.close();
             } catch (IOException | SignatureException ex) {
@@ -239,33 +233,25 @@ public class VotingClient extends Client {
         req.sign(keyPair);
         Utils.send(out, req.toString());
         
-        if (op.getType() == OperationType.UPLOAD) {
-            Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
-        }
-        
-        Acknowledgement ackTemp = Acknowledgement.parse(Utils.receive(in));
+        acknowledgement = Acknowledgement.parse(Utils.receive(in));
 
-        if (!ackTemp.validate(spKeyPair.getPublic())) {
+        if (!acknowledgement.validate(spKeyPair.getPublic())) {
             throw new SignatureException("ACK validation failure");
         }
-
-        String result = ackTemp.getResult();
-        if (result.equals(Config.AUDIT_FAIL) || 
-            result.equals(Config.DOWNLOAD_FAIL) ||
-            result.equals(Config.UPLOAD_FAIL)) {
-            System.err.println(result);
-        }
-        
-        acknowledgement = ackTemp;
-        
+                
+        File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
         switch (op.getType()) {
             case DOWNLOAD:
-                if (op.getMessage().equals(Config.EMPTY_STRING)) {
-                    break;
+                if (socket.getPort() == Config.SERVICE_PORT[0] ||
+                    socket.getLocalPort() == Config.SERVICE_PORT[0]) {
+                    Utils.receive(in, file);
                 }
+                break;
+            case UPLOAD:
+                Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
+                break;
             case AUDIT:
-                File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-                Utils.receive(in, file);
+                Utils.receive(in, file);                
             break;
             default:
         }
@@ -273,36 +259,43 @@ public class VotingClient extends Client {
 
     @Override
     public boolean audit(File spFile) {
-        return audit(0, null, null);
+        return audit(-1);
     }
     
-    public boolean audit(int port, Operation op, String roothash) {
-        if (op == null || roothash == null) {
+    public boolean audit(int port) {
+        if (port == -1) {
             return false;
         }
         
-        String calResult;
-        String attFileName = Config.DOWNLOADS_DIR_PATH + "/ATT_FOR_AUDIT";
+        Acknowledgement lastAck = syncAcks.get(port);
+        String lastRootHash = lastAck.getRoothash();
         
-        switch (op.getType()) {
+        Acknowledgement thisack = acks.get(port);
+        String thisRootHash = thisack.getRoothash();
+        
+        String serverGaveMeRoothash = null;
+        String meCalculateRoothash = null;
+        
+        String attFileName = Config.DOWNLOADS_DIR_PATH + "/ATT_FOR_AUDIT";
+        Operation thisOp = thisack.getRequest().getOperation();
+        
+        switch (thisOp.getType()) {
             case DOWNLOAD:
-                calResult = Utils.read(attFileName);
+                serverGaveMeRoothash = Utils.read(attFileName);
+                meCalculateRoothash = serverGaveMeRoothash;
                 break;
             case UPLOAD:
                 MerkleTree merkleTree = Utils.Deserialize(attFileName);
+                serverGaveMeRoothash = merkleTree.getRootHash();
                 
-                if (!syncRootHash.equals(merkleTree.getRootHash())) {
-                    return false;
-                }
+                merkleTree.update(thisOp.getPath(), thisOp.getMessage());
+                meCalculateRoothash = merkleTree.getRootHash();
                 
-                merkleTree.update(op.getPath(), op.getMessage());
-                calResult = merkleTree.getRootHash();
                 break;
             default:
-                calResult = Config.WRONG_OP;
         }
         
-        return calResult.equals(roothash);
+        return lastRootHash.equals(serverGaveMeRoothash) && thisRootHash.equals(meCalculateRoothash);
     }
     
     private int voting(Map<Integer, String> inputs) {
@@ -345,7 +338,6 @@ public class VotingClient extends Client {
         switch (op.getType()){
             case DOWNLOAD:
                 Utils.receive(in, syncAck);
-                syncRootHash = Utils.receive(in);
                 
                 syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
 
@@ -357,14 +349,13 @@ public class VotingClient extends Client {
                 break;
             case UPLOAD:
                 for (int p : Experiment.SERVER_PORTS) {
-                    String lastStr = (syncAcks.get(p) == null) ? null : syncAcks.get(p).toString();
+                    String lastStr = (acks.get(p) == null) ? null : acks.get(p).toString();
                     syncAckStrs.put(p, lastStr);
                 }
 
                 Utils.Serialize(syncAck, syncAckStrs);
 
                 Utils.send(out, syncAck);
-                Utils.send(out, syncRootHash);
                 break;
             default:
                 return false;

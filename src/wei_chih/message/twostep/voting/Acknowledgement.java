@@ -9,16 +9,20 @@ import org.w3c.dom.NodeList;
  */
 public class Acknowledgement extends SOAPMessage {
     private static final long serialVersionUID = 20141006L;
-    private final String result;
+    //private final String result;
+    private final String roothash;
+    private final String fileHash;
     private final Request request;
     
-    public Acknowledgement(String result, Request req) {
+    public Acknowledgement(String roothash, String fileHash, Request req) {
         super("acknowledgement");
         
-        this.result = result;
+        this.roothash = roothash;
+        this.fileHash = fileHash;
         this.request = req;
         
-        add2Body("result", result);
+        add2Body("roothash", roothash);
+        add2Body("fileHash", fileHash);
         add2Body("request", request.toString());
     }
     
@@ -27,12 +31,17 @@ public class Acknowledgement extends SOAPMessage {
         
         NodeList body = getBody();
         
-        this.result = body.item(0).getTextContent();
-        this.request = Request.parse(body.item(1).getTextContent());
+        this.roothash = body.item(0).getTextContent();
+        this.fileHash = body.item(1).getTextContent();
+        this.request = Request.parse(body.item(2).getTextContent());
     }
     
-    public String getResult() {
-        return result;
+    public String getRoothash() {
+        return roothash;
+    }
+    
+    public String getFileHash() {
+        return fileHash;
     }
     
     public Request getRequest() {
@@ -54,13 +63,14 @@ public class Acknowledgement extends SOAPMessage {
         
         final Acknowledgement objAck = (Acknowledgement) obj;
         
-        return this.result.equals(objAck.result) && this.request.equals(objAck.request);
+        return this.roothash.equals(objAck.roothash) && this.fileHash.equals(objAck.fileHash) && this.request.equals(objAck.request);
     }
     
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 53 * hash + (this.result != null ? this.result.hashCode() : 0);
+        hash = 53 * hash + (this.roothash != null ? this.roothash.hashCode() : 0);
+        hash = 53 * hash + (this.fileHash != null ? this.fileHash.hashCode() : 0);
         hash = 53 * hash + (this.request != null ? this.request.hashCode() : 0);
         return hash;
     }

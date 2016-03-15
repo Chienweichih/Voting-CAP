@@ -29,7 +29,6 @@ public class SyncServer implements ConnectionHandler {
     protected static final int[] SERVER_PORTS;
     protected static final int SYNC_PORT;
     
-    private static String rootHash;
     private static final Map<Integer, Acknowledgement> lastAcks;
     
     private final Socket socket;
@@ -41,9 +40,7 @@ public class SyncServer implements ConnectionHandler {
         System.arraycopy(Config.SERVICE_PORT, 0, SERVER_PORTS, 0, Config.SERVICE_NUM);
         
         SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
-        
-        rootHash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
-        
+                
         lastAcks = new HashMap<>();
         for (int port : SERVER_PORTS) {
             lastAcks.put(port, null);
@@ -84,7 +81,6 @@ public class SyncServer implements ConnectionHandler {
                 Utils.Serialize(syncAck, syncAckStrs);
 
                 Utils.send(out, syncAck);
-                Utils.send(out, rootHash);
             }
             
             // wait until client finish
@@ -101,7 +97,6 @@ public class SyncServer implements ConnectionHandler {
             
             if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
                 Utils.receive(in, syncAck);
-                rootHash = Utils.receive(in);
                 
                 syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
 

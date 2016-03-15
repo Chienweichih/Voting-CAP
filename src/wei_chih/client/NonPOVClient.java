@@ -98,19 +98,15 @@ public class NonPOVClient extends Client {
                     Utils.send(out, file);
                     break;
                 case DOWNLOAD:
-                    // !!!!! this is for multi server (wei_chih)
-                    //if (socket.getPort() == Config.SERVICE_PORT[0] ||
-                    //    socket.getLocalPort() == Config.SERVICE_PORT[0]) {
-                        file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-                        Utils.receive(in, file);
-                        if (ackTemp.getResult().equals(Utils.digest(file)) == false) {
-                            try {
-                                throw new java.io.IOException();
-                            } catch (IOException ex) {
-                                Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
-                            }
+                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                    Utils.receive(in, file);
+                    if (ackTemp.getFileHash().equals(Utils.digest(file)) == false) {
+                        try {
+                            throw new java.io.IOException();
+                        } catch (IOException ex) {
+                            Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
                         }
-                    //}
+                    }
                     break;
                 default:
             }

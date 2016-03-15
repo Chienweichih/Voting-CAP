@@ -56,7 +56,7 @@ public class NonPOVHandler implements ConnectionHandler {
             
             String result = Utils.digest(new File(SocketServer.dataDirPath + op.getPath()));
             
-            Acknowledgement ack = new Acknowledgement(result, req);
+            Acknowledgement ack = new Acknowledgement(null, result, req);
             ack.sign(keyPair);
             Utils.send(out, ack.toString());
             
@@ -70,12 +70,8 @@ public class NonPOVHandler implements ConnectionHandler {
                     }
                     break;
                 case DOWNLOAD:
-                    // !!!!! this is for multi server (wei_chih)
-                    //if (socket.getPort() == Config.SERVICE_PORT[0] ||
-                    //    socket.getLocalPort() == Config.SERVICE_PORT[0]) {
-                        file = new File(SocketServer.dataDirPath + op.getPath());
-                        Utils.send(out, file);
-                    //}
+                    file = new File(SocketServer.dataDirPath + op.getPath());
+                    Utils.send(out, file);
                     break;
                 default:
             }
