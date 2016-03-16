@@ -16,8 +16,8 @@ import java.util.concurrent.TimeUnit;
 
 import client.Client;
 import message.Operation;
-import wei_chih.message.twostep.voting.Acknowledgement;
-import wei_chih.message.twostep.voting.Request;
+import wei_chih.message.twostep.nonpov.Acknowledgement;
+import wei_chih.message.twostep.nonpov.Request;
 import wei_chih.service.Config;
 import wei_chih.utility.Utils;
 
@@ -100,7 +100,7 @@ public class NonPOVClient extends Client {
                 case DOWNLOAD:
                     file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     Utils.receive(in, file);
-                    if (ackTemp.getFileHash().equals(Utils.digest(file)) == false) {
+                    if (ackTemp.getResult().equals(Utils.digest(file)) == false) {
                         try {
                             throw new java.io.IOException();
                         } catch (IOException ex) {

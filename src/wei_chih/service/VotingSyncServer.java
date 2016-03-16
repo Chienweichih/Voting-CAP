@@ -23,7 +23,7 @@ import wei_chih.utility.*;
  *
  * @author chienweichih
  */
-public class SyncServer implements ConnectionHandler {
+public class VotingSyncServer implements ConnectionHandler {
     private static final ReentrantLock LOCK;
     
     protected static final int[] SERVER_PORTS;
@@ -47,7 +47,7 @@ public class SyncServer implements ConnectionHandler {
         }
     }
     
-    public SyncServer(Socket socket, KeyPair keyPair) {
+    public VotingSyncServer(Socket socket, KeyPair keyPair) {
         this.socket = socket;
     }
     
@@ -109,7 +109,7 @@ public class SyncServer implements ConnectionHandler {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(SyncServer.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(VotingSyncServer.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

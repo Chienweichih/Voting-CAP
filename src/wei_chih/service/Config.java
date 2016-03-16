@@ -11,6 +11,9 @@ public interface Config extends service.Config {
     public int SERVICE_NUM = 3;
     public int SERVICE_PORT[] = {3000, 3001, 3002, 3003, 3004, 3005, 3006};
     
+    public int WEI_SHIAN_SERVICE_PORT = SERVICE_PORT[SERVICE_PORT.length - 1];
+    public int WEI_SHIAN_SYNC_PORT = SERVICE_PORT[SERVICE_PORT.length - 2];
+    
     public String DATA_A_PATH = "../Accounts/Account A";
     public String DATA_B_PATH = "../Accounts/Account B";
     public String DATA_C_PATH = "../Accounts/Account C";

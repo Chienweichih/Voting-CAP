@@ -1,4 +1,4 @@
-package wei_shian.service;
+package wei_chih.service;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,15 +14,15 @@ import java.util.logging.Logger;
 
 import message.OperationType;
 import service.handler.ConnectionHandler;
+import wei_chih.message.twostep.weishian.Request;
 import wei_chih.utility.Utils;
 import wei_chih.utility.MerkleTree;
-import wei_shian.message.twostep.voting.Request;
 
 /**
  *
  * @author chienweichih
  */
-public class SyncServer implements ConnectionHandler {
+public class WeiShianSyncServer implements ConnectionHandler {
     private static final ReentrantLock LOCK;
     
     private static String roothash;
@@ -37,7 +37,7 @@ public class SyncServer implements ConnectionHandler {
         lastAck = Utils.digest(Config.DEFAULT_CHAINHASH);
     }
     
-    public SyncServer(Socket socket, KeyPair keyPair) {
+    public WeiShianSyncServer(Socket socket, KeyPair keyPair) {
         this.socket = socket;
     }
     
@@ -79,7 +79,7 @@ public class SyncServer implements ConnectionHandler {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(SyncServer.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(WeiShianSyncServer.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

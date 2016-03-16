@@ -14,8 +14,8 @@ import java.util.logging.Logger;
 
 import message.Operation;
 import service.handler.ConnectionHandler;
-import wei_chih.message.twostep.voting.Acknowledgement;
-import wei_chih.message.twostep.voting.Request;
+import wei_chih.message.twostep.nonpov.Acknowledgement;
+import wei_chih.message.twostep.nonpov.Request;
 import wei_chih.service.Config;
 import wei_chih.service.SocketServer;
 import wei_chih.utility.Utils;
@@ -56,7 +56,7 @@ public class NonPOVHandler implements ConnectionHandler {
             
             String result = Utils.digest(new File(SocketServer.dataDirPath + op.getPath()));
             
-            Acknowledgement ack = new Acknowledgement(null, result, req);
+            Acknowledgement ack = new Acknowledgement(result);
             ack.sign(keyPair);
             Utils.send(out, ack.toString());
             

@@ -1,4 +1,4 @@
-package wei_shian.client;
+package wei_chih.client;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -20,10 +20,11 @@ import java.util.logging.Logger;
 import client.Client;
 import message.Operation;
 import message.OperationType;
+import wei_chih.message.twostep.weishian.Request;
+import wei_chih.message.twostep.weishian.Acknowledgement;
+import wei_chih.service.Config;
 import wei_chih.utility.MerkleTree;
 import wei_chih.utility.Utils;
-import wei_shian.message.twostep.voting.*;
-import wei_shian.service.Config;
 
 /**
  *

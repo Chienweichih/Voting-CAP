@@ -1,4 +1,4 @@
-package wei_shian.message.twostep.voting;
+package wei_chih.message.twostep.weishian;
 
 import message.SOAPMessage;
 import org.w3c.dom.NodeList;
