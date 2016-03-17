@@ -64,10 +64,12 @@ public class VotingClient extends Client {
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
-                long time = System.currentTimeMillis();
+                
                 try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+                    long time = System.currentTimeMillis();
+                    
                     Operation op = operations.get(x % operations.size());
                     
                     boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
@@ -103,11 +105,10 @@ public class VotingClient extends Client {
                     }
 
                     syncSocket.close();
+                    results.add((System.currentTimeMillis() - time) / 1000.0);
                 } catch (IOException ex) {
                     LOGGER.log(Level.SEVERE, null, ex);
-                } finally {
-                    results.add((System.currentTimeMillis() - time) / 1000.0);
-                }                
+                }            
             });
         }
         
