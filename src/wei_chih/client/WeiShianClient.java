@@ -104,6 +104,12 @@ public class WeiShianClient extends Client {
         
         Collections.sort(results);
         
+        Double sum = 0.0;
+        for (Double num : results) {
+            sum += num;
+        }
+        System.out.println("Average time:" + sum.doubleValue()/results.size());
+        
         if (runTimes < 10) {
             for (double time : results) {
                 System.out.printf("%.5f s\n", time);
@@ -319,18 +325,15 @@ public class WeiShianClient extends Client {
     
     private void worstCase() {
         lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+            syncAtts(DOWNLOAD, syncOut, SyncIn);
+            syncAtts(UPLOAD, syncOut, SyncIn);
 
-        for (int i = 0;i < 100; ++i) {
-            try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
-                 DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-                 DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-                syncAtts(DOWNLOAD, syncOut, SyncIn);
-                syncAtts(UPLOAD, syncOut, SyncIn);
-
-                syncSocket.close();
-            } catch (IOException ex) {
-                LOGGER.log(Level.SEVERE, null, ex);
-            }
+            syncSocket.close();
+        } catch (IOException ex) {
+            LOGGER.log(Level.SEVERE, null, ex);
         }
     }
 }

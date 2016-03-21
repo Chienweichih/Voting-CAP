@@ -121,6 +121,12 @@ public class VotingClient extends Client {
         
         Collections.sort(results);
         
+        Double sum = 0.0;
+        for (Double num : results) {
+            sum += num;
+        }
+        System.out.println("Average time:" + sum.doubleValue()/results.size());
+        
         if (runTimes < 10) {
             for (double time : results) {
                 System.out.printf("%.5f s\n", time);

@@ -179,7 +179,12 @@ public class Utils extends utility.Utils {
                 
                 filePointer = new File(filePointer.getAbsoluteFile() + File.separator + fileList[randomNum]);
             }
-            fileNames.add(subPath(filePointer.getAbsolutePath()));
+            String randPath = subPath(filePointer.getAbsolutePath());
+            if (fileNames.contains(randPath)) {
+                --i;
+            } else {
+                fileNames.add(randPath);
+            }
         }
                 
         return fileNames;
