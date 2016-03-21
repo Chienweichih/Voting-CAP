@@ -33,10 +33,15 @@
 %\usetheme{Szeged}
 %\usetheme{Warsaw}
 
+% Chinese display
 \usepackage{CJKutf8}
+
+% Table's caption
+\usepackage{caption}
+
+% Flow Charts 
 \usepackage{tikz}
 \usetikzlibrary{shapes.geometric, arrows}
-
 \tikzset{
 	flowchartnode/.style = {minimum width=3cm, minimum height=1cm, text centered, draw=black},
 	process/.style = {rectangle, flowchartnode, fill=orange!30},
@@ -45,62 +50,40 @@
 	line/.style = {draw, -latex'}
 }
 
-\let\thefootnote\relax\footnotetext{Footnotetext without footnote mark}
+% Set footnotetext without footnote mark
+\let\thefootnote\relax\footnotetext{}
+
+% Roman Numbers
 \newcommand{\RNum}[1]{\uppercase\expandafter{\romannumeral #1\relax}}
+
+% Tab
 \newcommand{\tab}[1]{\hspace{.1\textwidth}\rlap{#1}}
 
-\usepackage{caption}
-\usepackage{tabu}
-\usepackage{listings}
-\usepackage{color}
- 
-\definecolor{codegreen}{rgb}{0,0.6,0}
-\definecolor{codegray}{rgb}{0.5,0.5,0.5}
-\definecolor{codepurple}{rgb}{0.58,0,0.82}
-\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
- 
-\lstdefinestyle{mystyle}{
-    backgroundcolor=\color{backcolour},   
-    commentstyle=\color{codegreen},
-    keywordstyle=\color{magenta},
-    numberstyle=\tiny\color{codegray},
-    stringstyle=\color{codepurple},
-    basicstyle=\footnotesize,
-    breakatwhitespace=false,         
-    breaklines=true,                 
-    captionpos=b,                    
-    keepspaces=true,                 
-    numbers=left,                    
-    numbersep=5pt,                  
-    showspaces=false,                
-    showstringspaces=false,
-    showtabs=false,                  
-    tabsize=2
-}
+% Divider
+\newcommand{\divider}[1]{\noindent\rule{.9\textwidth}{1pt}}
 
-\lstset{style=mystyle}
-
+% Figure directory
 \graphicspath{{fig/}}
 
-%First page
-\title[Progress Report]{Instant Auditing of Cloud Storage Access without Evidence Cached}
-
+% First page
+\title[Progress Report]{Instant Auditing of Cloud Storage Access without Cumulative Evidence}
 \author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang\\ Student : Wei-Chih Chien}
-
 \institute[NTNU CSIE CCLAB]{NTNU CSIE CCLAB}
+\date{2016.03.22}
 
-\date{2015.12.31}
-
+% Let every section start with outline
 \AtBeginSection[]
 {
   \begin{frame}<beamer>{Outline}
-    \tableofcontents[currentsection]
+  	\tableofcontents[currentsection]
   \end{frame}
 }
 
-% Let's get started
+% Start content
 \begin{document}
+% Chinese display
 \begin{CJK}{UTF8}{bkai}
+
 \begin{frame}
   \titlepage
 \end{frame}
@@ -110,76 +93,83 @@
 \end{frame}
 
 \section{Scenario}
-\begin{frame}{Scenario}{Why Real-time Auditing?}
+\begin{frame}{Scenario}{Law Office}
+	\alert{Advantage of Cloud Storage:}\\
+	\textcolor{blue}{
+		\hspace{.1\textwidth}Save money on hardware cost\\
+		\hspace{.1\textwidth}Easily access files\\
+		\hspace{.1\textwidth}...
+	}
 	\begin{center}
-	\includegraphics[width=.7\textwidth]{Scenario1.png}
+		\includegraphics[width=.5\textwidth]{Scenario1}
 	\end{center}
 \end{frame}
 
 \begin{frame}{Scenario (CON'T)}{Version Control}
 	\begin{center}
-	\includegraphics[width=.4\textwidth]{Scenario2.png}
+		\includegraphics[width=.4\textwidth]{Scenario2}\\
+		\textcolor{blue}{Always Get the Latest Version of Files.}
 	\end{center}
 \end{frame}
 
-\begin{frame}{Scenario (CON'T)}{Problem}
+\begin{frame}{Scenario (CON'T)}{What if...}
 	\begin{center}
-	\includegraphics[width=.7\textwidth]{Scenario3.png}
+		\includegraphics[width=.7\textwidth]{Scenario3}\\
+		\textcolor{blue}{To request compensation, \alert{Cryptographic Proof} is necessary}
 	\end{center}
-	\alert{Cryptography Proof Needed}
 \end{frame}
 
 \section{Real-time Auditing Schemes}
-\subsection{\small{Intuitive Method}}
-\begin{frame}{Intuitive Method}
-	\begin{center}
-	\includegraphics[width=.7\textwidth]{intuitive.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{Problem}
-	\begin{center}
-	\includegraphics[width=.5\textwidth]{Problem1.png}
-	\end{center}
-\end{frame}
-
 \subsection{\small{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
 \begin{frame}{\normalsize{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
 {\tiny{2014 IEEE 6th International Conference on Cloud Computing Technology and Science}}
+	\textcolor{blue}{Merkle Tree}\\
+	~\\
 	\begin{center}
-	\includegraphics[width=.8\textwidth]{wei_shian.png}
+		\includegraphics[width=.85\textwidth]{merkle_tree}
 	\end{center}
 \end{frame}
 
-\begin{frame}{Worse-case}
+\begin{frame}{\normalsize{Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree}}
+{\tiny{2014 IEEE 6th International Conference on Cloud Computing Technology and Science}}
 	\begin{center}
-	\includegraphics[width=.7\textwidth]{Problem2.png}
+		\includegraphics[width=.8\textwidth]{wei_shian}
 	\end{center}
-	\alert{因為要更新client端的Merkle Tree, 累積太多版本就需要很多時間來更新}
+\end{frame}
+
+\begin{frame}{Worst-case}
+	\textcolor{blue}{若有個 device 很久沒有使用，在讀寫檔案前需要更新大量未做的動作\\
+	~\\
+	使用者將會明顯感受到漫長的等待時間}\\
+	~\\
+	~\\
+	~\\
+	\begin{center}
+		\includegraphics[width=.5\textwidth]{worst_case}
+	\end{center}
 \end{frame}
 
 \subsection{\small{My Method}}
 \begin{frame}{My Method}
-	\color{blue} Assumption: $\text{同時有k個server上同一file出問題的機率} \approx 0$
+	\textcolor{blue}{Assumption: $\text{同時有 k 個 server 上同一 file 出問題的機率} \approx 0$}
 	\begin{center}
-	\alert{Service Providers are Independent Cloud}
-	\includegraphics[width=.7\textwidth]{wei_chih.png}
+		\alert{Service Providers are Independent Cloud}
+		\includegraphics[width=.7\textwidth]{wei_chih}
 	\end{center}
 \end{frame}
 
 \begin{frame}{Comparison}
 	\begin{itemize}
-		\item Pros
+		\item \textcolor{blue}{Pros}
 			\begin{enumerate}
-				\item Device 不用存 Merkle Tree, 省空間
-				\item Device 也不用同步 Merkle Tree, 省時間
+				\item Device 不用儲存、也不用修改 Merkle tree, 既省空間又省時間
 				\item 資料有多份備份
-				\item 平均比之前的方法快速, 且沒有 Worse-case
+				\item 解決之前的 Worst-case
 			\end{enumerate}
-		\item Cons
+		~\\
+		\item \textcolor{red}{Cons}
 			\begin{enumerate}
-				\item 硬體成本較高
-				\item 需要處理多份 Response
+				\item 需要傳送多份 Request, 處理多份 Response
 			\end{enumerate}
 	\end{itemize}
 \end{frame}
@@ -188,145 +178,204 @@
 \subsection{Flowchart}
 \begin{frame}{Flowchart}
 	\begin{center}
-	\resizebox{!}{.6\textwidth}
-	{%
-		\begin{tikzpicture}[node distance=2cm]
-		%定义流程图具体形状
-		\node (init) [process] {Initial};
-		\node (lock) [process, below of=init] {Lock};
-		\node (twostep) [process, below of=lock] {2-step Handshake};
-		\node (twostep_left) [process, left of=twostep, xshift=-2cm] {2-step Handshake};
-		\node (twostep_right) [process, right of=twostep, xshift=2cm] {2-step Handshake};
-		\node (voting) [decision, below of=twostep] {Voting};
-		\node (update) [io, below of=voting, align=center, yshift=-0.5cm] {File \\ Transmit};
-		\node (auditing) [process, right of=voting, xshift=2.5cm] {Auditing};
-		\node (unlock) [process, left of=update, xshift=-4cm] {Unlock};
+		\resizebox{!}{.6\textwidth}
+		{%
+			\begin{tikzpicture}[node distance=2cm]
+				% Define flow charts' component
+				\node (init) [process] {Initial};
+				\node (lock) [process, below of=init] {Lock};
+				\node (twostep) [process, below of=lock] {2-step Handshake};
+				\node (twostep_left) [process, left of=twostep, xshift=-2cm] {2-step Handshake};
+				\node (twostep_right) [process, right of=twostep, xshift=2cm] {2-step Handshake};
+				\node (voting) [decision, below of=twostep] {Voting};
+				\node (store) [process, below of=voting, yshift=-0.5cm] {Store ACK};
+				\node (update) [io, below of=store, align=center] {File \\ Transmit};
+				\node (auditing) [process, right of=update, xshift=2.5cm] {Auditing};
+				\node (unlock) [process, left of=store, xshift=-4cm] {Unlock};
 
-		%连接具体形状
-		\path [line](init) -- (lock);
-		\path [line](lock) -- (twostep);
-		\path [line](lock) -- (twostep_left);
-		\path [line](lock) -- (twostep_right);
-		\path [line](twostep) -- (voting);
-		\path [line](twostep_left) -- (voting);
-		\path [line](twostep_right) -- (voting);
-		\path [line](voting) -- node[anchor=east] {k個以上的}
-							    node[anchor=west] {ACK相同} (update);
-		\path [line](voting) -- node[anchor=north] {else} (auditing);
-		\path [line](auditing) |- (update);
-		\path [line](update) -- node[anchor=south] {check root hash}
-								node[anchor=north] {check file hash} (unlock);
-		\path [line](unlock) |- (lock);
-		\end{tikzpicture}%
-	}
+				% Define flow charts' link
+				\path [line](init) -- (lock);
+				\path [line](lock) -- (twostep);
+				\path [line](lock) -- (twostep_left);
+				\path [line](lock) -- (twostep_right);
+				\path [line](twostep) -- (voting);
+				\path [line](twostep_left) -- (voting);
+				\path [line](twostep_right) -- (voting);
+				\path [line](voting) -- node[anchor=east] {k個以上的}
+									    node[anchor=west] {ACK相同} (store);
+				\path [line](voting) -| node[anchor=west] {ACK不相同} (auditing);
+				\path [line](store) -- (update);
+				\path [line](store) -- (unlock);
+				\path [line](unlock) |- (lock);
+			\end{tikzpicture}%
+		}
 	\end{center}
 \end{frame}
 
-\subsection{Initial}
-\begin{frame}{Initial}
-	Create Merkle Tree
+\subsection{Download \& Upload}
+\begin{frame}{Download \& Upload}
+	\centering
+	\textcolor{blue}{\textbf{2-step Handshake}}\\
+	~\\
+	~\\
+	\begin{minipage}{.3\textwidth}
+        \includegraphics[width=1\textwidth]{2_step_handshake}
+    \end{minipage}%
+	\begin{minipage}{0.7\textwidth}
+		\centering
+		\textcolor{green}{\textbf{device $\rightarrow$ servers}}\\
+		~\\
+		$\textcolor{blue}{REQ} = (OP, [OP]_{pri(D)})$
+		$OP = (TYPE, PATH, HASH)$
+        \divider{}\\
+        \textcolor{green}{\textbf{server $\rightarrow$ device}}\\
+		~\\
+        $\textcolor{red}{ACK} = (RESULT, REQ, [RESULT, REQ]_{pri(S)})$
+        $RESULT = (roothash, filehash)$\\
+        ~\\
+        \textcolor{red}{\textbf{collect ACKs and voting}}
+    \end{minipage}%
+\end{frame}
+
+\begin{frame}{if Operation is UPLOAD}
+	\centering
+	\textcolor{blue}{\textbf{Server Update Merkle tree}}\\
+	~\\
+	~\\
 	\begin{center}
-	\includegraphics[width=.85\textwidth]{init.png}
+		\includegraphics[width=.65\textwidth]{update_merkle_tree}
 	\end{center}
 \end{frame}
 
-\subsection{Read}
-\begin{frame}{READ}{\RNum{1}. 2-step Handshake \& Voting}
+\begin{frame}{File Transmit}
 	\begin{center}
-	\includegraphics[width=.8\textwidth]{Read1.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{READ}{\RNum{2}. Download}
-	\begin{center}
-	\includegraphics[width=.65\textwidth]{Read2.png}
-	\end{center}
-\end{frame}
-
-\subsection{Write}
-\begin{frame}{WRITE}{\RNum{1}. Upload}
-	\begin{center}
-	\includegraphics[width=.8\textwidth]{Write1.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{WRITE}{\RNum{2}. Update Merkle Tree}
-	\begin{center}
-	\includegraphics[width=.65\textwidth]{Write2.png}
-	\end{center}
-\end{frame}
-
-\begin{frame}{WRITE}{\RNum{3}. Voting}
-	\begin{center}
-	\includegraphics[width=.7\textwidth]{Write3.png}
+		\includegraphics[width=.65\textwidth]{file_transmit}
 	\end{center}
 \end{frame}
 
 \subsection{Audit}
-\begin{frame}{AUDIT}
-	\begin{enumerate}
-		\item Device 向 \alert{Synchronization Server} 取得 Latest Ack.
-		\item Device 再向 \alert{Service Provider} 取得 前一版本的 Merkle Tree.
-		\item 使用 Step \RNum{1}. 的 Ack 包含的檔案 Hash 值\\
-			  來更新 Step \RNum{2}. 的 Merkle Tree.
-			  \begin{center}
-			  \includegraphics[width=.7\textwidth]{auditing.png}
-			  \end{center}
-		\item 比較 Device 自己算出的 Roothash 值是否和 Server 提供的相同.
-	\end{enumerate}
-\end{frame}
-
-\section{Schedules}
-\begin{frame}{Schedules}
-	\begin{enumerate}
-	{\color{blue}
-	\item My Method Finished.
-		\begin{itemize}
-			\item Merkle Tree Implements.
-			\item Operation Handle (Read, Write and Audit).
-			\item File Transmit.
-			\item Object Transmit (Serialization).
-			\item Synchronization Server Implements.
-		\end{itemize}
-	\item Wei-Shian's Method Finished.}
-		\begin{itemize}
-			\item Acknowledgement Chain Implements.
-		\end{itemize}
-	\item \alert{Question: Read Operation slower than Write Operation}
-	\item Design Different Experiments.
-	\end{enumerate}
+\begin{frame}{Audit}
+	\textcolor{blue}{$\because$ ACK 中有 roothash\\
+	$\therefore$ 新的 request 之前，所有的檔案都經過檢查，沒有問題}\\
+	~\\	
+	\begin{block}{}
+		\centering
+		device request $OP_i$，收到回傳的 $ACK_i$\\
+		發現 $Server_p$ 的 ACK 有錯誤，因此向 $Server_p$ 稽核\\
+		~\\
+		device 向 $Server_p$ 索取 $MT_{i-1}$\\
+		($MT_{i-1}$ 為執行 $OP_i$ 之前的 Merkle tree)
+	\end{block}
+	\begin{alertblock}{\textcolor{red}{$\bigstar$}\textcolor{blue}{$\bigstar$} 兩點有一個出錯就能確定 $Server_p$ 出錯}
+		\textcolor{red}{$\bigstar$} device 檢查 $MT_{i-1}$ 的 roothash 應和 $ACK_{i-1}$ 中的 roothash 一樣\\
+		\textcolor{blue}{$\bigstar$} device 以 $OP_i$ 中的 hash value 來更新 $MT_{i-1}$，\\
+		\tab{}更新後的 roothash 應和 $Server_p$ 現在的 roothash 相同
+	\end{alertblock}	
 \end{frame}
 
 \section{Experimental Results}
 \begin{frame}{Experimental Results}
 	\begin{table}[]
-	\centering
-	\captionsetup{justification=centering}
-	\caption{\tiny THE EXECUTION TIME OF FOLLOWING OPERATIONS (IN MS)}
-	\begin{tabular}{|l|l|l|l|l|l|}
-	\hline
-	Account A          &       & 666MB & 42files & 6dirs. &        \\ \hline
-	Test Data          & 1KB   & 10KB  & 100KB   & 1MB    & 10MB   \\ \hline
-	\textbf{Non POV}   &       &       &         &        &        \\ \hline
-	READ               & 0.72  & 0.519 & 0.471   & 1.766  & 13.417 \\ \hline
-	WRITE              & 1.086 & 0.651 & 1.891   & 3.172  & 16.426 \\ \hline
-	                   &       &       &         &        &        \\ \hline
-	\textbf{Wei Chih}  &       &       &         &        &        \\ \hline
-	READ               & 2.575 & 13.94 & 3.047   & 5.353  & 40.18  \\ \hline
-	WRITE              & 3.354 & 2.79  & 3.608   & 9.376  & 65.731 \\ \hline
-	                   &       &       &         &        &        \\ \hline
-	\textbf{Wei Shain} &       &       &         &        &        \\ \hline
-	READ               & 1.982 & 1.756 & 3.325   & 6.477  & \alert{40.606} \\ \hline
-	WRITE              & 1.708 & 2.046 & 3.67    & 4.834  & \alert{16.574} \\ \hline
-	\end{tabular}
+		\scriptsize
+		\centering
+		\begin{tabular}{cccc}
+			  & Size   & File  & Directory \\
+			  &			&		&			\\
+			A & 777 MB  & 48    & 6        \\
+			B & 145 MB  & 54198 & 188      \\
+			C & 5.95 GB & 45089 & 1459     
+		\end{tabular}
+	   
+		\captionsetup{justification=centering}
+		\caption{\tiny GENERATE MERKLE TREE'S TIME (IN SEC.)}
+		\begin{tabular}{|c|c|c|c|c|}
+			\hline
+			   &				   &   A   &   B    &   C    \\ \hline
+			   & Merkle tree Size & 5.4KB & 5.08MB & 4.37MB \\ \hline
+			   &                  &       &        &        \\ \hline
+			   & Generate         & 0.234 & 1.079  & 0.952  \\ \cline{2-5} 
+			PC & Serialize        & 0.015 & 0.343  & 0.265  \\ \cline{2-5} 
+			   & Deserialize      & 0     & 2.324  & 1.669  \\ \hline
+		   	   &                  &       &        &        \\ \hline
+			   & Generate         & 0.093 & 0.653  & 0.246  \\ \cline{2-5} 
+			VM & Serialize        & 0.011 & 0.298  & 0.238  \\ \cline{2-5} 
+			   & Deserialize      & 0.008 & 0.269  & 0.251  \\
+			\hline
+		\end{tabular}
 	\end{table}
-	\footnote{Server and Client on the Same Machine}
+\end{frame}
+
+\begin{frame}{Experimental Results}
+	\scriptsize
+	\begin{table}
+		\centering
+		\captionsetup{justification=centering}
+		\caption{\tiny THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
+		\begin{tabular}{|cccc|}
+					& NonPOV  & WeiChih   & WeiShian \\
+					&         &           &          \\
+		Average		& 1.09991 & 2.66026   & 1.05123  \\
+					&         &           &          \\
+					& 0.203   & 0.015     & 0.202    \\
+					& 0.203   & 0.016     & 0.203    \\
+					& 0.218   & 0.031     & 0.203    \\
+					& 0.218   & 0.031     & 0.203    \\
+					& 0.218   & 0.031     & 0.218    \\
+					& .       & .         & .        \\
+					& .       & .         & .        \\
+					& .       & .         & .        \\
+					& 4.838   & 11.536    & 3.802    \\
+					& 7.289   & 22.035    & 7.349    \\
+					& 11.32   & 36.262    & 11.947   \\
+					& 15.295  & 47.495    & 15.235   \\
+					& 32.208  & 104.097   & 34.439
+		\end{tabular}
+	\end{table}
+	\textcolor{red}{
+	WeiShian's Worst-case: \\
+	\tab{}\tab{}Synchronize (HashChain length = 100) need 0.595 sec.\\
+	\tab{}\tab{}Synchronize (HashChain length = 1000) need 5.54 sec.
+	}
+\end{frame}
+
+\begin{frame}{Experimental Results}
+	\scriptsize	
+	\begin{table}[]
+		\centering
+		\captionsetup{justification=centering}
+		\caption{\tiny THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
+		\begin{tabular}{|cccc|}
+				 & NonPOV  & WeiChih   & WeiShian \\
+				 &         &           &          \\
+		Average	 & 0.82753 & 0.93367   & 1.05288  \\
+				 &         &           &          \\
+				 & 0       & 0.015     & 0.218    \\
+				 & 0       & 0.016     & 0.218    \\
+				 & 0       & 0.031     & 0.218    \\
+				 & 0       & 0.031     & 0.218    \\
+				 & 0       & 0.031     & 0.218    \\
+				 & .       & .         & .        \\
+				 & .       & .         & .        \\
+				 & .       & .         & .        \\
+				 & 3.791   & 4.628     & 3.989    \\
+				 & 7.499   & 8.363     & 7.739    \\
+				 & 11.81   & 12.72     & 12.031   \\
+				 & 14.865  & 15.778    & 15.418   \\
+				 & 33.513  & 35.775    & 33.713
+		\end{tabular}
+	\end{table}
+	\textcolor{red}{
+	WeiShian's Worst-case: \\
+	\tab{}\tab{}Synchronize (HashChain length = 100) need 0.827 sec.\\
+	\tab{}\tab{}Synchronize (HashChain length = 1000) need 7.871 sec.
+	}
 \end{frame}
 
 \begin{frame}
 	\begin{center}
-	\includegraphics[width=\textwidth]{thank_you.jpg}
+		\includegraphics[width=\textwidth]{thank_you.jpg}
 	\end{center}	
 \end{frame}
+
 \end{CJK}
 \end{document}
