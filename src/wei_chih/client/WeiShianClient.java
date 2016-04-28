@@ -9,10 +9,8 @@ import java.security.PublicKey;
 import java.security.KeyPair;
 import java.security.SignatureException;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.ListIterator;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -61,7 +59,37 @@ public class WeiShianClient extends Client {
     public void run(final List<Operation> operations, int runTimes) {
         System.out.println("Running:");
         
-        List<Double> results = new ArrayList<>(); 
+        double[] results = new double[runTimes];
+        
+        // for best result
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i;
+            pool.execute(() -> {
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+                    boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    execute(operations.get(x % operations.size()));
+                    
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    syncSuccess = syncAtts(UPLOAD, syncOut, SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+                    
+                    syncSocket.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }
+            });
+        }
         
         for (int i = 1; i <= runTimes; i++) {
             final int x = i;
@@ -69,7 +97,7 @@ public class WeiShianClient extends Client {
                 try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-                    long time = System.currentTimeMillis();
+                    long time = System.nanoTime();
                     
                     boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
                     if (!syncSuccess) {
@@ -88,7 +116,7 @@ public class WeiShianClient extends Client {
                     }
                     
                     syncSocket.close();
-                    results.add((System.currentTimeMillis() - time) / 1000.0);
+                    results[x-1] = (System.nanoTime() - time) / 1e9;
                 } catch (IOException ex) {
                     LOGGER.log(Level.SEVERE, null, ex);
                 }
@@ -102,46 +130,22 @@ public class WeiShianClient extends Client {
             LOGGER.log(Level.SEVERE, null, ex);
         }
         
-        Collections.sort(results);
-        
-        Double sum = 0.0;
-        for (Double num : results) {
-            sum += num;
-        }
-        System.out.println("Average time:" + sum.doubleValue()/results.size());
-        
-        if (runTimes < 10) {
-            for (double time : results) {
-                System.out.printf("%.5f s\n", time);
-            }
-        } else {
-            for (int i = 0; i < 5; ++i) {
-                System.out.printf("%.5f s\n", results.get(i));
-            }
-            
-            System.out.println(".");
-            System.out.println(".");
-            System.out.println(".");
-            
-            for (int i = 5; i > 0; --i) {
-                System.out.printf("%.5f s\n", results.get(results.size() - i));
-            }
-        }
+        Utils.printExperimentResult(results);
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         System.out.println("Auditing:");
         
-        long time = System.currentTimeMillis();
+        long time = System.nanoTime();
         boolean audit = audit();
-        System.out.println("Audit: " + audit + ", cost " + ((System.currentTimeMillis() - time) / 1000.0) + " s");
+        System.out.println("Audit: " + audit + ", cost " + ((System.nanoTime() - time) / 1e9) + " s");
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         System.out.println("Worst Case:");
         
-        time = System.currentTimeMillis();
+        time = System.nanoTime();
         worstCase();
-        System.out.println("Worst Case cost " + ((System.currentTimeMillis() - time) / 1000.0) + " s");
+        System.out.println("Worst Case cost " + ((System.nanoTime() - time) / 1e9) + " s");
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         
     }
@@ -324,16 +328,18 @@ public class WeiShianClient extends Client {
     }
     
     private void worstCase() {
-        lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
-        try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
-             DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
-             DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-            syncAtts(DOWNLOAD, syncOut, SyncIn);
-            syncAtts(UPLOAD, syncOut, SyncIn);
+        for (int i = 0;i < 100; ++i) {
+            lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+            try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
+                 DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+                 DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+                syncAtts(DOWNLOAD, syncOut, SyncIn);
+                syncAtts(UPLOAD, syncOut, SyncIn);
 
-            syncSocket.close();
-        } catch (IOException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
+                syncSocket.close();
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE, null, ex);
+            }    
         }
     }
 }

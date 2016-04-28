@@ -37,7 +37,7 @@ public class Experiment {
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
-        final int runTimes = 100;
+        final int runTimes = 40;
         
         dataDirPath = Utils.getDataDirPath(args[0]);
 
@@ -61,18 +61,19 @@ public class Experiment {
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         
-        System.out.println("\n === NonPOV ===");
+        System.out.println("\n === WeiShainPOV ===");
         System.out.println("Data Path: " + dataDirPath);
-        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.SERVICE_PORT[Config.SERVICE_NUM + 1]);
+        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SERVICE_PORT);
+        System.out.println("Sync. Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SYNC_PORT);
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 1; ++i) {
             System.out.println("\nUPLOAD " + i);
-            new NonPOVClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
+            new WeiShianClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
         }
-        
-        for (int i = 0; i < 2; ++i) {
+
+        for (int i = 0; i < 1; ++i) {
             System.out.println("\nDOWNLOAD " + i);
-            new NonPOVClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
+            new WeiShianClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
         }
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -85,31 +86,30 @@ public class Experiment {
         }
         System.out.println("\nSync. Host: " + Config.SERVICE_HOSTNAME + ":" + SYNC_PORT);
         
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 1; ++i) {
             System.out.println("\nUPLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
         }
         
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 1; ++i) {
             System.out.println("\nDOWNLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
         }
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         
-        System.out.println("\n === WeiShainPOV ===");
+        System.out.println("\n === NonPOV ===");
         System.out.println("Data Path: " + dataDirPath);
-        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SERVICE_PORT);
-        System.out.println("Sync. Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SYNC_PORT);
+        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.SERVICE_PORT[Config.SERVICE_NUM + 1]);
 
-        for (int i = 0; i < 2; ++i) {
+        for (int i = 0; i < 1; ++i) {
             System.out.println("\nUPLOAD " + i);
-            new WeiShianClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
+            new NonPOVClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
         }
-
-        for (int i = 0; i < 2; ++i) {
+        
+        for (int i = 0; i < 1; ++i) {
             System.out.println("\nDOWNLOAD " + i);
-            new WeiShianClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
+            new NonPOVClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
         }
     }
 }

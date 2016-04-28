@@ -10,8 +10,6 @@ import java.security.SignatureException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,8 +57,9 @@ public class VotingClient extends Client {
     public void run(final List<Operation> operations, int runTimes) {
         System.out.println("Running (" + runTimes + " times):");
         
-        List<Double> results = new ArrayList<>(); 
+        double[] results = new double[runTimes];
         
+        // for best result
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
@@ -68,8 +67,6 @@ public class VotingClient extends Client {
                 try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
-                    long time = System.currentTimeMillis();
-                    
                     Operation op = operations.get(x % operations.size());
                     
                     boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
@@ -105,7 +102,54 @@ public class VotingClient extends Client {
                     }
 
                     syncSocket.close();
-                    results.add((System.currentTimeMillis() - time) / 1000.0);
+                } catch (IOException ex) {
+                    LOGGER.log(Level.SEVERE, null, ex);
+                }            
+            });
+        }
+        
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i; 
+            pool.execute(() -> {
+                try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
+                     DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
+                     DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
+                    Operation op = operations.get(x % operations.size());
+                    
+                    boolean syncSuccess = syncAtts(new Operation(OperationType.DOWNLOAD,
+                                                                 Config.EMPTY_STRING,
+                                                                 (op.getType() == OperationType.UPLOAD)? Config.EMPTY_STRING: "Download Please"), 
+                                                   syncOut, 
+                                                   SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+                    
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    long time = System.nanoTime();
+                    int diffPort = execute(op, Experiment.SERVER_PORTS[0]);
+                    results[x-1] = (System.nanoTime() - time) / 1e9;
+                    if (diffPort != -1) {
+                        execute(new Operation(OperationType.AUDIT,
+                                              "/ATT_FOR_AUDIT",
+                                              Config.EMPTY_STRING),
+                                diffPort);
+                        boolean audit = audit(diffPort);
+                        System.out.println("Audit: " + audit);
+                    }
+                    
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    
+                    syncSuccess = syncAtts(new Operation(OperationType.UPLOAD,
+                                                         Config.EMPTY_STRING,
+                                                         (op.getType() == OperationType.UPLOAD)? "Upload Please" : Config.EMPTY_STRING), 
+                                           syncOut, 
+                                           SyncIn);
+                    if (!syncSuccess) {
+                        System.err.println("Sync Error");
+                    }
+
+                    syncSocket.close();
                 } catch (IOException ex) {
                     LOGGER.log(Level.SEVERE, null, ex);
                 }            
@@ -119,31 +163,7 @@ public class VotingClient extends Client {
             LOGGER.log(Level.SEVERE, null, ex);
         }
         
-        Collections.sort(results);
-        
-        Double sum = 0.0;
-        for (Double num : results) {
-            sum += num;
-        }
-        System.out.println("Average time:" + sum.doubleValue()/results.size());
-        
-        if (runTimes < 10) {
-            for (double time : results) {
-                System.out.printf("%.5f s\n", time);
-            }
-        } else {
-            for (int i = 0; i < 5; ++i) {
-                System.out.printf("%.5f s\n", results.get(i));
-            }
-            
-            System.out.println(".");
-            System.out.println(".");
-            System.out.println(".");
-            
-            for (int i = 5; i > 0; --i) {
-                System.out.printf("%.5f s\n", results.get(results.size() - i));
-            }
-        }
+        Utils.printExperimentResult(results);
         
         runAudit();
     }
@@ -151,12 +171,12 @@ public class VotingClient extends Client {
     private void runAudit() {
         System.out.println("Auditing:");
         
-        long time = System.currentTimeMillis();
+        long time = System.nanoTime();
         execute(new Operation(OperationType.AUDIT,
                               "/ATT_FOR_AUDIT",
                               Config.EMPTY_STRING),
                 Experiment.SERVER_PORTS[0]);
-        System.out.println("Download attestation, cost " + (System.currentTimeMillis() - time)/1000.0 + " s");
+        System.out.println("Download attestation, cost " + (System.nanoTime() - time)/1e9 + " s");
         
         try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
              DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
@@ -173,10 +193,10 @@ public class VotingClient extends Client {
 
             ///////////////////////////////////////////////////////////////////////////////////////////////////
             
-            time = System.currentTimeMillis();
+            time = System.nanoTime();
             int testPort = Experiment.SERVER_PORTS[0];
             boolean audit = audit(testPort);
-            System.out.println("Audit: " + audit + ", cost " + (System.currentTimeMillis() - time)/1000.0 + " s");
+            System.out.println("Audit: " + audit + ", cost " + (System.nanoTime() - time)/1e9 + " s");
             
             ///////////////////////////////////////////////////////////////////////////////////////////////////
             

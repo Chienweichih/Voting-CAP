@@ -36,8 +36,8 @@
 % Chinese display
 \usepackage{CJKutf8}
 
-% Table's caption
-\usepackage{caption}
+% English? (cause Overleaf)
+\usepackage[english]{babel}
 
 % Flow Charts 
 \usepackage{tikz}
@@ -50,8 +50,10 @@
 	line/.style = {draw, -latex'}
 }
 
-% Set footnotetext without footnote mark
-\let\thefootnote\relax\footnotetext{}
+% Indexed letters inside circles
+\newcommand\encircle[1]{%
+  \tikz[baseline=(char.base)]{
+  	\node[shape=circle,draw,inner sep=2pt] (char) {#1};}}
 
 % Roman Numbers
 \newcommand{\RNum}[1]{\uppercase\expandafter{\romannumeral #1\relax}}
@@ -62,14 +64,20 @@
 % Divider
 \newcommand{\divider}[1]{\noindent\rule{.9\textwidth}{1pt}}
 
+% Set footnotetext without footnote mark
+\let\thefootnote\relax\footnotetext{}
+
+% Set caption with tiny size
+\setbeamerfont{caption}{size=\tiny}
+
 % Figure directory
 \graphicspath{{fig/}}
 
 % First page
-\title[Progress Report]{Instant Auditing of Cloud Storage Access without Cumulative Evidence}
-\author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang\\ Student : Wei-Chih Chien}
+\title[Progress Report]{Instant Auditing of Cloud Storage Access by Voting of Different Cloud Storages}
+\author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang \texorpdfstring{\\ Student : Wei-Chih Chien}{}}
 \institute[NTNU CSIE CCLAB]{NTNU CSIE CCLAB}
-\date{2016.03.22}
+\date{2016.05.24}
 
 % Let every section start with outline
 \AtBeginSection[]
@@ -215,24 +223,29 @@
 \subsection{Download \& Upload}
 \begin{frame}{Download \& Upload}
 	\centering
-	\textcolor{blue}{\textbf{2-step Handshake}}\\
+	\textcolor{blue}{\textbf{Request \& Response}}\\
 	~\\
 	~\\
-	\begin{minipage}{.3\textwidth}
+	\begin{minipage}{.45\textwidth}
         \includegraphics[width=1\textwidth]{2_step_handshake}
     \end{minipage}%
-	\begin{minipage}{0.7\textwidth}
+	\begin{minipage}{.55\textwidth}
+    	\footnotesize
 		\centering
-		\textcolor{green}{\textbf{device $\rightarrow$ servers}}\\
-		~\\
-		$\textcolor{blue}{REQ} = (OP, [OP]_{pri(D)})$
-		$OP = (TYPE, PATH, HASH)$
+		\begin{equation} \label{eq1}
+                \begin{split}
+                        \textcolor{blue}{REQ} & = (OP, [OP]_{pri(D)}) \\
+                        OP & = (TYPE, PATH, HASH) \\
+                \end{split}
+        \end{equation}
         \divider{}\\
-        \textcolor{green}{\textbf{server $\rightarrow$ device}}\\
-		~\\
-        $\textcolor{red}{ACK} = (RESULT, REQ, [RESULT, REQ]_{pri(S)})$
-        $RESULT = (roothash, filehash)$\\
-        ~\\
+        \begin{equation} \label{eq2}
+                \begin{split}
+                        \textcolor{red}{ACK} & = (RESULT, REQ,\\
+                        & \tab{}\tab{}[RESULT, REQ]_{pri(S)}) \\
+                        RESULT & = (roothash, filehash)
+                \end{split}
+        \end{equation}
         \textcolor{red}{\textbf{collect ACKs and voting}}
     \end{minipage}%
 \end{frame}
@@ -266,9 +279,9 @@
 		device 向 $Server_p$ 索取 $MT_{i-1}$\\
 		($MT_{i-1}$ 為執行 $OP_i$ 之前的 Merkle tree)
 	\end{block}
-	\begin{alertblock}{\textcolor{red}{$\bigstar$}\textcolor{blue}{$\bigstar$} 兩點有一個出錯就能確定 $Server_p$ 出錯}
-		\textcolor{red}{$\bigstar$} device 檢查 $MT_{i-1}$ 的 roothash 應和 $ACK_{i-1}$ 中的 roothash 一樣\\
-		\textcolor{blue}{$\bigstar$} device 以 $OP_i$ 中的 hash value 來更新 $MT_{i-1}$，\\
+	\begin{alertblock}{\encircle{1}\encircle{2} 兩點有一個出錯就能確定 $Server_p$ 出錯}
+		\encircle{1} device 檢查 $MT_{i-1}$ 的 roothash 應和 $ACK_{i-1}$ 中的 roothash 一樣\\
+		\encircle{2} device 以 $OP_i$ 中的 hash value 來更新 $MT_{i-1}$，\\
 		\tab{}更新後的 roothash 應和 $Server_p$ 現在的 roothash 相同
 	\end{alertblock}	
 \end{frame}
@@ -278,28 +291,26 @@
 	\begin{table}[]
 		\scriptsize
 		\centering
-		\begin{tabular}{cccc}
-			  & Size   & File  & Directory \\
-			  &			&		&			\\
-			A & 777 MB  & 48    & 6        \\
-			B & 145 MB  & 54198 & 188      \\
-			C & 5.95 GB & 45089 & 1459     
+		\begin{tabular}{crccr}
+			  & Size    & File  & Directory & Merkle tree Size \\
+			  &			&		&		    &                  \\
+			A & 777 MB  & 48    & 6         & 5.4 KB           \\
+			B & 145 MB  & 54198 & 188       & 5.08 MB          \\
+			C & 5.95 GB & 45089 & 1459      & 4.37 MB          \\
 		\end{tabular}
-	   
-		\captionsetup{justification=centering}
-		\caption{\tiny GENERATE MERKLE TREE'S TIME (IN SEC.)}
-		\begin{tabular}{|c|c|c|c|c|}
+        
+		\caption{GENERATE MERKLE TREE'S TIME (IN SEC.)}
+		\begin{tabular}{|c|r|c|c|c|}
 			\hline
-			   &				   &   A   &   B    &   C    \\ \hline
-			   & Merkle tree Size & 5.4KB & 5.08MB & 4.37MB \\ \hline
-			   &                  &       &        &        \\ \hline
-			   & Generate         &14.876 &61.176  &198.405 \\ \cline{2-5} 
-			PC & Serialize        & 0.040 & 0.756  & 0.670  \\ \cline{2-5} 
-			   & Deserialize      & 0.009 & 0.299  & 0.295  \\ \hline
-		   	   &                  &       &        &        \\ \hline
-			   & Generate         & 6.821 &144.267 &620.151 \\ \cline{2-5} 
-			VM & Serialize        & 0.011 & 0.343  & 0.299  \\ \cline{2-5} 
-			   & Deserialize      & 0.015 & 1.016  & 0.860  \\
+			   &             & A      & B       & C       \\ \hline
+               &             &        &		    &		  \\ \hline
+			   & Generate    & 14.876 & 61.176  & 198.405 \\ \cline{2-5} 
+			PC & Serialize   & 0.040  & 0.756   & 0.670   \\ \cline{2-5} 
+			   & Deserialize & 0.009  & 0.299   & 0.295   \\ \hline
+		   	   &             &        &         &         \\ \hline
+			   & Generate    & 6.821  & 144.267 & 620.151 \\ \cline{2-5} 
+			VM & Serialize   & 0.011  & 0.343   & 0.299   \\ \cline{2-5} 
+			   & Deserialize & 0.015  & 1.016   & 0.860   \\
 			\hline
 		\end{tabular}
 	\end{table}
@@ -308,67 +319,44 @@
 \begin{frame}{Experimental Results}
 	\scriptsize
 	\begin{table}
+    	\large
 		\centering
-		\captionsetup{justification=centering}
-		\caption{\tiny THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
-		\begin{tabular}{|cccc|}
-					& NonPOV  & WeiChih   & WeiShian \\
-					&         &           &          \\
-		Average		& 1.09991 & 2.66026   & 1.05123  \\
-					&         &           &          \\
-					& 0.203   & 0.015     & 0.202    \\
-					& 0.203   & 0.016     & 0.203    \\
-					& 0.218   & 0.031     & 0.203    \\
-					& 0.218   & 0.031     & 0.203    \\
-					& 0.218   & 0.031     & 0.218    \\
-					& .       & .         & .        \\
-					& .       & .         & .        \\
-					& .       & .         & .        \\
-					& 4.838   & 11.536    & 3.802    \\
-					& 7.289   & 22.035    & 7.349    \\
-					& 11.32   & 36.262    & 11.947   \\
-					& 15.295  & 47.495    & 15.235   \\
-					& 32.208  & 104.097   & 34.439
+		\caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
+		\begin{tabular}{lccc}      	
+            Test File Size & Non POV  & Voting   & 2014 CloudCom \\ \hline
+            $<$ 10 KB      & 0.005518 & 0.037380 & 0.218630      \\ \hline
+            $<$ 100 KB     & 0.015352 & 0.039608 & 0.232741      \\ \hline
+            $<$ 1 MB       & 0.056828 & 0.105343 & 0.272903      \\ \hline
+            $<$ 10 MB      & 0.359668 & 0.391630 & 0.567197      \\
 		\end{tabular}
 	\end{table}
-	\textcolor{red}{
-	WeiShian's Worst-case: \\
-	\tab{}\tab{}Synchronize (HashChain length = 100) need 0.595 sec.\\
-	\tab{}\tab{}Synchronize (HashChain length = 1000) need 5.54 sec.
-	}
+    \begin{alertblock}{2014 CloudCom Worst-case}
+    	\normalsize
+    	\tab{} Synchronize (HashChain length = 100) cost \textcolor{red}{0.595 sec}. \\
+        \tab{} Synchronize (HashChain length = 1000) cost \textcolor{red}{5.54 sec}.
+    \end{alertblock}
 \end{frame}
 
 \begin{frame}{Experimental Results}
 	\scriptsize	
 	\begin{table}[]
-		\centering
-		\captionsetup{justification=centering}
-		\caption{\tiny THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
-		\begin{tabular}{|cccc|}
-				 & NonPOV  & WeiChih   & WeiShian \\
-				 &         &           &          \\
-		Average	 & 0.82753 & 0.93367   & 1.05288  \\
-				 &         &           &          \\
-				 & 0       & 0.015     & 0.218    \\
-				 & 0       & 0.016     & 0.218    \\
-				 & 0       & 0.031     & 0.218    \\
-				 & 0       & 0.031     & 0.218    \\
-				 & 0       & 0.031     & 0.218    \\
-				 & .       & .         & .        \\
-				 & .       & .         & .        \\
-				 & .       & .         & .        \\
-				 & 3.791   & 4.628     & 3.989    \\
-				 & 7.499   & 8.363     & 7.739    \\
-				 & 11.81   & 12.72     & 12.031   \\
-				 & 14.865  & 15.778    & 15.418   \\
-				 & 33.513  & 35.775    & 33.713
+    	\large
+		\centering      
+		\caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
+		\begin{tabular}{lccc}      	
+            Test File Size & Non POV  & Voting   & 2014 CloudCom \\ \hline
+            $<$ 10 KB      & 0.213026 & 0.036708 & 0.231693      \\ \hline
+            $<$ 100 KB     & 0.219071 & 0.074291 & 0.237524      \\ \hline
+            $<$ 1 MB       & 0.258437 & 0.191194 & 0.271910      \\ \hline
+            $<$ 10 MB      & 0.548203 & 1.033431 & 0.551122      \\
 		\end{tabular}
 	\end{table}
-	\textcolor{red}{
-	WeiShian's Worst-case: \\
-	\tab{}\tab{}Synchronize (HashChain length = 100) need 0.827 sec.\\
-	\tab{}\tab{}Synchronize (HashChain length = 1000) need 7.871 sec.
-	}
+    \tab{} \textcolor{red}{(數據有問題需更正)}
+    \begin{alertblock}{2014 CloudCom Worst-case}
+    	\normalsize
+    	\tab{} Synchronize (HashChain length = 100) cost \textcolor{red}{0.827 sec}. \\
+        \tab{} Synchronize (HashChain length = 1000) cost \textcolor{red}{7.871 sec}.
+    \end{alertblock}
 \end{frame}
 
 \begin{frame}

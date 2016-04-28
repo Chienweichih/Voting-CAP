@@ -8,10 +8,8 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.SignatureException;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.Collections;
 import java.util.concurrent.TimeUnit;
 
 import client.Client;
@@ -38,14 +36,22 @@ public class NonPOVClient extends Client {
     public void run(final List<Operation> operations, int runTimes) {
         System.out.println("Running (" + runTimes + " times):");
         
-        List<Double> results = new ArrayList<>(); 
+        double[] results = new double[runTimes];
+        
+        // for best result
+        for (int i = 1; i <= runTimes; i++) {
+            final int x = i; 
+            pool.execute(() -> {
+                execute(operations.get(x % operations.size()));
+            });
+        }
         
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
-                long time = System.currentTimeMillis();
+                long time = System.nanoTime();
                 execute(operations.get(x % operations.size()));
-                results.add((System.currentTimeMillis() - time) / 1000.0);
+                results[x-1] = (System.nanoTime() - time) / 1e9;
             });
         }
         
@@ -55,32 +61,8 @@ public class NonPOVClient extends Client {
         } catch (InterruptedException ex) {
             Logger.getLogger(NonPOVClient.class.getName()).log(Level.SEVERE, null, ex);
         }
-
-        Collections.sort(results);
         
-        Double sum = 0.0;
-        for (Double num : results) {
-            sum += num;
-        }
-        System.out.println("Average time:" + sum.doubleValue()/results.size());
-        
-        if (runTimes < 10) {
-            for (double time : results) {
-                System.out.printf("%.5f s\n", time);
-            }
-        } else {
-            for (int i = 0; i < 5; ++i) {
-                System.out.printf("%.5f s\n", results.get(i));
-            }
-            
-            System.out.println(".");
-            System.out.println(".");
-            System.out.println(".");
-            
-            for (int i = 5; i > 0; --i) {
-                System.out.printf("%.5f s\n", results.get(results.size() - i));
-            }
-        }
+        Utils.printExperimentResult(results);
                 
         System.out.println("Audit not supported.");
     }
@@ -97,14 +79,12 @@ public class NonPOVClient extends Client {
             throw new SignatureException("ACK validation failure");
         }
         
-        File file;
         switch (op.getType()) {
                 case UPLOAD:
-                    file = new File(Experiment.dataDirPath + op.getPath());
-                    Utils.send(out, file);
+                    Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
                     break;
                 case DOWNLOAD:
-                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                    File file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     Utils.receive(in, file);
                     if (ackTemp.getResult().equals(Utils.digest(file)) == false) {
                         try {

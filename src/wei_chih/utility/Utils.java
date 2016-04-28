@@ -11,7 +11,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -163,27 +162,38 @@ public class Utils extends utility.Utils {
         return new String[]{dataDirPath, testFileName};
     }
     
-    public static ArrayList<String> randomPickupFiles(String folderPath, int number) throws FileNotFoundException {
+    public static String[] randomPickupFiles(String folderPath, int number) throws FileNotFoundException {
         if (new File(folderPath).exists() == false) {
             throw new java.io.FileNotFoundException();
         }
         
-        ArrayList<String> fileNames = new ArrayList<>();
+        String[] fileNames = new String[number];
+        int[] index = new int[]{0, number/4, number/2, number*3/4};
         
-        for (int i = 0; i < number; ++i) {
+        while (index[0] + index[1] + index[2] + index[3] < number*5/2) {
             File filePointer = new File(folderPath);
             while (filePointer.isDirectory()) {
                 String[] fileList = filePointer.list();
                 int childNum = fileList.length;
-                int randomNum = ThreadLocalRandom.current().nextInt(0, childNum);
                 
-                filePointer = new File(filePointer.getAbsoluteFile() + File.separator + fileList[randomNum]);
+                if (childNum <= 0) {
+                    filePointer = filePointer.getParentFile();
+                } else {
+                    int randomNum = ThreadLocalRandom.current().nextInt(0, childNum);
+                    filePointer = new File(filePointer.getAbsoluteFile() + File.separator + fileList[randomNum]);
+                }
             }
-            String randPath = subPath(filePointer.getAbsolutePath());
-            if (fileNames.contains(randPath)) {
-                --i;
-            } else {
-                fileNames.add(randPath);
+            
+            long fileSize = filePointer.length() / 10000;
+            int indexNum = 0;
+            while (fileSize > 0) {
+                fileSize /= 10;
+                indexNum++;
+            }
+            
+            if (indexNum < 4 && index[indexNum] < number*(indexNum + 1)/4) {
+                fileNames[index[indexNum]] = subPath(filePointer.getAbsolutePath());
+                index[indexNum]++;
             }
         }
                 
@@ -196,5 +206,16 @@ public class Utils extends utility.Utils {
             return path;
         }
         return path.substring(indexOfHead + "Accounts/Account A".length());
+    }
+    
+    public static void printExperimentResult(double[] results) {
+        int runTimes = results.length;
+        for (int i = 0; i < 4; ++i) {
+            double sum = 0.0;
+            for (int j = 0; j < runTimes/4; ++j) {
+                sum += results[i*10 + j];
+            }
+            System.out.printf("Average Time for File Size under %10.0f Bytes : %f s\n", 10000*(Math.pow(10, i)), sum*4/runTimes);
+        }
     }
 }

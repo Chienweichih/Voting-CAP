@@ -210,20 +210,20 @@ public class MerkleTree implements Serializable {
         filePath.put("C", Config.DATA_C_PATH);
         
         for (Entry<String, String> entry : filePath.entrySet()) {
-            long time = System.currentTimeMillis();
+            long time = System.nanoTime();
             MerkleTree merkleTree = new MerkleTree(new File(entry.getValue()));
-            time = System.currentTimeMillis() - time;
-            System.out.printf("Generate Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1000.0);
+            time = System.nanoTime() - time;
+            System.out.printf("Generate Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
 
-            time = System.currentTimeMillis();
+            time = System.nanoTime();
             Utils.Serialize(new File(entry.getKey() + ".merkletree"), merkleTree);
-            time = System.currentTimeMillis() - time;
-            System.out.printf("Serialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1000.0);
+            time = System.nanoTime() - time;
+            System.out.printf("Serialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
         
-            time = System.currentTimeMillis();
+            time = System.nanoTime();
             Utils.Deserialize(entry.getKey() + ".merkletree");
-            time = System.currentTimeMillis() - time;
-            System.out.printf("Deserialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1000.0);
+            time = System.nanoTime() - time;
+            System.out.printf("Deserialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
         }
     }
 }
