@@ -27,17 +27,24 @@ import wei_chih.utility.*;
 public class VotingHandler implements ConnectionHandler {
     private static final ReentrantLock LOCK;
     
-    private static final MerkleTree merkleTree;
-    private static String digestBeforeUpdate;
-    private static Operation lastOP;
+    private static final MerkleTree[] merkleTree;
+    private static final String[] digestBeforeUpdate;
+    private static final Operation[] lastOP;
     
     private final Socket socket;
     private final KeyPair keyPair;
     
     static {
-        merkleTree = new MerkleTree(new File(SocketServer.dataDirPath));
-        digestBeforeUpdate = "";
-        lastOP = new Operation(OperationType.DOWNLOAD, "", merkleTree.getRootHash());
+        merkleTree = new MerkleTree[Config.SERVICE_NUM];
+        digestBeforeUpdate = new String[Config.SERVICE_NUM];
+        lastOP = new Operation[Config.SERVICE_NUM];
+        
+        for (int i = 0; i < Config.SERVICE_NUM; ++i) {
+            merkleTree[i] = new MerkleTree(new File(SocketServer.dataDirPath));
+            digestBeforeUpdate[i] = "";
+            lastOP[i] = new Operation(OperationType.DOWNLOAD, "", merkleTree[i].getRootHash());
+        }
+
         LOCK = new ReentrantLock();
     }
     
@@ -49,6 +56,13 @@ public class VotingHandler implements ConnectionHandler {
     @Override
     public void run() {
         PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+        
+        int portIndex = 0;
+        if (Math.abs(socket.getPort() - Config.SERVICE_PORT[0]) < 10) {
+            portIndex = socket.getPort() - Config.SERVICE_PORT[0];
+        } else if (Math.abs(socket.getLocalPort() - Config.SERVICE_PORT[0]) < 10) {
+            portIndex = socket.getLocalPort() - Config.SERVICE_PORT[0];
+        }
         
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
@@ -63,13 +77,13 @@ public class VotingHandler implements ConnectionHandler {
             Operation op = req.getOperation();
             
             if (op.getType() == OperationType.UPLOAD) {
-                digestBeforeUpdate = merkleTree.getDigest(op.getPath());
-                merkleTree.update(op.getPath(), op.getMessage());
+                digestBeforeUpdate[portIndex] = merkleTree[portIndex].getDigest(op.getPath());
+                merkleTree[portIndex].update(op.getPath(), op.getMessage());
             }
             
             File file = new File(SocketServer.dataDirPath + op.getPath());
             
-            String rootHash = merkleTree.getRootHash();
+            String rootHash = merkleTree[portIndex].getRootHash();
             String fileHash = null;
             if (file.exists()) {
                 fileHash = Utils.digest(file);
@@ -78,18 +92,17 @@ public class VotingHandler implements ConnectionHandler {
             Acknowledgement ack = new Acknowledgement(rootHash, fileHash, req);
             ack.sign(keyPair);
             Utils.send(out, ack.toString());
-                        
+            
             switch (op.getType()) {
                 case DOWNLOAD:
-                    lastOP = op;
+                    lastOP[portIndex] = op;
                     
-                    if (socket.getPort() == Config.SERVICE_PORT[0] ||
-                        socket.getLocalPort() == Config.SERVICE_PORT[0]) {
+                    if (portIndex + Config.SERVICE_PORT[0] == Config.SERVICE_PORT[0]) {
                         Utils.send(out, file);
                     }
                     break;
                 case UPLOAD:
-                    lastOP = op;
+                    lastOP[portIndex] = op;
                     
                     file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     Utils.receive(in, file);
@@ -102,13 +115,13 @@ public class VotingHandler implements ConnectionHandler {
                 case AUDIT:
                     file = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/voting");
                     
-                    switch (lastOP.getType()) {
+                    switch (lastOP[portIndex].getType()) {
                         case DOWNLOAD:
                             Utils.write(file, rootHash);
                             break;
                         case UPLOAD:
-                            MerkleTree prevMerkleTree = new MerkleTree(merkleTree);
-                            prevMerkleTree.update(lastOP.getPath(), digestBeforeUpdate);
+                            MerkleTree prevMerkleTree = new MerkleTree(merkleTree[portIndex]);
+                            prevMerkleTree.update(lastOP[portIndex].getPath(), digestBeforeUpdate[portIndex]);
                             Utils.Serialize(file, prevMerkleTree);
                             break;
                         default:

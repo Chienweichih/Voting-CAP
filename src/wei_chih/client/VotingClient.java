@@ -111,6 +111,7 @@ public class VotingClient extends Client {
         for (int i = 1; i <= runTimes; i++) {
             final int x = i; 
             pool.execute(() -> {
+                long time = System.nanoTime();
                 try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Experiment.SYNC_PORT);
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
@@ -126,9 +127,7 @@ public class VotingClient extends Client {
                     }
                     
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
-                    long time = System.nanoTime();
                     int diffPort = execute(op, Experiment.SERVER_PORTS[0]);
-                    results[x-1] = (System.nanoTime() - time) / 1e9;
                     if (diffPort != -1) {
                         execute(new Operation(OperationType.AUDIT,
                                               "/ATT_FOR_AUDIT",
@@ -153,6 +152,7 @@ public class VotingClient extends Client {
                 } catch (IOException ex) {
                     LOGGER.log(Level.SEVERE, null, ex);
                 }            
+            results[x-1] = (System.nanoTime() - time) / 1e9;
             });
         }
         

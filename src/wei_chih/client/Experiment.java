@@ -61,23 +61,6 @@ public class Experiment {
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
         
-        System.out.println("\n === WeiShainPOV ===");
-        System.out.println("Data Path: " + dataDirPath);
-        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SERVICE_PORT);
-        System.out.println("Sync. Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SYNC_PORT);
-
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nUPLOAD " + i);
-            new WeiShianClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
-        }
-
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nDOWNLOAD " + i);
-            new WeiShianClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
-        }
-        
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        
         System.out.println("\n === VotingPOV ===");
         System.out.println("Data Path: " + dataDirPath);
         System.out.print("Host: " + Config.SERVICE_HOSTNAME);
@@ -94,6 +77,23 @@ public class Experiment {
         for (int i = 0; i < 1; ++i) {
             System.out.println("\nDOWNLOAD " + i);
             new VotingClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
+        }
+        
+        ///////////////////////////////////////////////////////////////////////////////////////////////////
+        
+        System.out.println("\n === WeiShainPOV ===");
+        System.out.println("Data Path: " + dataDirPath);
+        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SERVICE_PORT);
+        System.out.println("Sync. Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SYNC_PORT);
+
+        for (int i = 0; i < 1; ++i) {
+            System.out.println("\nUPLOAD " + i);
+            new WeiShianClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
+        }
+
+        for (int i = 0; i < 1; ++i) {
+            System.out.println("\nDOWNLOAD " + i);
+            new WeiShianClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
         }
         
         ///////////////////////////////////////////////////////////////////////////////////////////////////
