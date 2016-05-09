@@ -98,14 +98,15 @@ public class WeiShianClient extends Client {
                      DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
                     long time = System.nanoTime();
-                    
+
+                    lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);                    
                     boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
                     if (!syncSuccess) {
                         System.err.println("Sync Error");
                     }
 
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
-                    
+
                     execute(operations.get(x % operations.size()));
                     
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
