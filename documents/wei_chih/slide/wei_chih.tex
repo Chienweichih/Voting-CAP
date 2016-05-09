@@ -317,46 +317,83 @@
 \end{frame}
 
 \begin{frame}{Experimental Results}
+{The client device and SP are in the same network segment}
 	\scriptsize
-	\begin{table}
-    	\large
-		\centering
-		\caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
-		\begin{tabular}{lccc}      	
-            Test File Size & Non POV  & Voting   & 2014 CloudCom \\ \hline
-            $<$ 10 KB      & 0.005518 & 0.037380 & 0.218630      \\ \hline
-            $<$ 100 KB     & 0.015352 & 0.039608 & 0.232741      \\ \hline
-            $<$ 1 MB       & 0.056828 & 0.105343 & 0.272903      \\ \hline
-            $<$ 10 MB      & 0.359668 & 0.391630 & 0.567197      \\
-		\end{tabular}
-	\end{table}
-    \begin{alertblock}{2014 CloudCom Worst-case}
-    	\normalsize
-    	\tab{} Synchronize (HashChain length = 100) cost \textcolor{red}{0.595 sec}. \\
-        \tab{} Synchronize (HashChain length = 1000) cost \textcolor{red}{5.54 sec}.
-    \end{alertblock}
+    \begin{table}[]
+    \large
+    \centering
+    \caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
+    \begin{tabular}{lccc}
+        Test File        & Non POV  & This Paper & 2014 CloudCom \\ \hline
+        \textless 10 KB  & 0.010608 & 0.046139   & 0.164744      \\ \hline
+        \textless 100 KB & 0.014393 & 0.070739   & 0.175226      \\ \hline
+        \textless 1 MB   & 0.090440 & 0.153822   & 0.253963      \\ \hline
+        \textless 10 MB  & 0.367989 & 0.430937   & 0.513308      \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{table}[]
+    \large    
+    \centering
+    \caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
+    \begin{tabular}{lccc}
+        Test File        & Non POV  & This Paper & 2014 CloudCom \\ \hline
+        \textless 10 KB  & 0.007845 & 0.042295   & 0.224947      \\ \hline
+        \textless 100 KB & 0.013691 & 0.053583   & 0.236347      \\ \hline
+        \textless 1 MB   & 0.098570 & 0.146021   & 0.359045      \\ \hline
+        \textless 10 MB  & 0.354916 & 0.392072   & 0.961740      \\ \hline
+    \end{tabular}
+    \end{table}
 \end{frame}
 
 \begin{frame}{Experimental Results}
-	\scriptsize	
+{The client device and SP are \alert{not} in the same network segment}
 	\begin{table}[]
-    	\large
-		\centering      
-		\caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
-		\begin{tabular}{lccc}      	
-            Test File Size & Non POV  & Voting   & 2014 CloudCom \\ \hline
-            $<$ 10 KB      & 0.213026 & 0.036708 & 0.231693      \\ \hline
-            $<$ 100 KB     & 0.219071 & 0.074291 & 0.237524      \\ \hline
-            $<$ 1 MB       & 0.258437 & 0.191194 & 0.271910      \\ \hline
-            $<$ 10 MB      & 0.548203 & 1.033431 & 0.551122      \\
-		\end{tabular}
-	\end{table}
-    \tab{} \textcolor{red}{(數據有問題需更正)}
-    \begin{alertblock}{2014 CloudCom Worst-case}
-    	\normalsize
-    	\tab{} Synchronize (HashChain length = 100) cost \textcolor{red}{0.827 sec}. \\
-        \tab{} Synchronize (HashChain length = 1000) cost \textcolor{red}{7.871 sec}.
-    \end{alertblock}
+    \large    
+    \centering
+    \caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
+    \begin{tabular}{lccc}
+        Test File        & Non POV  & This Paper & 2014 CloudCom \\ \hline
+        \textless 10 KB  & 0.077653 & 0.254801   & 0.407407      \\ \hline
+        \textless 100 KB & 0.149493 & 0.338238   & 0.492000      \\ \hline
+        \textless 1 MB   & 0.631626 & 0.825261   & 0.983832      \\ \hline
+        \textless 10 MB  & 4.014217 & 4.182142   & 4.359997      \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{table}[]
+    \large 
+    \centering
+    \caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
+    \begin{tabular}{lccc}
+    Test File        & Non POV  & This Paper & 2014 CloudCom \\ \hline
+    \textless 10 KB  & 0.061063 & 0.275808   & 0.538531      \\ \hline
+    \textless 100 KB & 0.093941 & 0.312340   & 0.620296      \\ \hline
+    \textless 1 MB   & 0.225640 & 0.457329   & 0.752591      \\ \hline
+    \textless 10 MB  & 1.147272 & 1.296215   & 1.631534      \\ \hline
+    \end{tabular}
+    \end{table}
+\end{frame}
+
+\begin{frame}{Experimental Results}{Running time of different numbers' servers (in sec.)}
+    \begin{table}[]
+    \small
+    \centering
+    \label{my-label}
+    \begin{tabular}{lccllcc}
+        \textcolor{blue}{3 Server} & \multicolumn{1}{l}{} & \multicolumn{1}{l}{} &  & \textcolor{blue}{5 Server} & \multicolumn{1}{l}{} & \multicolumn{1}{l}{} \\
+        Test File                  & Upload               & Download             &  & Test File                  & Upload               & Download             \\
+        \textless 10 KB            & 0.046139             & 0.042295             &  & \textless 10 KB            & 0.067923             & 0.054263             \\
+        \textless 100 KB           & 0.070739             & 0.053583             &  & \textless 100 KB           & 0.083563             & 0.055442             \\
+        \textless 1 MB             & 0.153822             & 0.146021             &  & \textless 1 MB             & 0.166289             & 0.159869             \\
+        \textless 10 MB            & 0.430937             & 0.392072             &  & \textless 10 MB            & 0.513879             & 0.476251             \\
+                                   &                      &                      &  &                            &                      &                      \\
+        \textcolor{blue}{7 Server} & \multicolumn{1}{l}{} & \multicolumn{1}{l}{} &  & \textcolor{blue}{9 Server} & \multicolumn{1}{l}{} & \multicolumn{1}{l}{} \\
+        Test File                  & Upload               & Download             &  & Test File                  & Upload               & Download             \\
+        \textless 10 KB            & 0.101676             & 0.064370             &  & \textless 10 KB            & 0.108696             & 0.078872             \\
+        \textless 100 KB           & 0.112895             & 0.083961             &  & \textless 100 KB           & 0.145049             & 0.097507             \\
+        \textless 1 MB             & 0.200053             & 0.195817             &  & \textless 1 MB             & 0.203870             & 0.202213             \\
+        \textless 10 MB            & 0.684666             & 0.622665             &  & \textless 10 MB            & 0.694259             & 0.625499            
+    \end{tabular}
+    \end{table}
 \end{frame}
 
 \begin{frame}
