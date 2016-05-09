@@ -104,12 +104,14 @@ public class VotingHandler implements ConnectionHandler {
                 case UPLOAD:
                     lastOP[portIndex] = op;
                     
-                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-                    Utils.receive(in, file);
-                    String digest = Utils.digest(file);
+                    if (portIndex + Config.SERVICE_PORT[0] == Config.SERVICE_PORT[0]) {
+                        file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
+                        Utils.receive(in, file);
+                        String digest = Utils.digest(file);
 
-                    if (op.getMessage().equals(digest) == false) {
-                        throw new java.io.IOException();
+                        if (op.getMessage().equals(digest) == false) {
+                            throw new java.io.IOException();
+                        }
                     }
                     break;
                 case AUDIT:

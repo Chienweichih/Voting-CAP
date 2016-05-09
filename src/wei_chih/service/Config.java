@@ -9,7 +9,11 @@ public interface Config extends service.Config {
     public String SYNC_HOSTNAME = SERVICE_HOSTNAME;
     
     public int SERVICE_NUM = 3;
-    public int SERVICE_PORT[] = {3000, 3001, 3002, 3003, 3004, 3005, 3006};
+    public int SERVICE_PORT[] = {3000, 3001, 3002, 3003, 3004,
+                                 3005, 3006, 3007, 3008, 3009,
+                                 3010, 3011, 3012, 3013, 3014,
+                                 3015, 3016, 3017, 3018,
+                                 3019, 3020};
     
     public int WEI_SHIAN_SERVICE_PORT = SERVICE_PORT[SERVICE_PORT.length - 1];
     public int WEI_SHIAN_SYNC_PORT = SERVICE_PORT[SERVICE_PORT.length - 2];

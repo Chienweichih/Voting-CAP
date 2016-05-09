@@ -275,7 +275,10 @@ public class VotingClient extends Client {
                 }
                 break;
             case UPLOAD:
-                Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
+                if (socket.getPort() == Config.SERVICE_PORT[0] ||
+                    socket.getLocalPort() == Config.SERVICE_PORT[0]) {
+                    Utils.send(out, new File(Experiment.dataDirPath + op.getPath()));
+                }                
                 break;
             case AUDIT:
                 Utils.receive(in, file);                

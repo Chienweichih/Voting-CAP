@@ -210,12 +210,19 @@ public class Utils extends utility.Utils {
     
     public static void printExperimentResult(double[] results) {
         int runTimes = results.length;
+        double[] avgTime = new double[4];
         for (int i = 0; i < 4; ++i) {
             double sum = 0.0;
             for (int j = 0; j < runTimes/4; ++j) {
                 sum += results[i*10 + j];
             }
-            System.out.printf("Average Time for File Size under %10.0f Bytes : %f s\n", 10000*(Math.pow(10, i)), sum*4/runTimes);
+            avgTime[i] = sum*4/runTimes;
+            System.out.printf("Average Time for File Size under %10.0f Bytes : %f s\n", 10000*(Math.pow(10, i)), avgTime[i]);
+        }
+        
+        // for easily copy data
+        for (int i = 0; i < 4; ++i) {
+            System.out.println(avgTime[i]);
         }
     }
 }
