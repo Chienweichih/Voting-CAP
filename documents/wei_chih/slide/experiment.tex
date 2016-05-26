@@ -49,6 +49,37 @@
 \end{frame}
 
 \begin{frame}{Experimental Results}
+{The client device and SP are in the same network segment (UPLOAD)}
+	\begin{minipage}[c]{0.4\textwidth}
+    \scriptsize
+    \begin{table}[] 
+    \centering
+    \caption{}
+    \begin{tabular}{lccc}
+        Test File        & Rate     \\ \hline
+        \textless 10 KB  & -76.95\% \\ \hline
+        \textless 100 KB & -64.97\% \\ \hline
+        \textless 1 MB   & -61.24\% \\ \hline
+        \textless 10 MB  & -56.68\% \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{center}
+		$Rate\ =\ \frac{(V-N)\ -\ (C-N)}{(C-N)}$
+        \begin{equation*} \label{eq3}
+                \begin{split}
+                        V\ & =\ Voting,\ this\ paper\\
+                        C\ & =\ 2014\ Cloud\ Com\\
+                        N\ & =\ Non\ POV
+                \end{split}
+        \end{equation*}
+    \end{center}
+    \end{minipage}%
+    \begin{minipage}[c]{0.6\textwidth}
+	\includegraphics[width=\textwidth]{LAB_VM_UP}
+    \end{minipage}
+\end{frame}
+
+\begin{frame}{Experimental Results}
 {The client device and SP are in the same network segment}
 	\scriptsize
     \begin{table}[] 
@@ -65,6 +96,37 @@
     \begin{center}
 	    \includegraphics[width=.6\textwidth]{LAB_VM_DO}
     \end{center}
+\end{frame}
+
+\begin{frame}{Experimental Results}
+{The client device and SP are in the same network segment (DOWNLOAD)}
+	\begin{minipage}[c]{0.4\textwidth}
+    \scriptsize
+    \begin{table}[] 
+    \centering
+    \caption{}
+    \begin{tabular}{lccc}
+        Test File        & Rate     \\ \hline
+        \textless 10 KB  & -84.13\% \\ \hline
+        \textless 100 KB & -82.08\% \\ \hline
+        \textless 1 MB   & -81.78\% \\ \hline
+        \textless 10 MB  & -93.88\% \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{center}
+		$Rate\ =\ \frac{(V-N)\ -\ (C-N)}{(C-N)}$
+        \begin{equation*} \label{eq4}
+                \begin{split}
+                        V\ & =\ Voting,\ this\ paper\\
+                        C\ & =\ 2014\ Cloud\ Com\\
+                        N\ & =\ Non\ POV
+                \end{split}
+        \end{equation*}
+    \end{center}
+    \end{minipage}%
+    \begin{minipage}[c]{0.6\textwidth}
+	\includegraphics[width=\textwidth]{LAB_VM_DO}
+    \end{minipage}
 \end{frame}
 
 \begin{frame}{Experimental Results}
@@ -87,6 +149,37 @@
 \end{frame}
 
 \begin{frame}{Experimental Results}
+{The client device and SP are \alert{not} in the same network segment (UPLOAD)}
+	\begin{minipage}[c]{0.4\textwidth}
+	\scriptsize
+    \begin{table}[] 
+    \centering
+    \caption{}
+    \begin{tabular}{lccc}
+        Test File        & Rate     \\ \hline
+        \textless 10 KB  & -46.28\% \\ \hline
+        \textless 100 KB & -44.89\% \\ \hline
+        \textless 1 MB   & -45.02\% \\ \hline
+        \textless 10 MB  & -51.44\% \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{center}
+		$Rate\ =\ \frac{(V-N)\ -\ (C-N)}{(C-N)}$
+        \begin{equation*} \label{eq5}
+                \begin{split}
+                        V\ & =\ Voting,\ this\ paper\\
+                        C\ & =\ 2014\ Cloud\ Com\\
+                        N\ & =\ Non\ POV
+                \end{split}
+        \end{equation*}
+    \end{center}
+    \end{minipage}%
+    \begin{minipage}[c]{0.6\textwidth}
+	\includegraphics[width=\textwidth]{HOME_VM_UP}
+    \end{minipage}
+\end{frame}
+
+\begin{frame}{Experimental Results}
 {The client device and SP are \alert{not} in the same network segment}
 	\scriptsize
     \begin{table}[]
@@ -103,6 +196,37 @@
     \begin{center}
 	    \includegraphics[width=.6\textwidth]{HOME_VM_DO}
     \end{center}
+\end{frame}
+
+\begin{frame}{Experimental Results}
+{The client device and SP are \alert{not} in the same network segment (DOWNLOAD)}
+	\begin{minipage}[c]{0.4\textwidth}
+	\scriptsize
+    \begin{table}[] 
+    \centering
+    \caption{}
+    \begin{tabular}{lccc}
+        Test File        & Rate     \\ \hline
+        \textless 10 KB  & -55.02\% \\ \hline
+        \textless 100 KB & -58.51\% \\ \hline
+        \textless 1 MB   & -56.03\% \\ \hline
+        \textless 10 MB  & -69.24\% \\ \hline
+    \end{tabular}
+    \end{table}
+    \begin{center}
+		$Rate\ =\ \frac{(V-N)\ -\ (C-N)}{(C-N)}$
+        \begin{equation*} \label{eq6}
+                \begin{split}
+                        V\ & =\ Voting,\ this\ paper\\
+                        C\ & =\ 2014\ Cloud\ Com\\
+                        N\ & =\ Non\ POV
+                \end{split}
+        \end{equation*}
+    \end{center}
+    \end{minipage}%
+    \begin{minipage}[c]{0.6\textwidth}
+	\includegraphics[width=\textwidth]{HOME_VM_DO}
+    \end{minipage}
 \end{frame}
 
 \begin{frame}{Experimental Results}{Running time of different numbers' servers}
