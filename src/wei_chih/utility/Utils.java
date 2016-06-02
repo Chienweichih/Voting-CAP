@@ -88,21 +88,21 @@ public class Utils extends utility.Utils {
         return obj;
     }
     
-    public static String getDataDirPath(String args) {
+    public static String getDataDirPath(String args, String pathPrefix) {
         String dataDirPath = Config.EMPTY_STRING;
         try {
             switch (args.charAt(args.length() - 1)) {
                 case 'A':case 'a':
-                    dataDirPath = new File(Config.DATA_A_PATH).getCanonicalPath();
+                    dataDirPath = new File(pathPrefix + "Account A").getCanonicalPath();
                     break;
                 case 'B':case 'b':
-                    dataDirPath = new File(Config.DATA_B_PATH).getCanonicalPath();
+                    dataDirPath = new File(pathPrefix + "Account B").getCanonicalPath();
                     break;
                 case 'C':case 'c':
-                    dataDirPath = new File(Config.DATA_C_PATH).getCanonicalPath();
+                    dataDirPath = new File(pathPrefix + "Account C").getCanonicalPath();
                     break;
                 case 'D':case 'd':
-                    dataDirPath = new File(Config.DATA_D_PATH).getCanonicalPath();
+                    dataDirPath = new File(pathPrefix + "Account D").getCanonicalPath();
                     break;
                 default:
                     throw new java.lang.IllegalArgumentException();
@@ -114,13 +114,13 @@ public class Utils extends utility.Utils {
         return dataDirPath;
     }
     
-    public static String[] getTestFileName(String[] args) {
+    public static String[] getTestFileName(String[] args, String pathPrefix) {
         if (args.length != 2) {
             System.err.println("NEED TWO ARGUMENT");
             return new String[]{Config.EMPTY_STRING};
         }
 
-        String dataDirPath = getDataDirPath(args[0]);
+        String dataDirPath = getDataDirPath(args[0], pathPrefix);
         String testFileName = "";
         
         switch (dataDirPath.charAt(dataDirPath.length() - 1)) {

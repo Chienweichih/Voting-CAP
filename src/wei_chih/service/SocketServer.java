@@ -26,7 +26,7 @@ public class SocketServer extends service.SocketServer {
             System.err.println("NEED ONE ARGUMENT");
             return;
         }
-        dataDirPath = Utils.getDataDirPath(args[0]);
+        dataDirPath = Utils.getDataDirPath(args[0], Config.SERVER_ACCOUNT_PATH);
                 
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();

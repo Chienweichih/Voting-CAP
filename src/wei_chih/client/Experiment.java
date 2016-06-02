@@ -39,7 +39,7 @@ public class Experiment {
         
         final int runTimes = 40;
         
-        dataDirPath = Utils.getDataDirPath(args[0]);
+        dataDirPath = Utils.getDataDirPath(args[0], Config.CLIENT_ACCOUNT_PATH);
 
         List<Operation> downloadOPs = new ArrayList<>();
         List<Operation> uploadOPs = new ArrayList<>();

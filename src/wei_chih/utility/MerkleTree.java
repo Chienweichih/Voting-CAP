@@ -202,12 +202,29 @@ public class MerkleTree implements Serializable {
         }
     }
     
+    private static String getRoothashFromHashedFiles(Node rootNode) {
+        String rootHash = "";
+        
+        for (Node n : rootNode.children) {
+            if (n.isDirectory()) {
+                rootHash += getRoothashFromHashedFiles(n);
+            } else {
+                rootHash += n.digest;
+            }
+        }
+        
+        return Utils.digest(Utils.Str2Hex(rootHash));
+    }
+    
     public static void main(String[] args) {
         
+        String pathPrefix = (args[0].equals("client"))? Config.CLIENT_ACCOUNT_PATH
+                                                      : Config.SERVER_ACCOUNT_PATH;
+        
         HashMap<String, String> filePath = new HashMap<>();
-        filePath.put("A", Config.DATA_A_PATH);
-        filePath.put("B", Config.DATA_B_PATH);
-        filePath.put("C", Config.DATA_C_PATH);
+        filePath.put("A", pathPrefix + "Account A");
+        filePath.put("B", pathPrefix + "Account B");
+        filePath.put("C", pathPrefix + "Account C");
         
         for (Entry<String, String> entry : filePath.entrySet()) {
             long time = System.nanoTime();
@@ -215,6 +232,13 @@ public class MerkleTree implements Serializable {
             time = System.nanoTime() - time;
             System.out.printf("Generate Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
 
+            for (int i = 0; i < 5; ++i) {
+                time = System.nanoTime();
+                getRoothashFromHashedFiles(merkleTree.root);
+                time = System.nanoTime() - time;
+                System.out.printf("Get Roothash From Merkle Tree %s Hashed Files Cost: %.5f s\n", entry.getKey(), time/1e9);
+            }
+            
             time = System.nanoTime();
             Utils.Serialize(new File(entry.getKey() + ".merkletree"), merkleTree);
             time = System.nanoTime() - time;
