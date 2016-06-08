@@ -1,4 +1,4 @@
-package wei_chih.service.handler.twostep;
+package wei_chih.service.handler;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -12,31 +12,35 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import message.Operation;
+import message.OperationType;
 import service.handler.ConnectionHandler;
-import wei_chih.message.twostep.nonpov.Acknowledgement;
-import wei_chih.message.twostep.nonpov.Request;
+import wei_chih.message.weishian.Request;
 import wei_chih.service.Config;
 import wei_chih.service.SocketServer;
 import wei_chih.utility.Utils;
+import wei_chih.utility.MerkleTree;
 
 /**
  *
  * @author chienweichih
  */
-public class NonPOVHandler implements ConnectionHandler {
+public class WeiShianSyncHandler implements ConnectionHandler {
     private static final ReentrantLock LOCK;
     
+    private static String roothash;
+    private static String lastAck;
+        
     private final Socket socket;
-    private final KeyPair keyPair;
     
     static {
         LOCK = new ReentrantLock();
+        
+        roothash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
+        lastAck = Utils.digest(Config.DEFAULT_CHAINHASH);
     }
     
-    public NonPOVHandler(Socket socket, KeyPair keyPair) {
+    public WeiShianSyncHandler(Socket socket, KeyPair keyPair) {
         this.socket = socket;
-        this.keyPair = keyPair;
     }
     
     @Override
@@ -46,7 +50,6 @@ public class NonPOVHandler implements ConnectionHandler {
         try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
              DataInputStream in = new DataInputStream(socket.getInputStream())) {
             Request req = Request.parse(Utils.receive(in));
-            Operation op = req.getOperation();
             
             LOCK.lock();
             
@@ -54,31 +57,31 @@ public class NonPOVHandler implements ConnectionHandler {
                 throw new SignatureException("REQ validation failure");
             }
             
-            String result = Utils.digest(new File(SocketServer.dataDirPath + op.getPath()));
-            
-            Acknowledgement ack = new Acknowledgement(result);
-            ack.sign(keyPair);
-            Utils.send(out, ack.toString());
-            
-            File file;
-            switch (op.getType()) {
-                case UPLOAD:
-                    file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
-                    Utils.receive(in, file);
-                    if (op.getMessage().equals(Utils.digest(file)) == false) {
-                        throw new java.io.IOException();
-                    }
-                    break;
-                case DOWNLOAD:
-                    file = new File(SocketServer.dataDirPath + op.getPath());
-                    Utils.send(out, file);
-                    break;
-                default:
+            if (req.getOperation().getType() != OperationType.DOWNLOAD) {
+                return;
             }
+            
+            Utils.send(out, roothash);
+            Utils.send(out, lastAck);
+            
+            // wait until client finish
+            
+            req = Request.parse(Utils.receive(in));
+            
+            if (!req.validate(clientPubKey)) {
+                throw new SignatureException("REQ validation failure");
+            }
+            
+            if (req.getOperation().getType() != OperationType.UPLOAD) {
+                return;
+            }
+            
+            roothash = Utils.receive(in);
+            lastAck = Utils.receive(in);
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(NonPOVHandler.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(WeiShianSyncHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

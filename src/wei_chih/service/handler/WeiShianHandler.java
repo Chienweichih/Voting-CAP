@@ -1,4 +1,4 @@
-package wei_chih.service.handler.twostep;
+package wei_chih.service.handler;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,8 +16,8 @@ import java.util.logging.Logger;
 
 import message.Operation;
 import service.handler.ConnectionHandler;
-import wei_chih.message.twostep.weishian.Acknowledgement;
-import wei_chih.message.twostep.weishian.Request;
+import wei_chih.message.weishian.Acknowledgement;
+import wei_chih.message.weishian.Request;
 import wei_chih.service.Config;
 import wei_chih.service.SocketServer;
 import wei_chih.utility.MerkleTree;

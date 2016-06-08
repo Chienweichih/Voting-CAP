@@ -1,4 +1,4 @@
-package wei_chih.message.twostep.voting;
+package wei_chih.message.voting;
 
 import message.Operation;
 import message.OperationType;

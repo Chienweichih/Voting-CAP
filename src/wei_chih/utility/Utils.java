@@ -114,54 +114,6 @@ public class Utils extends utility.Utils {
         return dataDirPath;
     }
     
-    public static String[] getTestFileName(String[] args, String pathPrefix) {
-        if (args.length != 2) {
-            System.err.println("NEED TWO ARGUMENT");
-            return new String[]{Config.EMPTY_STRING};
-        }
-
-        String dataDirPath = getDataDirPath(args[0], pathPrefix);
-        String testFileName = "";
-        
-        switch (dataDirPath.charAt(dataDirPath.length() - 1)) {
-            case 'A':
-                testFileName = Config.DATA_A_TESTFILE;
-                break;
-            case 'B':
-                testFileName = Config.DATA_B_TESTFILE;
-                break;
-            case 'C':
-                testFileName = Config.DATA_C_TESTFILE;
-                break;
-            case 'D':
-                testFileName = Config.DATA_D_TESTFILE;
-                break;
-            default:
-        }
-                
-        if (args[1].charAt(2) == '0') {
-            testFileName += "/100";
-        } else if (args[1].charAt(1) == '0') {
-            testFileName += "/10";
-        } else if (args[1].charAt(0) == '1') {
-            testFileName += "/1";
-        } else {
-            System.err.println("ARGUMENT ERROR");
-            return new String[]{Config.EMPTY_STRING};
-        }
-        
-        if (Pattern.matches(".+[mM][bB]", args[1])) {
-            testFileName += "MB.bin";
-        } else if (Pattern.matches(".+[kK][bB]", args[1])) {
-            testFileName += "KB.bin";
-        } else {
-           System.err.println("ARGUMENT ERROR");
-           return new String[]{Config.EMPTY_STRING};
-        }
-        
-        return new String[]{dataDirPath, testFileName};
-    }
-    
     public static String[] randomPickupFiles(String folderPath, int number) throws FileNotFoundException {
         if (new File(folderPath).exists() == false) {
             throw new java.io.FileNotFoundException();

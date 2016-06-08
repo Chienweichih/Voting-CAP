@@ -1,5 +1,7 @@
-package wei_chih.service;
+package wei_chih.service.handler;
 
+import wei_chih.message.voting.Request;
+import wei_chih.message.voting.Acknowledgement;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -16,18 +18,18 @@ import java.util.logging.Logger;
 
 import message.OperationType;
 import service.handler.ConnectionHandler;
-import wei_chih.message.twostep.voting.*;
+import wei_chih.service.Config;
 import wei_chih.utility.*;
 
 /**
  *
  * @author chienweichih
  */
-public class VotingSyncServer implements ConnectionHandler {
+public class VotingSyncHandler implements ConnectionHandler {
     private static final ReentrantLock LOCK;
     
-    protected static final int[] SERVER_PORTS;
-    protected static final int SYNC_PORT;
+    public static final int[] SERVER_PORTS;
+    public static final int SYNC_PORT;
     
     private static final Map<Integer, Acknowledgement> lastAcks;
     
@@ -47,7 +49,7 @@ public class VotingSyncServer implements ConnectionHandler {
         }
     }
     
-    public VotingSyncServer(Socket socket, KeyPair keyPair) {
+    public VotingSyncHandler(Socket socket, KeyPair keyPair) {
         this.socket = socket;
     }
     
@@ -109,7 +111,7 @@ public class VotingSyncServer implements ConnectionHandler {
             
             socket.close();
         } catch (IOException | SignatureException ex) {
-            Logger.getLogger(VotingSyncServer.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(VotingSyncHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

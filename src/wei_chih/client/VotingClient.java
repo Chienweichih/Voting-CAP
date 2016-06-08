@@ -1,5 +1,7 @@
 package wei_chih.client;
 
+import wei_chih.message.voting.Request;
+import wei_chih.message.voting.Acknowledgement;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
@@ -17,7 +19,6 @@ import java.util.logging.Logger;
 import client.Client;
 import message.Operation;
 import message.OperationType;
-import wei_chih.message.twostep.voting.*;
 import wei_chih.service.Config;
 import wei_chih.utility.*;
 

@@ -1,4 +1,4 @@
-package wei_chih.message.twostep.weishian;
+package wei_chih.message.weishian;
 
 import message.Operation;
 import message.OperationType;

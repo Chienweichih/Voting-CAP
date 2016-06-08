@@ -1,4 +1,4 @@
-package wei_chih.message.twostep.nonpov;
+package wei_chih.message.nonpov;
 
 import message.SOAPMessage;
 import org.w3c.dom.NodeList;

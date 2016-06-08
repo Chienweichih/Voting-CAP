@@ -1,4 +1,4 @@
-package wei_chih.message.twostep.nonpov;
+package wei_chih.message.nonpov;
 
 import message.Operation;
 import message.OperationType;

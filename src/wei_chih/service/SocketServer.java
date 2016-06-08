@@ -1,10 +1,12 @@
 package wei_chih.service;
 
 import service.handler.ConnectionHandler;
-import wei_chih.service.handler.twostep.NonPOVHandler;
-import wei_chih.service.handler.twostep.VotingHandler;
+import wei_chih.service.handler.NonPOVHandler;
+import wei_chih.service.handler.VotingHandler;
+import wei_chih.service.handler.WeiShianHandler;
+import wei_chih.service.handler.VotingSyncHandler;
+import wei_chih.service.handler.WeiShianSyncHandler;
 import wei_chih.utility.Utils;
-import wei_chih.service.handler.twostep.WeiShianHandler;
 
 /**
  *
@@ -33,14 +35,14 @@ public class SocketServer extends service.SocketServer {
         
         new SocketServer(NonPOVHandler.class, Config.SERVICE_PORT[Config.SERVICE_NUM + 1]).start();
         
-        for (int p : VotingSyncServer.SERVER_PORTS) {
+        for (int p : VotingSyncHandler.SERVER_PORTS) {
             new SocketServer(VotingHandler.class, p).start();
         }
         
-        new SocketServer(VotingSyncServer.class, VotingSyncServer.SYNC_PORT).start();
+        new SocketServer(VotingSyncHandler.class, VotingSyncHandler.SYNC_PORT).start();
         
         new SocketServer(WeiShianHandler.class, Config.WEI_SHIAN_SERVICE_PORT).start();
-        new SocketServer(WeiShianSyncServer.class, Config.WEI_SHIAN_SYNC_PORT).start();
+        new SocketServer(WeiShianSyncHandler.class, Config.WEI_SHIAN_SYNC_PORT).start();
         
         System.out.println("Ready to go!");
     }

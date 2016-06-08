@@ -14,8 +14,8 @@ import java.util.concurrent.TimeUnit;
 
 import client.Client;
 import message.Operation;
-import wei_chih.message.twostep.nonpov.Acknowledgement;
-import wei_chih.message.twostep.nonpov.Request;
+import wei_chih.message.nonpov.Acknowledgement;
+import wei_chih.message.nonpov.Request;
 import wei_chih.service.Config;
 import wei_chih.utility.Utils;
 
