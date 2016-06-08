@@ -35,6 +35,7 @@ public class VotingClient extends Client {
     
     private Acknowledgement acknowledgement;
     
+    private Map<Integer, Integer> sequenceNumbers;
     private final Map<Integer, Acknowledgement> syncAcks;
     private final Map<Integer, Acknowledgement> acks;
     
@@ -235,12 +236,16 @@ public class VotingClient extends Client {
             try (Socket socket = new Socket(hostname, p);
                  DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                  DataInputStream in = new DataInputStream(socket.getInputStream())) {
+                int sn = sequenceNumbers.get(p);
+                op = new Operation(op.getType(), op.getPath(), op.getMessage(), Integer.toString(sn));
                 hook(op, socket, out, in);
 
+                sequenceNumbers.replace(p, sn + 1);
                 acks.replace(p, acknowledgement);
                 switch (op.getType()) {
                     case DOWNLOAD:
                         results.put(p, acknowledgement.getFileHash());
+                        break;
                     case UPLOAD:
                         results.put(p, acknowledgement.getRoothash());
                 }
@@ -355,6 +360,7 @@ public class VotingClient extends Client {
     }
     
     private boolean syncAtts(Operation op, DataOutputStream out, DataInputStream in) {
+        File syncSN = new File(Config.DOWNLOADS_DIR_PATH + "/syncSN");
         File syncAck = new File(Config.DOWNLOADS_DIR_PATH + "/syncAck");
         Map<Integer, String> syncAckStrs = new HashMap<>();
         
@@ -362,14 +368,27 @@ public class VotingClient extends Client {
         req.sign(keyPair);
         Utils.send(out, req.toString());
         
+        switch (op.getType()){
+            case DOWNLOAD:
+                Utils.receive(in, syncSN);                
+                sequenceNumbers = Utils.Deserialize(syncSN.getAbsolutePath());
+                break;
+            case UPLOAD:
+                Utils.Serialize(syncSN, sequenceNumbers);
+                Utils.send(out, syncSN);
+                break;
+            default:
+                return false;
+        }
+        
         if (op.getMessage().equals(Config.EMPTY_STRING)) {
             return true;
         }
         
         switch (op.getType()){
             case DOWNLOAD:
-                Utils.receive(in, syncAck);
                 
+                Utils.receive(in, syncAck);                               
                 syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
 
                 for (int p : Experiment.SERVER_PORTS) {
@@ -385,7 +404,6 @@ public class VotingClient extends Client {
                 }
 
                 Utils.Serialize(syncAck, syncAckStrs);
-
                 Utils.send(out, syncAck);
                 break;
             default:

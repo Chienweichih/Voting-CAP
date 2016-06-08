@@ -31,6 +31,7 @@ public class VotingHandler implements ConnectionHandler {
     private static final MerkleTree[] merkleTree;
     private static final String[] digestBeforeUpdate;
     private static final Operation[] lastOP;
+    private static final Integer[] sequenceNumbers;
     
     private final Socket socket;
     private final KeyPair keyPair;
@@ -39,11 +40,13 @@ public class VotingHandler implements ConnectionHandler {
         merkleTree = new MerkleTree[Config.SERVICE_NUM];
         digestBeforeUpdate = new String[Config.SERVICE_NUM];
         lastOP = new Operation[Config.SERVICE_NUM];
+        sequenceNumbers = new Integer[Config.SERVICE_NUM];
         
         for (int i = 0; i < Config.SERVICE_NUM; ++i) {
             merkleTree[i] = new MerkleTree(new File(SocketServer.dataDirPath));
             digestBeforeUpdate[i] = "";
             lastOP[i] = new Operation(OperationType.DOWNLOAD, "", merkleTree[i].getRootHash());
+            sequenceNumbers[i] = 0;
         }
 
         LOCK = new ReentrantLock();
@@ -77,9 +80,17 @@ public class VotingHandler implements ConnectionHandler {
             
             Operation op = req.getOperation();
             
-            if (op.getType() == OperationType.UPLOAD) {
-                digestBeforeUpdate[portIndex] = merkleTree[portIndex].getDigest(op.getPath());
-                merkleTree[portIndex].update(op.getPath(), op.getMessage());
+            switch(op.getType()) {
+                case UPLOAD:
+                    digestBeforeUpdate[portIndex] = merkleTree[portIndex].getDigest(op.getPath());
+                    merkleTree[portIndex].update(op.getPath(), op.getMessage());
+                case DOWNLOAD:
+                    // both upload and download, so no break
+                    if (!op.getClientID().equals(String.valueOf(sequenceNumbers[portIndex]))) {
+                        throw new java.security.InvalidParameterException();
+                    }
+                    sequenceNumbers[portIndex]++;
+                default:
             }
             
             File file = new File(SocketServer.dataDirPath + op.getPath());

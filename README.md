@@ -106,7 +106,7 @@ for (int i = 0; i < runTimes; i++) {
 - 更新一個節點的雜湊值： `public void update(String fname, String digest)`
 - 刪除一個節點： `public void delete(String fname)`
 - 取得雜湊樹的根節點雜湊值： `public String getRootHash()`
-- 取得新一個節點的雜湊值：`public String getDigest(String path)`
+- 取得一個節點的雜湊值：`public String getDigest(String path)`
 - 從已經取 hash 的檔案推算出根節點雜湊值的實驗： `private static String getRoothashFromHashedFiles(Node rootNode)`
 
 

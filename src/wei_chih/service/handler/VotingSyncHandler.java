@@ -31,7 +31,9 @@ public class VotingSyncHandler implements ConnectionHandler {
     public static final int[] SERVER_PORTS;
     public static final int SYNC_PORT;
     
+    private static final Map<Integer, Integer> sequenceNumbers;
     private static final Map<Integer, Acknowledgement> lastAcks;
+    
     
     private final Socket socket;
     
@@ -43,8 +45,11 @@ public class VotingSyncHandler implements ConnectionHandler {
         
         SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
                 
+        sequenceNumbers = new HashMap<>();
         lastAcks = new HashMap<>();
+        
         for (int port : SERVER_PORTS) {
+            sequenceNumbers.put(port, 0);
             lastAcks.put(port, null);
         }
     }
@@ -63,6 +68,9 @@ public class VotingSyncHandler implements ConnectionHandler {
             
             LOCK.lock();
             
+            File syncSN = new File(Config.DOWNLOADS_DIR_PATH + "/syncSNs");
+            Map<Integer, Integer> syncSNReturn;
+            
             File syncAck = new File(Config.DOWNLOADS_DIR_PATH + "/syncLast");
             Map<Integer, String> syncAckStrs = new HashMap<>();
             
@@ -74,14 +82,15 @@ public class VotingSyncHandler implements ConnectionHandler {
                 return;
             }
             
+            Utils.Serialize(syncSN, sequenceNumbers);
+            Utils.send(out, syncSN);
+            
             if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
                 for (int port : SERVER_PORTS) {
                     String lastStr = (lastAcks.get(port) == null) ? null : lastAcks.get(port).toString();
                     syncAckStrs.put(port, lastStr);
                 }
-
                 Utils.Serialize(syncAck, syncAckStrs);
-
                 Utils.send(out, syncAck);
             }
             
@@ -97,12 +106,20 @@ public class VotingSyncHandler implements ConnectionHandler {
                 return;
             }
             
+            Utils.receive(in, syncSN);
+            syncSNReturn = Utils.Deserialize(syncSN.getAbsolutePath());
+            
+            for (int port : SERVER_PORTS) { 
+                if (syncSNReturn.get(port) != null) {
+                    sequenceNumbers.replace(port, syncSNReturn.get(port));
+                }    
+            }
+            
             if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
                 Utils.receive(in, syncAck);
-                
-                syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());
+                syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());                
 
-                for (int port : SERVER_PORTS) {
+                for (int port : SERVER_PORTS) {                    
                     if (syncAckStrs.get(port) != null) {
                         lastAcks.replace(port, Acknowledgement.parse(syncAckStrs.get(port)));
                     }
