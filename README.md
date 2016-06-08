@@ -3,82 +3,84 @@ Author: Wei-Chih Chien
 
 (This README reference from [Malthael's CAP-for-SOA-Systems README.md](https://github.com/CloudComLab/CAP-for-SOA-Systems/blob/master/README.md))
 
-## ¦p¦ó¶}©l
-1. ¨Ï¥Î [GitHub Desktop](https://desktop.github.com) Clone ¥»±M®×
-2. ¶}±Ò [NetBeans IDE](https://netbeans.org) ¤W¤è¿ï³æ¿ï¾Ü `File` > `Open Project` > `¥»±M®×¸ô®|`
-3. ÀË¬d°ò¥»³]©w (³£¦b `wei_chih.service.Config` ¤¤)¡G
-    - `SERVICE_HOSTNAME` ªº­È¬O§_¬° `"localhost"`
-    - `CLIENT_ACCOUNT_PATH` ³]©w¬°­n³B²zªºÀÉ®×¸ê®Æ§¨¸ô®| (Accounts)
-4. ¤W¤è¿ï³æ¿ï¾Ü `Run` > `Clean and Build Project` ½sÄ¶ (§Ö±¶Áä¬° Shift-F11)
-5. ·s¼W¦øªA¾¹»P¨Ï¥ÎªÌªº°õ¦æ³]©w¡G
-    1. ¤W¤è¿ï³æ¿ï¾Ü `File` > `Project Properties`
-    2. ¿ï¾Ü `Categories` ¤¤ªº `Run` ¼ĞÅÒ
-    3. ¿ï¾Ü `New` > ¿é¤J `client` ©Î `server`
-    4. ­º¥ı³]©w `Main Class`¡G
-        * `client` ¬° `wei_chih.client.Experiment`
-        * `server` ¬° `wei_chih.service.SocketServer`
-    5. ³Ì«á`Arguments` ³]©w¦¨ `A` ©Î `B` ©Î `C` (¤À§O¬O `Account A`, `Account B` ©M `Account C`)
-6. °õ¦æ server¡G
-    1. ¤W¤è¿ï³æ¿ï¾Ü `Run` > `Set Project Configuration` > `server` (©Î¬O Toorbars ¤¤ªº¿ï³æ)
-    2. ¤W¤è¿ï³æ¿ï¾Ü `Run` > `Run Project` ±Ò°Ê¦øªA¾¹ (§Ö±¶Áä¬° F6)
-    3. µ¥«İ console ¥X²{ `Ready to go!` ¦r¼Ë
-7. °õ¦æ client¡G
-    1. ¤W¤è¿ï³æ¿ï¾Ü `Run` > `Set Project Configuration` > `client` (©Î¬O Toorbars ¤¤ªº¿ï³æ)
-    2. ¤W¤è¿ï³æ¿ï¾Ü `Run` > `Run Project` ¼ÒÀÀ¨Ï¥ÎªÌ¦æ¬° (§Ö±¶Áä¬° F6)
-    3. «İ `wei_chih.client.Experiments.java` µ²§ô¤§«á¡A°O±o¤]­nÃö³¬¦øªA¾¹
+## å¦‚ä½•é–‹å§‹
+1. ä½¿ç”¨ [GitHub Desktop](https://desktop.github.com) Clone æœ¬å°ˆæ¡ˆ
+2. é–‹å•Ÿ [NetBeans IDE](https://netbeans.org) ä¸Šæ–¹é¸å–®é¸æ“‡ `File` > `Open Project` > `æœ¬å°ˆæ¡ˆè·¯å¾‘`
+3. æª¢æŸ¥åŸºæœ¬è¨­å®š (éƒ½åœ¨ `wei_chih.service.Config` ä¸­)ï¼š
+    - `SERVICE_HOSTNAME` çš„å€¼æ˜¯å¦ç‚º `"localhost"`
+    - `CLIENT_ACCOUNT_PATH` è¨­å®šç‚ºè¦è™•ç†çš„æª”æ¡ˆè³‡æ–™å¤¾è·¯å¾‘ (Accounts)
+4. ä¸Šæ–¹é¸å–®é¸æ“‡ `Run` > `Clean and Build Project` ç·¨è­¯ (å¿«æ·éµç‚º Shift-F11)
+5. æ–°å¢ä¼ºæœå™¨èˆ‡ä½¿ç”¨è€…çš„åŸ·è¡Œè¨­å®šï¼š
+    1. ä¸Šæ–¹é¸å–®é¸æ“‡ `File` > `Project Properties`
+    2. é¸æ“‡ `Categories` ä¸­çš„ `Run` æ¨™ç±¤
+    3. é¸æ“‡ `New` > è¼¸å…¥ `client` æˆ– `server`
+    4. é¦–å…ˆè¨­å®š `Main Class`ï¼š
+        * `client` ç‚º `wei_chih.client.Experiment`
+        * `server` ç‚º `wei_chih.service.SocketServer`
+    5. æœ€å¾Œ`Arguments` è¨­å®šæˆ `A` æˆ– `B` æˆ– `C` (åˆ†åˆ¥æ˜¯ `Account A`, `Account B` å’Œ `Account C`)
+6. åŸ·è¡Œ serverï¼š
+    1. ä¸Šæ–¹é¸å–®é¸æ“‡ `Run` > `Set Project Configuration` > `server` (æˆ–æ˜¯ Toorbars ä¸­çš„é¸å–®)
+    2. ä¸Šæ–¹é¸å–®é¸æ“‡ `Run` > `Run Project` å•Ÿå‹•ä¼ºæœå™¨ (å¿«æ·éµç‚º F6)
+    3. ç­‰å¾… console å‡ºç¾ `Ready to go!` å­—æ¨£
+7. åŸ·è¡Œ clientï¼š
+    1. ä¸Šæ–¹é¸å–®é¸æ“‡ `Run` > `Set Project Configuration` > `client` (æˆ–æ˜¯ Toorbars ä¸­çš„é¸å–®)
+    2. ä¸Šæ–¹é¸å–®é¸æ“‡ `Run` > `Run Project` æ¨¡æ“¬ä½¿ç”¨è€…è¡Œç‚º (å¿«æ·éµç‚º F6)
+    3. å¾… `wei_chih.client.Experiments.java` çµæŸä¹‹å¾Œï¼Œè¨˜å¾—ä¹Ÿè¦é—œé–‰ä¼ºæœå™¨
 
-**½Ğ¨Ï¥Î JDK 8 ¥H¤Wª©¥»**
+**è«‹ä½¿ç”¨ JDK 8 ä»¥ä¸Šç‰ˆæœ¬**
 
-## ³]©w»·ºİ server
-­Y­n±N server °õ¦æ©ó»·ºİªº vm ¡A½Ğ¨Ì¥H¤U¨BÆJ³]©w¡G
+## è¨­å®šé ç«¯ server
+è‹¥è¦å°‡ server åŸ·è¡Œæ–¼é ç«¯çš„ vm ï¼Œè«‹ä¾ä»¥ä¸‹æ­¥é©Ÿè¨­å®šï¼š
 
-1. ·s¼W»·ºİ Java ¥­¥x¡G
-    1. ¤W¤è¿ï³æ¿ï¾Ü `Tools` > `Java Platforms`
-    2. ÂI¿ï `Add Platform...`
-    3. ¿ï¾Ü `Remote Java Standard Edition`¡AÂI¿ï `Next`
-    3. ±N»·ºİ server ªº detail ¶ñ¤J¡AÂI¿ï `Finish` ´N§¹¦¨¤F
-2. §ó§ï¦øªA¾¹ªº°õ¦æ³]©w¡G
-    1. ¤W¤è¿ï³æ¿ï¾Ü `File` > `Project Properties`
-    2. ¿ï¾Ü `Categories` ¤¤ªº `Run` ¼ĞÅÒ
-    3. `Configuartion` ¿ï¾Ü `server`
-    4. `Runtime Platform` ¿ï¾Ü­è­è·s¼Wªº»·ºİ Java ¥­¥x¡AÂI¿ï `ok` §¹¦¨
-3. §ó§ï°ò¥»³]©w (³£¦b `wei_chih.service.Config` ¤¤)¡G
-    - `SERVICE_HOSTNAME` ªº­È¬° `"»·ºİ server ip"`
-    - `SERVER_ACCOUNT_PATH` §ï¬°»·ºİ server¤WªºÀÉ®×¸ê®Æ§¨¸ô®| (Accounts)
-4. ¤W¤è¿ï³æ¿ï¾Ü `Run` > `Clean and Build Project` ½sÄ¶ (§Ö±¶Áä¬° Shift-F11)
-5. ½T»{¦øªA¾¹ºİ»P¨Ï¥ÎªÌºİ `keypairs` ¸ê®Æ§¨¤¤ªºÃ±³¹ÀÉ®×¬Û¦P¡A­Y¤£¬Û¦P°õ¦æ®É·|¥á¥X `java.security.SignatureException`
-6. ¨Ì·Ó«e­± `¦p¦ó¶}©l` ªº¤èªk°õ¦æ server ©M client §Y¥i
+1. æ–°å¢é ç«¯ Java å¹³å°ï¼š
+    1. ä¸Šæ–¹é¸å–®é¸æ“‡ `Tools` > `Java Platforms`
+    2. é»é¸ `Add Platform...`
+    3. é¸æ“‡ `Remote Java Standard Edition`ï¼Œé»é¸ `Next`
+    3. å°‡é ç«¯ server çš„ detail å¡«å…¥ï¼Œé»é¸ `Finish` å°±å®Œæˆäº†
+2. æ›´æ”¹ä¼ºæœå™¨çš„åŸ·è¡Œè¨­å®šï¼š
+    1. ä¸Šæ–¹é¸å–®é¸æ“‡ `File` > `Project Properties`
+    2. é¸æ“‡ `Categories` ä¸­çš„ `Run` æ¨™ç±¤
+    3. `Configuartion` é¸æ“‡ `server`
+    4. `Runtime Platform` é¸æ“‡å‰›å‰›æ–°å¢çš„é ç«¯ Java å¹³å°ï¼Œé»é¸ `ok` å®Œæˆ
+3. æ›´æ”¹åŸºæœ¬è¨­å®š (éƒ½åœ¨ `wei_chih.service.Config` ä¸­)ï¼š
+    - `SERVICE_HOSTNAME` çš„å€¼ç‚º `"é ç«¯ server ip"`
+    - `SERVER_ACCOUNT_PATH` æ”¹ç‚ºé ç«¯ serverä¸Šçš„æª”æ¡ˆè³‡æ–™å¤¾è·¯å¾‘ (Accounts)
+4. ä¸Šæ–¹é¸å–®é¸æ“‡ `Run` > `Clean and Build Project` ç·¨è­¯ (å¿«æ·éµç‚º Shift-F11)
+5. ç¢ºèªä¼ºæœå™¨ç«¯èˆ‡ä½¿ç”¨è€…ç«¯ `keypairs` è³‡æ–™å¤¾ä¸­çš„ç°½ç« æª”æ¡ˆç›¸åŒï¼Œè‹¥ä¸ç›¸åŒåŸ·è¡Œæ™‚æœƒä¸Ÿå‡º `java.security.SignatureException`
+6. ä¾ç…§å‰é¢ `å¦‚ä½•é–‹å§‹` çš„æ–¹æ³•åŸ·è¡Œ server å’Œ client å³å¯
 
-## ¤¶²Ğ
+## ä»‹ç´¹
 
-³o­Ó Project ¬OÄ~©Ó Malthael ¼gªº [Cryptographic Accountability Protocol for Service-Oriented Architecture Systems](https://github.com/CloudComLab/CAP-for-SOA-Systems)¡A©Ò¦³¸ò§Úªº½×¤å¦³Ãöªº code ³£¦b `src/wei_chih/` ¥Ø¿ı©³¤U¡A¥]§t¤TºØ CAP ªº¹ê§@¡G
+é€™å€‹ Project æ˜¯ç¹¼æ‰¿ [Malthael](https://github.com/Malthael) å¯«çš„ [Cryptographic Accountability Protocol for Service-Oriented Architecture Systems](https://github.com/CloudComLab/CAP-for-SOA-Systems)ï¼Œæ‰€æœ‰è·Ÿæˆ‘çš„è«–æ–‡æœ‰é—œçš„ code éƒ½åœ¨ `src/wei_chih/` ç›®éŒ„åº•ä¸‹ï¼ŒåŒ…å«ä¸‰ç¨® CAP çš„å¯¦ä½œï¼š
+
 * Non-CAP (Non-POV)
 * Voting-POV
 * WeiShian-POV (2014 Cloud Com)
 
-¨t²Î¥D­n¦³¥|¤j³¡¤À¡G
+ç³»çµ±ä¸»è¦æœ‰å››å¤§éƒ¨åˆ†ï¼š
 
-* ªA°È´£¨ÑªÌ¡]service provider¡^
-* ¨Ï¥ÎªÌ¡]client¡^
-* ¤¤¶¡¶Ç»¼ªº°T®§¡]message¡^
-* Âø´ê¾ğ (merkle tree)
+* æœå‹™æä¾›è€…ï¼ˆservice providerï¼‰
+* ä½¿ç”¨è€…ï¼ˆclientï¼‰
+* ä¸­é–“å‚³éçš„è¨Šæ¯ï¼ˆmessageï¼‰
+* é›œæ¹Šæ¨¹ (merkle tree)
 
-### ªA°È´£¨ÑªÌ¡]service provider¡^
+### æœå‹™æä¾›è€…ï¼ˆservice providerï¼‰
 
-Â²³æ¨Ó»¡´N¬O¦øªA¾¹¡A±Ò°Êªº®É­Ô·|¶}±Ò¥H¤U`SocketServer`¡AºÊÅ¥¤£¦Pªº port¡G
+ç°¡å–®ä¾†èªªå°±æ˜¯ä¼ºæœå™¨ï¼Œå•Ÿå‹•çš„æ™‚å€™æœƒé–‹å•Ÿä»¥ä¸‹`SocketServer`ï¼Œç›£è½ä¸åŒçš„ portï¼š
+
 1. NonPOVHandler
-2. VotingHandler (¥Ñ `VotingSyncServer.SERVER_PORTS` ¨M©w¼Æ¶q)
+2. VotingHandler (ç”± `VotingSyncServer.SERVER_PORTS` æ±ºå®šæ•¸é‡)
 3. VotingSyncServer
 4. WeiShianHandler
 5. WeiShianSyncServer
 
-¨C­Ó½Ğ¨D©è¹F¤§«á¡A·|²£¥Í¤@­Ó `Thread` ¨Ã°t¦X¤£¦P CAP ¦Û¤vªº handler ¥h°õ¦æ½Ğ¨D¡C§A¥i¥H¦b `wei_chih.service.handler` §ä¨ì¤­­Ó handler¡A¨Ã¥B³z¹L¸ÌÀYªº `public void run()` Æ[¹î¨ä¦æ¬°¡C
+æ¯å€‹è«‹æ±‚æŠµé”ä¹‹å¾Œï¼Œæœƒç”¢ç”Ÿä¸€å€‹ `Thread` ä¸¦é…åˆä¸åŒ CAP è‡ªå·±çš„ handler å»åŸ·è¡Œè«‹æ±‚ã€‚ä½ å¯ä»¥åœ¨ `wei_chih.service.handler` æ‰¾åˆ°äº”å€‹ handlerï¼Œä¸¦ä¸”é€éè£¡é ­çš„ `public void run()` è§€å¯Ÿå…¶è¡Œç‚ºã€‚
 
-### ¨Ï¥ÎªÌ¡]client¡^
+### ä½¿ç”¨è€…ï¼ˆclientï¼‰
 
-¨Ï¥ÎªÌªº¹ê§@³£¦b `wei_chih.client` ¤¤¡A¨ä¤¤ªº `Experiments.java` ²Î¾ã¤F¦U CAP ¨Ï¥ÎªÌªº©I¥s¡A°õ¦æ¥L´N¥i¥Hª½±µ¤ñ¸û¤TªÌªº®t²§¡C
+ä½¿ç”¨è€…çš„å¯¦ä½œéƒ½åœ¨ `wei_chih.client` ä¸­ï¼Œå…¶ä¸­çš„ `Experiments.java` çµ±æ•´äº†å„ CAP ä½¿ç”¨è€…çš„å‘¼å«ï¼ŒåŸ·è¡Œä»–å°±å¯ä»¥ç›´æ¥æ¯”è¼ƒä¸‰è€…çš„å·®ç•°ã€‚
 
-¨Ï¥ÎªÌ¥D­n³z¹L `public void run(final List<Operation> operations, int runTimes)` °õ¦æ¡A·|½ü¬y©I¥s©Ò¦³°Ê§@¡G
+ä½¿ç”¨è€…ä¸»è¦é€é `public void run(final List<Operation> operations, int runTimes)` åŸ·è¡Œï¼Œæœƒè¼ªæµå‘¼å«æ‰€æœ‰å‹•ä½œï¼š
 
 ```
 for (int i = 0; i < runTimes; i++) {
@@ -86,26 +88,26 @@ for (int i = 0; i < runTimes; i++) {
 }
 ```
 
-`execute(Operation op)` ·|¥ı¥h»P¦øªA¾¹«Ø¥ß³s±µ¡AµM«á¦A°õ¦æ `protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)`¡C§A¥i¥H¥hÆ[¹î¨C­Ó¨Ï¥ÎªÌ¸Ì­±ªº¦¹¤èªk¡A¨Ã»P¹ïÀ³¨ìªº handler ·f°tµÛ¬İ¡A´N¥i¥H±oª¾¨C­Ó CAP ªº¹B§@¼Ò¦¡¡C
+`execute(Operation op)` æœƒå…ˆå»èˆ‡ä¼ºæœå™¨å»ºç«‹é€£æ¥ï¼Œç„¶å¾Œå†åŸ·è¡Œ `protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)`ã€‚ä½ å¯ä»¥å»è§€å¯Ÿæ¯å€‹ä½¿ç”¨è€…è£¡é¢çš„æ­¤æ–¹æ³•ï¼Œä¸¦èˆ‡å°æ‡‰åˆ°çš„ handler æ­é…è‘—çœ‹ï¼Œå°±å¯ä»¥å¾—çŸ¥æ¯å€‹ CAP çš„é‹ä½œæ¨¡å¼ã€‚
 
-### ¤¤¶¡¶Ç»¼ªº°T®§¡]message¡^
+### ä¸­é–“å‚³éçš„è¨Šæ¯ï¼ˆmessageï¼‰
 
-¥H [SOAP](https://en.wikipedia.org/wiki/SOAP) ®æ¦¡¬°¥D¡A¨Ï¥Î `javax.xml.soap.MessageFactory` ²£¥Í¡A¥t¥~ÁÙªş¦³¹q¤lÃ±³¹¡A¥ş³¡¹ê§@¥i¥H¦b `wei_chih.message` §ä¨ì¡C
+ä»¥ [SOAP](https://en.wikipedia.org/wiki/SOAP) æ ¼å¼ç‚ºä¸»ï¼Œä½¿ç”¨ `javax.xml.soap.MessageFactory` ç”¢ç”Ÿï¼Œå¦å¤–é‚„é™„æœ‰é›»å­ç°½ç« ï¼Œå…¨éƒ¨å¯¦ä½œå¯ä»¥åœ¨ `wei_chih.message` æ‰¾åˆ°ã€‚
 
-`Non CAP (Non POV)`, `Voting`, `Wei-shian` ´£¨Ñ¡G
+`Non CAP (Non POV)`, `Voting`, `Wei-shian` æä¾›ï¼š
 
 * Request
 * Acknowledgement
 
-### Âø´ê¾ğ (merkle tree)
-Âø´ê¾ğªº¹ê§@¦b `wei_chih.utility.MerkleTree.java` ¤¤¡A¨C­Ó¸`ÂIªº¸ê®Æ¥Î inner class `Node`Àx¦s¡C­º¥ı©I¥s«Øºc¤¸ `public MerkleTree(File rootPath)` «Ø¥ß¤@­ÓÂø´ê¾ğ¡A±µªÌ¥i¥H¥Î¥H¤U member function ¾Ş§@Âø´ê¾ğª«¥ó¡G
+### é›œæ¹Šæ¨¹ (merkle tree)
+é›œæ¹Šæ¨¹çš„å¯¦ä½œåœ¨ `wei_chih.utility.MerkleTree.java` ä¸­ï¼Œæ¯å€‹ç¯€é»çš„è³‡æ–™ç”¨ inner class `Node`å„²å­˜ã€‚é¦–å…ˆå‘¼å«å»ºæ§‹å…ƒ `public MerkleTree(File rootPath)` å»ºç«‹ä¸€å€‹é›œæ¹Šæ¨¹ï¼Œæ¥è€…å¯ä»¥ç”¨ä»¥ä¸‹ member function æ“ä½œé›œæ¹Šæ¨¹ç‰©ä»¶ï¼š
 
-- «ş¨©¾ã´ÊÂø´ê¾ğ¡G  `public MerkleTree(MerkleTree merkleTree)`
-- §ó·s¤@­Ó¸`ÂIªºÂø´ê­È¡G `public void update(String fname, String digest)`
-- §R°£¤@­Ó¸`ÂI¡G `public void delete(String fname)`
-- ¨ú±oÂø´ê¾ğªº®Ú¸`ÂIÂø´ê­È¡G `public String getRootHash()`
-- ¨ú±o·s¤@­Ó¸`ÂIªºÂø´ê­È¡G`public String getDigest(String path)`
-- ±q¤w¸g¨ú hash ªºÀÉ®×±Àºâ¥X®Ú¸`ÂIÂø´ê­Èªº¹êÅç¡G `private static String getRoothashFromHashedFiles(Node rootNode)`
+- æ‹·è²æ•´æ£µé›œæ¹Šæ¨¹ï¼š  `public MerkleTree(MerkleTree merkleTree)`
+- æ›´æ–°ä¸€å€‹ç¯€é»çš„é›œæ¹Šå€¼ï¼š `public void update(String fname, String digest)`
+- åˆªé™¤ä¸€å€‹ç¯€é»ï¼š `public void delete(String fname)`
+- å–å¾—é›œæ¹Šæ¨¹çš„æ ¹ç¯€é»é›œæ¹Šå€¼ï¼š `public String getRootHash()`
+- å–å¾—æ–°ä¸€å€‹ç¯€é»çš„é›œæ¹Šå€¼ï¼š`public String getDigest(String path)`
+- å¾å·²ç¶“å– hash çš„æª”æ¡ˆæ¨ç®—å‡ºæ ¹ç¯€é»é›œæ¹Šå€¼çš„å¯¦é©—ï¼š `private static String getRoothashFromHashedFiles(Node rootNode)`
 
 
 ## License
