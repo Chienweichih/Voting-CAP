@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import client.Client;
 import message.Operation;
 import message.OperationType;
 import wei_chih.utility.Utils;
@@ -30,7 +33,9 @@ public class Experiment {
         SYNC_PORT = Config.SERVICE_PORT[Config.SERVICE_NUM];
     }
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws ClassNotFoundException {
+        ClassLoader classLoader = ClassLoader.getSystemClassLoader();
+        
         KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
         KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
         
@@ -41,6 +46,7 @@ public class Experiment {
         
         dataDirPath = Utils.getDataDirPath(args[0], Config.CLIENT_ACCOUNT_PATH);
 
+        // prepare ramdom operations
         List<Operation> downloadOPs = new ArrayList<>();
         List<Operation> uploadOPs = new ArrayList<>();
         
@@ -58,58 +64,39 @@ public class Experiment {
         } catch (FileNotFoundException ex) {
             Logger.getLogger(Experiment.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        System.out.println("\n === VotingPOV ===");
+
+        // print machine detail
         System.out.println("Data Path: " + dataDirPath);
-        System.out.print("Host: " + Config.SERVICE_HOSTNAME);
+        System.out.println("Service Host: " + Config.SERVICE_HOSTNAME);
+        System.out.print("Voting-POV Port:");
         for (int p : SERVER_PORTS) {
-            System.out.print(" :" + p);
+            System.out.print(" " + p);
         }
-        System.out.println("\nSync. Host: " + Config.SERVICE_HOSTNAME + ":" + SYNC_PORT);
+        System.out.println("\nVoting-POV Sync. Port: " + SYNC_PORT);
+        System.out.println("WeiShian-POV Port: " + Config.WEI_SHIAN_SERVICE_PORT);
+        System.out.println("WeiShian-POV Sync. Port: " + Config.WEI_SHIAN_SYNC_PORT);
+        System.out.println("Non-POV Port: " + Config.SERVICE_PORT[Config.SERVICE_NUM + 1]);
         
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nUPLOAD " + i);
-            new VotingClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
-        }
+        // add clients do-list
+        Map<String, Client> clients = new LinkedHashMap<>();
+        clients.put("Voting-POV-Upload", new VotingClient(clientKeyPair, spKeyPair));
+        clients.put("Voting-POV-Download", new VotingClient(clientKeyPair, spKeyPair));
+        clients.put("WeiShian-POV-Upload", new WeiShianClient(clientKeyPair, spKeyPair));
+        clients.put("WeiShian-POV-Download", new WeiShianClient(clientKeyPair, spKeyPair));
+        clients.put("Non-POV-Upload", new NonPOVClient(clientKeyPair, spKeyPair));
+        clients.put("Non-POV-Download", new NonPOVClient(clientKeyPair, spKeyPair));
         
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nDOWNLOAD " + i);
-            new VotingClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
-        }
-        
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        System.out.println("\n === WeiShainPOV ===");
-        System.out.println("Data Path: " + dataDirPath);
-        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SERVICE_PORT);
-        System.out.println("Sync. Host: " + Config.SERVICE_HOSTNAME + ":" + Config.WEI_SHIAN_SYNC_PORT);
-
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nUPLOAD " + i);
-            new WeiShianClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
-        }
-
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nDOWNLOAD " + i);
-            new WeiShianClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
-        }
-        
-        ///////////////////////////////////////////////////////////////////////////////////////////////////
-        
-        System.out.println("\n === NonPOV ===");
-        System.out.println("Data Path: " + dataDirPath);
-        System.out.println("Host: " + Config.SERVICE_HOSTNAME + ":" + Config.SERVICE_PORT[Config.SERVICE_NUM + 1]);
-
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nUPLOAD " + i);
-            new NonPOVClient(clientKeyPair, spKeyPair).run(uploadOPs, runTimes);
-        }
-        
-        for (int i = 0; i < 1; ++i) {
-            System.out.println("\nDOWNLOAD " + i);
-            new NonPOVClient(clientKeyPair, spKeyPair).run(downloadOPs, runTimes);
+        // go!
+        for (Map.Entry<String, Client> client : clients.entrySet()) {
+            classLoader.loadClass(client.getValue().getClass().getName());
+            
+            System.out.println("\n" + client.getKey());
+            
+            if (client.getKey().endsWith("Upload")) {
+                client.getValue().run(uploadOPs, runTimes);
+            } else {
+                client.getValue().run(downloadOPs, runTimes);
+            }
         }
     }
 }
