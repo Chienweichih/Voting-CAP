@@ -13,6 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.OperationType;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import wei_chih.message.weishian.Request;
 import wei_chih.service.Config;
@@ -24,31 +26,28 @@ import wei_chih.utility.MerkleTree;
  *
  * @author chienweichih
  */
-public class WeiShianSyncHandler implements ConnectionHandler {
+public class WeiShianSyncHandler extends ConnectionHandler {
     private static final ReentrantLock LOCK;
     
     private static String roothash;
     private static String lastAck;
-        
-    private final Socket socket;
-    
+
     static {
         LOCK = new ReentrantLock();
         
         roothash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
-        lastAck = Utils.digest(Config.DEFAULT_CHAINHASH);
+        lastAck = Utils.digest(Config.INITIAL_HASH, Config.DIGEST_ALGORITHM);
     }
     
     public WeiShianSyncHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
+        super(socket, keyPair);
     }
-    
+
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in) throws SignatureException, IllegalAccessException {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();

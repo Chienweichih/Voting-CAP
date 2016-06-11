@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 
 import message.Operation;
 import message.OperationType;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import wei_chih.service.Config;
 import wei_chih.service.SocketServer;
@@ -25,17 +27,14 @@ import wei_chih.utility.*;
  *
  * @author Chienweichih
  */
-public class VotingHandler implements ConnectionHandler {
+public class VotingHandler extends ConnectionHandler {
     private static final ReentrantLock LOCK;
     
     private static final MerkleTree[] merkleTree;
     private static final String[] digestBeforeUpdate;
     private static final Operation[] lastOP;
     private static final Integer[] sequenceNumbers;
-    
-    private final Socket socket;
-    private final KeyPair keyPair;
-    
+
     static {
         merkleTree = new MerkleTree[Config.SERVICE_NUM];
         digestBeforeUpdate = new String[Config.SERVICE_NUM];
@@ -53,13 +52,12 @@ public class VotingHandler implements ConnectionHandler {
     }
     
     public VotingHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
-        this.keyPair = keyPair;
+        super(socket, keyPair);
     }
-    
+
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in) {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         
         int portIndex = 0;
         if (Math.abs(socket.getPort() - Config.SERVICE_PORT[0]) < 10) {
@@ -68,8 +66,7 @@ public class VotingHandler implements ConnectionHandler {
             portIndex = socket.getLocalPort() - Config.SERVICE_PORT[0];
         }
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
@@ -86,7 +83,7 @@ public class VotingHandler implements ConnectionHandler {
                     merkleTree[portIndex].update(op.getPath(), op.getMessage());
                 case DOWNLOAD:
                     // both upload and download, so no break
-                    if (!op.getClientID().equals(String.valueOf(sequenceNumbers[portIndex]))) {
+                    if (0 != op.getClientID().compareTo(String.valueOf(sequenceNumbers[portIndex]))) {
                         throw new java.security.InvalidParameterException();
                     }
                     sequenceNumbers[portIndex]++;
@@ -98,7 +95,7 @@ public class VotingHandler implements ConnectionHandler {
             String rootHash = merkleTree[portIndex].getRootHash();
             String fileHash = null;
             if (file.exists()) {
-                fileHash = Utils.digest(file);
+                fileHash = Utils.digest(file, Config.DIGEST_ALGORITHM);
             }
             
             Acknowledgement ack = new Acknowledgement(rootHash, fileHash, req);
@@ -119,9 +116,9 @@ public class VotingHandler implements ConnectionHandler {
                     if (portIndex + Config.SERVICE_PORT[0] == Config.SERVICE_PORT[0]) {
                         file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                         Utils.receive(in, file);
-                        String digest = Utils.digest(file);
+                        String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
 
-                        if (op.getMessage().equals(digest) == false) {
+                        if (0 != op.getMessage().compareTo(digest)) {
                             throw new java.io.IOException();
                         }
                     }

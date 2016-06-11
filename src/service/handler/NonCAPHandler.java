@@ -1,60 +1,47 @@
 package service.handler;
 
+import message.noncap.Request;
+import message.noncap.Acknowledgement;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
-import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import message.Operation;
 import service.Config;
-import message.nonpov.*;
 import utility.Utils;
 
 /**
  *
  * @author Scott
  */
-public class NonPOVHandler implements ConnectionHandler {
+public class NonCAPHandler extends ConnectionHandler {
     public static final File REQ_ATTESTATION;
     public static final File ACK_ATTESTATION;
     
     private static final ReentrantLock LOCK;
     
     static {
-        REQ_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/nonpov.req");
-        ACK_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/nonpov.ack");
+        REQ_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/noncap.req");
+        ACK_ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/noncap.ack");
         
         LOCK = new ReentrantLock();
     }
     
-    private final Socket socket;
-    private final KeyPair keyPair;
-    
-    public NonPOVHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
-        this.keyPair = keyPair;
+    public NonCAPHandler(Socket socket, KeyPair keyPair) {
+        super(socket, keyPair);
     }
     
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
-        
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+    protected void handle(DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        try {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
-            
-            if (!req.validate(clientPubKey)) {
-                throw new SignatureException("REQ validation failure");
-            }
             
             String result;
             
@@ -99,8 +86,6 @@ public class NonPOVHandler implements ConnectionHandler {
             
             Acknowledgement ack = new Acknowledgement(result);
             
-            ack.sign(keyPair);
-            
             Utils.send(out, ack.toString());
             
             if (sendFileAfterAck) {
@@ -119,10 +104,6 @@ public class NonPOVHandler implements ConnectionHandler {
             
             Utils.appendAndDigest(REQ_ATTESTATION, req.toString() + '\n');
             Utils.appendAndDigest(ACK_ATTESTATION, ack.toString() + '\n');
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(NonPOVHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

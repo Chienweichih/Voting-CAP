@@ -29,7 +29,7 @@ public class NonPOVClient extends Client {
               Config.SERVICE_PORT[Config.SERVICE_NUM + 1],
               keyPair,
               spKeyPair,
-              Config.NUM_PROCESSORS);
+              true);
     }
     
     @Override
@@ -68,7 +68,7 @@ public class NonPOVClient extends Client {
     }
 
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException {
         Request req = new Request(op);
         req.sign(keyPair);

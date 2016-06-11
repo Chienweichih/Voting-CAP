@@ -3,19 +3,18 @@ package service.handler.twostep;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
 import java.util.LinkedList;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import message.Operation;
 import message.twostep.chainhash.*;
 import service.Config;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import utility.Utils;
 
@@ -23,35 +22,31 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class ChainHashHandler implements ConnectionHandler {
+public class ChainHashHandler extends ConnectionHandler {
     public static final File ATTESTATION;
     
     private static final LinkedList<String> HashingChain;
     private static final ReentrantLock LOCK;
     
-    private final Socket socket;
-    private final KeyPair keyPair;
-    
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/chainhash");
         
         HashingChain = new LinkedList<>();
-        HashingChain.add(Config.DEFAULT_CHAINHASH);
+        HashingChain.add(Config.INITIAL_HASH);
         
         LOCK = new ReentrantLock();
     }
     
     public ChainHashHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
-        this.keyPair = keyPair;
+        super(socket, keyPair);
     }
     
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
@@ -115,10 +110,6 @@ public class ChainHashHandler implements ConnectionHandler {
             }
             
             Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(ChainHashHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

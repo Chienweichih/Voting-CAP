@@ -15,6 +15,8 @@ import java.util.logging.Logger;
 import message.Operation;
 import message.twostep.csn.*;
 import service.Config;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import utility.Utils;
 
@@ -22,14 +24,11 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class CSNHandler implements ConnectionHandler {
+public class CSNHandler extends ConnectionHandler {
     public static final File ATTESTATION;
     
     private static final ReentrantLock LOCK;
     private static int CSN;
-    
-    private final Socket socket;
-    private final KeyPair keyPair;
     
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/csn");
@@ -39,16 +38,15 @@ public class CSNHandler implements ConnectionHandler {
     }
     
     public CSNHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
-        this.keyPair = keyPair;
+        super(socket, keyPair);
     }
     
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
@@ -116,10 +114,6 @@ public class CSNHandler implements ConnectionHandler {
             }
             
             Utils.appendAndDigest(ATTESTATION, ack.toString() + '\n');
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(CSNHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {
                 LOCK.unlock();

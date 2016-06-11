@@ -10,6 +10,8 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.SignatureException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -18,7 +20,7 @@ import message.OperationType;
 import message.fourstep.doublechainhash.*;
 import service.Config;
 import service.handler.fourstep.DoubleChainHashHandler;
-import service.handler.fourstep.DoubleHashingChainTable;
+import service.DoubleHashingChainTable;
 import utility.Utils;
 
 /**
@@ -42,10 +44,10 @@ public class DoubleChainHashClient extends Client {
               Config.DOUBLECHAINHASH_SERVICE_PORT,
               keyPair,
               spKeyPair,
-              Config.NUM_PROCESSORS);
+              true);
         
         this.id = id;
-        this.lastChainHash = Config.DEFAULT_CHAINHASH;
+        this.lastChainHash = Config.INITIAL_HASH;
     }
     
     public String getLastChainHash() {
@@ -53,7 +55,7 @@ public class DoubleChainHashClient extends Client {
     }
     
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException, IllegalAccessException {
         Request req = new Request(op, op.getClientID());
         
@@ -121,9 +123,9 @@ public class DoubleChainHashClient extends Client {
 
         lastChainHash = Utils.digest(ack.toString());
 
-        long start = System.currentTimeMillis();
-        Utils.write(ATTESTATION, ack.toString());
-        this.attestationCollectTime += System.currentTimeMillis() - start;
+        synchronized (this) {
+            Utils.write(ATTESTATION, ack.toString());
+        }
     }
     
     @Override
@@ -138,6 +140,7 @@ public class DoubleChainHashClient extends Client {
         PublicKey cliKey = keyPair.getPublic();
         
         DoubleHashingChainTable hashingChainTab = new DoubleHashingChainTable();
+        Map<String, String> mainChainTab = new HashMap<>();
         
         try (FileReader fr = new FileReader(spFile);
              BufferedReader br = new BufferedReader(fr)) {
@@ -155,12 +158,7 @@ public class DoubleChainHashClient extends Client {
                 
                 String clientID = req.getClientID();
                 
-                if (hashingChainTab.getLastChainHashOfAll().compareTo(
-                    res.getUserLastChainHash()) == 0) {
-                    hashingChainTab.chain(Utils.digest(res.toString()));
-                } else {
-                    success = false;
-                }
+                mainChainTab.put(res.getUserLastChainHash(), Utils.digest(res.toString()));
                 
                 if (hashingChainTab.getLastChainHash(clientID).compareTo(
                     res.getClientDeviceLastChainHash()) == 0) {
@@ -172,6 +170,17 @@ public class DoubleChainHashClient extends Client {
                 success &= ack.validate(spKey) & rr.validate(cliKey);
                 success &= res.validate(spKey) & req.validate(cliKey);
             } while (success);
+            
+            String hash = Config.INITIAL_HASH;
+            int numFound = 0;
+            
+            while (mainChainTab.containsKey(hash)) {
+                numFound += 1;
+                
+                hash = mainChainTab.get(hash);
+            }
+            
+            success &= numFound == mainChainTab.size();
         } catch (IOException ex) {
             success = false;
             

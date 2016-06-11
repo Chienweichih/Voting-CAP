@@ -49,9 +49,9 @@ public class WeiShianClient extends Client {
               Config.WEI_SHIAN_SERVICE_PORT,
               keyPair,
               spKeyPair,
-              Config.NUM_PROCESSORS);
+              true);
         
-        lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+        lastChainHash = Utils.digest(Config.INITIAL_HASH);
         merkleTree = new MerkleTree(new File(Experiment.dataDirPath));
     }
     
@@ -99,7 +99,7 @@ public class WeiShianClient extends Client {
                      DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {
                     long time = System.nanoTime();
 
-                    lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);                    
+                    lastChainHash = Utils.digest(Config.INITIAL_HASH);                    
                     boolean syncSuccess = syncAtts(DOWNLOAD, syncOut, SyncIn);
                     if (!syncSuccess) {
                         System.err.println("Sync Error");
@@ -152,7 +152,7 @@ public class WeiShianClient extends Client {
     }
     
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException, IllegalAccessException {
         Request req = new Request(op);
         req.sign(keyPair);
@@ -330,7 +330,7 @@ public class WeiShianClient extends Client {
     
     private void worstCase() {
         for (int i = 0;i < 100; ++i) {
-            lastChainHash = Utils.digest(Config.DEFAULT_CHAINHASH);
+            lastChainHash = Utils.digest(Config.INITIAL_HASH);
             try (Socket syncSocket = new Socket(Config.SYNC_HOSTNAME, Config.WEI_SHIAN_SYNC_PORT);
                  DataOutputStream syncOut = new DataOutputStream(syncSocket.getOutputStream());
                  DataInputStream SyncIn = new DataInputStream(syncSocket.getInputStream())) {

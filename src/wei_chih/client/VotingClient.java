@@ -44,7 +44,7 @@ public class VotingClient extends Client {
               Experiment.SYNC_PORT,
               keyPair,
               spKeyPair,
-              Config.NUM_PROCESSORS);
+              true);
         
         syncAcks = new HashMap<>();
         acks = new HashMap<>();
@@ -222,7 +222,7 @@ public class VotingClient extends Client {
             try (Socket socket = new Socket(hostname, auditPort);
                  DataOutputStream out = new DataOutputStream(socket.getOutputStream());
                  DataInputStream in = new DataInputStream(socket.getInputStream())) {
-                hook(op, socket, out, in);
+                handle(op, socket, out, in);
                 socket.close();
             } catch (IOException | SignatureException ex) {
                 LOGGER.log(Level.SEVERE, null, ex);
@@ -238,7 +238,7 @@ public class VotingClient extends Client {
                  DataInputStream in = new DataInputStream(socket.getInputStream())) {
                 int sn = sequenceNumbers.get(p);
                 op = new Operation(op.getType(), op.getPath(), op.getMessage(), Integer.toString(sn));
-                hook(op, socket, out, in);
+                handle(op, socket, out, in);
 
                 sequenceNumbers.replace(p, sn + 1);
                 acks.replace(p, acknowledgement);
@@ -260,7 +260,7 @@ public class VotingClient extends Client {
     }
     
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException {
         Request req = new Request(op);
         req.sign(keyPair);

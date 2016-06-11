@@ -18,8 +18,8 @@ import message.OperationType;
 import message.fourstep.chainhash_lsn.*;
 import service.Config;
 import service.handler.fourstep.ChainHashAndLSNHandler;
-import service.handler.fourstep.HashingChainTable;
-import service.handler.fourstep.LSNTable;
+import service.HashingChainTable;
+import service.LSNTable;
 import utility.Utils;
 
 /**
@@ -36,23 +36,23 @@ public class ChainHashAndLSNClient extends Client {
     }
     
     private final String id;
-    private int lsn;
+    private final LSNTable lsnTable;
     
     public ChainHashAndLSNClient(String id, KeyPair keyPair, KeyPair spKeyPair) {
         super(Config.SERVICE_HOSTNAME,
               Config.CHAINHASH_LSN_SERVICE_PORT,
               keyPair,
               spKeyPair,
-              Config.NUM_PROCESSORS);
+              true);
         
         this.id = id;
-        this.lsn = 1;
+        this.lsnTable = new LSNTable();
     }
     
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException, IllegalAccessException {
-        Request req = new Request(op, op.getClientID(), lsn);
+        Request req = new Request(op, op.getClientID(), lsnTable.get(op.getClientID()));
 
         req.sign(keyPair);
 
@@ -83,8 +83,8 @@ public class ChainHashAndLSNClient extends Client {
         String result = ack.getResult();
         String fname = "";
 
-        lsn += 1;
-
+        lsnTable.increment(req.getClientID());
+        
         switch (op.getType()) {
             case DOWNLOAD:
                 fname = "-" + System.currentTimeMillis();
@@ -109,9 +109,9 @@ public class ChainHashAndLSNClient extends Client {
                 break;
         }
 
-        long start = System.currentTimeMillis();
-        Utils.write(ATTESTATION, ack.toString());
-        this.attestationCollectTime += System.currentTimeMillis() - start;
+        synchronized (this) {
+            Utils.write(ATTESTATION, ack.toString());
+        }
     }
 
     @Override

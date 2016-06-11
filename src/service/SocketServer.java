@@ -12,7 +12,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import service.handler.ConnectionHandler;
-import service.handler.NonPOVHandler;
+import service.handler.NonCAPHandler;
 import service.handler.fourstep.ChainHashAndLSNHandler;
 import service.handler.fourstep.DoubleChainHashHandler;
 import service.handler.twostep.CSNHandler;
@@ -43,7 +43,7 @@ public class SocketServer extends Thread {
             Logger.getLogger(SocketServer.class.getName()).log(Level.SEVERE, null, ex);
         }
         
-        keyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
+        keyPair = KeyManager.getInstance().getKeyPair(Key.SERVICE_PROVIDER);
     }
     
     @Override
@@ -81,7 +81,7 @@ public class SocketServer extends Thread {
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
         
-        new SocketServer(NonPOVHandler.class, Config.NONPOV_SERVICE_PORT).start();
+        new SocketServer(NonCAPHandler.class, Config.NONCAP_SERVICE_PORT).start();
         new SocketServer(CSNHandler.class, Config.CSN_SERVICE_PORT).start();
         new SocketServer(ChainHashHandler.class, Config.CHAINHASH_SERVICE_PORT).start();
         new SocketServer(ChainHashAndLSNHandler.class, Config.CHAINHASH_LSN_SERVICE_PORT).start();

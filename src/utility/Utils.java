@@ -292,6 +292,28 @@ public class Utils {
     }
     
     /**
+     * Write KeyPair to specific file.
+     */
+    public static void writeKeyPair(String fname, KeyPair keyPair) {
+        File keyFile = new File(fname);
+
+        if (!keyFile.exists()) {
+            try {
+                keyFile.createNewFile();
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE, null, ex);
+            }
+
+            try (FileOutputStream fos = new FileOutputStream(keyFile);
+                 ObjectOutputStream out = new ObjectOutputStream(fos)) {
+                out.writeObject(keyPair);
+            } catch (IOException ex) {
+                LOGGER.log(Level.SEVERE, null, ex);
+            }
+        }
+    }
+    
+    /**
      * Delete all of attestation files.
      */
     public static void cleanAllAttestations() {
@@ -362,25 +384,6 @@ public class Utils {
             }
             
             writeDigest(fs.getPath());
-        }
-        
-        for (service.KeyPair kp : service.KeyPair.values()) {
-            File keyFile = new File(kp.getPath());
-            
-            if (!keyFile.exists()) {
-                try {
-                    keyFile.createNewFile();
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
-                }
-            
-                try (FileOutputStream fos = new FileOutputStream(keyFile);
-                     ObjectOutputStream out = new ObjectOutputStream(fos)) {
-                    out.writeObject(randomGenerateKeyPair());
-                } catch (IOException ex) {
-                    LOGGER.log(Level.SEVERE, null, ex);
-                }
-            }
         }
     }
 }

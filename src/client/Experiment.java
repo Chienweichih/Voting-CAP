@@ -7,7 +7,8 @@ import java.util.List;
 import java.util.Map;
 import message.Operation;
 import message.OperationType;
-import service.Config;
+import service.Key;
+import service.KeyManager;
 import utility.Utils;
 
 /**
@@ -17,16 +18,18 @@ import utility.Utils;
 public class Experiment {
     public static void main(String[] args) throws ClassNotFoundException {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
-        KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
-        KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
+        
+        KeyManager keyManager = KeyManager.getInstance();
+        KeyPair clientKeyPair = keyManager.getKeyPair(Key.CLIENT);
+        KeyPair spKeyPair = keyManager.getKeyPair(Key.SERVICE_PROVIDER);
         
         Utils.cleanAllAttestations();
         
         Map<String, Client> clients = new LinkedHashMap<>();
         
-        clients.put("non-POV", new NonPOVClient(clientKeyPair, spKeyPair));
-        clients.put("CSN", new CSNClient(clientKeyPair, spKeyPair));
-        clients.put("ChainHash", new ChainHashClient(clientKeyPair, spKeyPair));
+        clients.put("non-CAP", new NonCAPClient(clientKeyPair, spKeyPair));
+        clients.put("Two-Step-SN", new CSNClient(clientKeyPair, spKeyPair));
+        clients.put("Two-Step-CH", new ChainHashClient(clientKeyPair, spKeyPair));
         
         int runTimes = 100;
         
@@ -50,14 +53,12 @@ public class Experiment {
         }
         
         clients.clear();
-        clients.put("C&L", new ChainHashAndLSNClient("id", clientKeyPair, spKeyPair));
-        clients.put("DoubleHash", new DoubleChainHashClient("id", clientKeyPair, spKeyPair));
+        clients.put("Four-Step-C&L", new ChainHashAndLSNClient("id", clientKeyPair, spKeyPair));
+        clients.put("Four-Step-DH", new DoubleChainHashClient("id", clientKeyPair, spKeyPair));
         
         ops.clear();
-        for (int i = 0; i < files.length; i++) {
-            service.File file = files[i];
-            
-            for (int j = 0; j < Config.NUM_PROCESSORS; j++) {
+        for (service.File file : files) {
+            for (int j = 0; j < 4; j++) {
                 String id = "id" + j;
 
                 ops.add(new Operation(OperationType.DOWNLOAD, file.getName(), "", id));

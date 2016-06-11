@@ -13,6 +13,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.Operation;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import wei_chih.message.nonpov.Acknowledgement;
 import wei_chih.message.nonpov.Request;
@@ -24,27 +26,22 @@ import wei_chih.utility.Utils;
  *
  * @author chienweichih
  */
-public class NonPOVHandler implements ConnectionHandler {
+public class NonPOVHandler extends ConnectionHandler {
     private static final ReentrantLock LOCK;
-    
-    private final Socket socket;
-    private final KeyPair keyPair;
     
     static {
         LOCK = new ReentrantLock();
     }
     
     public NonPOVHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
-        this.keyPair = keyPair;
+        super(socket, keyPair);
     }
-    
+
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in) {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             Operation op = req.getOperation();
             
@@ -65,7 +62,8 @@ public class NonPOVHandler implements ConnectionHandler {
                 case UPLOAD:
                     file = new File(Config.DOWNLOADS_DIR_PATH + op.getPath());
                     Utils.receive(in, file);
-                    if (op.getMessage().equals(Utils.digest(file)) == false) {
+                    String digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
+                    if (0 != op.getMessage().compareTo(digest)) {
                         throw new java.io.IOException();
                     }
                     break;
@@ -77,7 +75,7 @@ public class NonPOVHandler implements ConnectionHandler {
             }
             
             socket.close();
-        } catch (IOException | SignatureException ex) {
+        } catch (SignatureException | IOException ex) {
             Logger.getLogger(NonPOVHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (LOCK != null) {

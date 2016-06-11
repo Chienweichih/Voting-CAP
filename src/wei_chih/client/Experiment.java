@@ -13,6 +13,8 @@ import java.util.logging.Logger;
 import client.Client;
 import message.Operation;
 import message.OperationType;
+import service.Key;
+import service.KeyManager;
 import wei_chih.utility.Utils;
 import wei_chih.service.Config;
 
@@ -36,8 +38,9 @@ public class Experiment {
     public static void main(String[] args) throws ClassNotFoundException {
         ClassLoader classLoader = ClassLoader.getSystemClassLoader();
         
-        KeyPair clientKeyPair = service.KeyPair.CLIENT.getKeypair();
-        KeyPair spKeyPair = service.KeyPair.SERVICE_PROVIDER.getKeypair();
+        KeyManager keyManager = KeyManager.getInstance();
+        KeyPair clientKeyPair = keyManager.getKeyPair(Key.CLIENT);
+        KeyPair spKeyPair = keyManager.getKeyPair(Key.SERVICE_PROVIDER);
         
         Utils.createRequiredFiles();
         Utils.cleanAllAttestations();
@@ -81,11 +84,11 @@ public class Experiment {
         Map<String, Client> clients = new LinkedHashMap<>();
         clients.put("Voting-POV-Upload", new VotingClient(clientKeyPair, spKeyPair));
         clients.put("Voting-POV-Download", new VotingClient(clientKeyPair, spKeyPair));
-        clients.put("WeiShian-POV-Upload", new WeiShianClient(clientKeyPair, spKeyPair));
-        clients.put("WeiShian-POV-Download", new WeiShianClient(clientKeyPair, spKeyPair));
         clients.put("Non-POV-Upload", new NonPOVClient(clientKeyPair, spKeyPair));
         clients.put("Non-POV-Download", new NonPOVClient(clientKeyPair, spKeyPair));
-        
+        clients.put("WeiShian-POV-Upload", new WeiShianClient(clientKeyPair, spKeyPair));
+        clients.put("WeiShian-POV-Download", new WeiShianClient(clientKeyPair, spKeyPair));
+                
         // go!
         for (Map.Entry<String, Client> client : clients.entrySet()) {
             classLoader.loadClass(client.getValue().getClass().getName());

@@ -1,9 +1,10 @@
 package service.handler.fourstep;
 
+import service.HashingChainTable;
+import service.LSNTable;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.IOException;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.PublicKey;
@@ -11,12 +12,12 @@ import java.security.SignatureException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import message.Operation;
 import message.fourstep.chainhash_lsn.*;
 import service.Config;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import utility.Utils;
 
@@ -24,15 +25,12 @@ import utility.Utils;
  *
  * @author Scott
  */
-public class ChainHashAndLSNHandler implements ConnectionHandler {
+public class ChainHashAndLSNHandler extends ConnectionHandler {
     public static final File ATTESTATION;
     
     private static final HashingChainTable HASHING_CHAIN_TABLE;
     private static final LSNTable LSN_TABLE;
     private static final ReentrantLock LOCK;
-    
-    private final Socket socket;
-    private final KeyPair keyPair;
     
     static {
         ATTESTATION = new File(Config.ATTESTATION_DIR_PATH + "/service-provider/chainhash-lsn");
@@ -43,17 +41,16 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
     }
     
     public ChainHashAndLSNHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
-        this.keyPair = keyPair;
+        super(socket, keyPair);
     }
-    
+
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in)
+            throws SignatureException, IllegalAccessException {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         Lock lock = null;
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             String result, clientID;
             
@@ -79,6 +76,8 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
                 res.sign(keyPair);
 
                 Utils.send(out, res.toString());
+                
+                LSN_TABLE.increment(req.getClientID());
             } finally {
                 LOCK.unlock();
             }
@@ -88,8 +87,6 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
             if (!rr.validate(clientPubKey)) {
                 throw new SignatureException("RR validation failure");
             }
-            
-            LSN_TABLE.increment(req.getClientID());
             
             Operation op = req.getOperation();
 
@@ -162,10 +159,6 @@ public class ChainHashAndLSNHandler implements ConnectionHandler {
             HASHING_CHAIN_TABLE.chain(req.getClientID(), Utils.digest(ackStr));
             
             Utils.appendAndDigest(ATTESTATION, ackStr + '\n');
-            
-            socket.close();
-        } catch (IOException | SignatureException ex) {
-            Logger.getLogger(ChainHashAndLSNHandler.class.getName()).log(Level.SEVERE, null, ex);
         } finally {
             if (lock != null) {
                 lock.unlock();

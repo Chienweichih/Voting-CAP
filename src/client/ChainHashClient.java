@@ -41,9 +41,9 @@ public class ChainHashClient extends Client {
               Config.CHAINHASH_SERVICE_PORT,
               keyPair,
               spKeyPair,
-              Config.NUM_PROCESSORS);
+              false);
         
-        this.lastChainHash = Config.DEFAULT_CHAINHASH;
+        this.lastChainHash = Config.INITIAL_HASH;
     }
     
     public String getLastChainHash() {
@@ -51,7 +51,7 @@ public class ChainHashClient extends Client {
     }
     
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in) 
             throws SignatureException, IllegalAccessException {
         Request req = new Request(op);
 
@@ -105,9 +105,7 @@ public class ChainHashClient extends Client {
                 break;
         }
 
-        long start = System.currentTimeMillis();
         Utils.write(ATTESTATION, ack.toString());
-        this.attestationCollectTime += System.currentTimeMillis() - start;
     }
 
     @Override
@@ -123,7 +121,7 @@ public class ChainHashClient extends Client {
         
         try (FileReader fr = new FileReader(spFile);
              BufferedReader br = new BufferedReader(fr)) {
-            String chainhash = Config.DEFAULT_CHAINHASH;
+            String chainhash = Config.INITIAL_HASH;
             
             do {
                 String s = br.readLine();

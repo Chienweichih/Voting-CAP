@@ -41,13 +41,13 @@ public class CSNClient extends Client {
               Config.CSN_SERVICE_PORT,
               keyPair,
               spKeyPair,
-              1);
+              false);
         
         this.csn = 1;
     }
     
     @Override
-    protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
+    protected void handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in)
             throws SignatureException, IllegalAccessException {
         Request req = new Request(op, csn);
         
@@ -97,10 +97,8 @@ public class CSNClient extends Client {
 
                 break;
         }
-
-        long start = System.currentTimeMillis();
+        
         Utils.write(ATTESTATION, ack.toString() + '\n');
-        super.attestationCollectTime += System.currentTimeMillis() - start;
     }
 
     @Override

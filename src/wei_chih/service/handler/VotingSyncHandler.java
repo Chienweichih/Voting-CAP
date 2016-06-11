@@ -17,6 +17,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import message.OperationType;
+import service.Key;
+import service.KeyManager;
 import service.handler.ConnectionHandler;
 import wei_chih.service.Config;
 import wei_chih.utility.*;
@@ -25,7 +27,7 @@ import wei_chih.utility.*;
  *
  * @author chienweichih
  */
-public class VotingSyncHandler implements ConnectionHandler {
+public class VotingSyncHandler extends ConnectionHandler {
     private static final ReentrantLock LOCK;
     
     public static final int[] SERVER_PORTS;
@@ -33,10 +35,7 @@ public class VotingSyncHandler implements ConnectionHandler {
     
     private static final Map<Integer, Integer> sequenceNumbers;
     private static final Map<Integer, Acknowledgement> lastAcks;
-    
-    
-    private final Socket socket;
-    
+
     static {
         LOCK = new ReentrantLock();
         
@@ -55,15 +54,14 @@ public class VotingSyncHandler implements ConnectionHandler {
     }
     
     public VotingSyncHandler(Socket socket, KeyPair keyPair) {
-        this.socket = socket;
+        super(socket, keyPair);
     }
-    
+
     @Override
-    public void run() {
-        PublicKey clientPubKey = service.KeyPair.CLIENT.getKeypair().getPublic();
+    protected void handle(DataOutputStream out, DataInputStream in) {
+        PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
         
-        try (DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-             DataInputStream in = new DataInputStream(socket.getInputStream())) {
+        try {
             Request req = Request.parse(Utils.receive(in));
             
             LOCK.lock();
@@ -85,7 +83,7 @@ public class VotingSyncHandler implements ConnectionHandler {
             Utils.Serialize(syncSN, sequenceNumbers);
             Utils.send(out, syncSN);
             
-            if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
+            if (0 != req.getOperation().getMessage().compareTo(Config.EMPTY_STRING)) {
                 for (int port : SERVER_PORTS) {
                     String lastStr = (lastAcks.get(port) == null) ? null : lastAcks.get(port).toString();
                     syncAckStrs.put(port, lastStr);
@@ -115,7 +113,7 @@ public class VotingSyncHandler implements ConnectionHandler {
                 }    
             }
             
-            if (!req.getOperation().getMessage().equals(Config.EMPTY_STRING)) {
+            if (0 != req.getOperation().getMessage().compareTo(Config.EMPTY_STRING)) {
                 Utils.receive(in, syncAck);
                 syncAckStrs = Utils.Deserialize(syncAck.getAbsolutePath());                
 
