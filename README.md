@@ -54,7 +54,7 @@ Author: Wei-Chih Chien
 這個 Project 是繼承 [Malthael](https://github.com/Malthael) 寫的 [Cryptographic Accountability Protocol for Service-Oriented Architecture Systems](https://github.com/CloudComLab/CAP-for-SOA-Systems)，所有跟我的論文有關的 code 都在 `src/wei_chih/` 目錄底下，包含三種 CAP 的實作：
 
 * Non-CAP
-* wei-Chih-CAP (Replication and Voting, this paper)
+* Wei-Chih-CAP (Replication and Voting, this paper)
 * Wei-Shian-CAP ([Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree](http://handle.ncl.edu.tw/11296/ndltd/22505799904029871228))
 
 系統主要有四大部分：
@@ -66,7 +66,7 @@ Author: Wei-Chih Chien
 
 ### 服務提供者（service provider）
 
-簡單來說就是伺服器，啟動的時候會開啟以下`SocketServer`，監聽不同的 port：
+簡單來說就是伺服器，啟動的時候會開啟以下`SocketServer`，監聽不同的 port 並各自對應到不同的 CAP：
 
 1. NonCAPHandler
 2. WeiChihHandler (由 `WeiChihSyncServer.SERVER_PORTS` 決定數量)
@@ -74,13 +74,13 @@ Author: Wei-Chih Chien
 4. WeiShianHandler
 5. WeiShianSyncServer
 
-每個請求抵達之後，會產生一個 `Thread` 並配合不同 CAP 自己的 handler 去執行請求。你可以在 `wei_chih.service.handler` 找到五個 handler，並且透過裡頭的 `public void run()` 觀察其行為。
+每個請求抵達之後，會產生一個 `Thread` 並配合不同 CAP 自己的 handler 去執行請求。你可以在 `wei_chih.service.handler` 找到五個 handler，並且透過裡頭的 `void handle(DataOutputStream out, DataInputStream in)` 觀察其行為。
 
 ### 使用者（client）
 
 使用者的實作都在 `wei_chih.client` 中，其中的 `Experiments.java` 統整了各 CAP 使用者的呼叫，執行他就可以直接比較三者的差異。
 
-使用者主要透過 `public void run(final List<Operation> operations, int runTimes)` 執行，會輪流呼叫所有動作：
+使用者主要透過 `void run(final List<Operation> operations, final int runTimes)` 執行，會輪流呼叫所有動作：
 
 ```
 for (int i = 0; i < runTimes; i++) {
@@ -88,26 +88,26 @@ for (int i = 0; i < runTimes; i++) {
 }
 ```
 
-`execute(Operation op)` 會先去與伺服器建立連接，然後再執行 `protected void hook(Operation op, Socket socket, DataOutputStream out, DataInputStream in)`。你可以去觀察每個使用者裡面的此方法，並與對應到的 handler 搭配著看，就可以得知每個 CAP 的運作模式。
+`execute(Operation op)` 會先去與伺服器建立連接，然後再執行 `handle(Operation op, Socket socket, DataOutputStream out, DataInputStream in)`。你可以去觀察每個使用者裡面的此方法，並與對應到的 handler 搭配著看，就可以得知每個 CAP 的運作模式。
 
 ### 中間傳遞的訊息（message）
 
 以 [SOAP](https://en.wikipedia.org/wiki/SOAP) 格式為主，使用 `javax.xml.soap.MessageFactory` 產生，另外還附有電子簽章，全部實作可以在 `wei_chih.message` 找到。
 
-`Non CAP`, `Wei-chih`, `Wei-shian` 提供：
+`Non CAP`, `Wei-Chih`, `Wei-Shian` 提供：
 
 * Request
 * Acknowledgement
 
 ### 雜湊樹 (merkle tree)
-雜湊樹的實作在 `wei_chih.utility.MerkleTree.java` 中，每個節點的資料用 inner class `Node`儲存。首先呼叫建構元 `public MerkleTree(File rootPath)` 建立一個雜湊樹，接者可以用以下 member function 操作雜湊樹物件：
+雜湊樹的實作在 `wei_chih.utility.MerkleTree.java` 中，每個節點的資料用 inner class `Node`儲存。首先呼叫建構元 `MerkleTree(File rootPath)` 建立一個雜湊樹，接者可以用以下成員函數操作雜湊樹物件：
 
-- 拷貝整棵雜湊樹：  `public MerkleTree(MerkleTree merkleTree)`
-- 更新一個節點的雜湊值： `public void update(String fname, String digest)`
-- 刪除一個節點： `public void delete(String fname)`
-- 取得雜湊樹的根節點雜湊值： `public String getRootHash()`
-- 取得一個節點的雜湊值：`public String getDigest(String path)`
-- 從已經取 hash 的檔案推算出根節點雜湊值的實驗： `private static String getRoothashFromHashedFiles(Node rootNode)`
+- 拷貝整棵雜湊樹：  `MerkleTree(MerkleTree merkleTree)`
+- 更新一個節點的雜湊值： `void update(String fname, String digest)`
+- 刪除一個節點： `void delete(String fname)`
+- 取得雜湊樹的根節點雜湊值： `String getRootHash()`
+- 取得一個節點的雜湊值：`String getDigest(String path)`
+- 從已經取 hash 的檔案推算出根節點雜湊值的實驗： `String getRoothashFromHashedFiles(Node rootNode)`
 
 
 ## License
