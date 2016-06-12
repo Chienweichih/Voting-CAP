@@ -53,9 +53,9 @@ Author: Wei-Chih Chien
 
 這個 Project 是繼承 [Malthael](https://github.com/Malthael) 寫的 [Cryptographic Accountability Protocol for Service-Oriented Architecture Systems](https://github.com/CloudComLab/CAP-for-SOA-Systems)，所有跟我的論文有關的 code 都在 `src/wei_chih/` 目錄底下，包含三種 CAP 的實作：
 
-* Non-CAP (Non-POV)
-* Voting-POV
-* WeiShian-POV (2014 Cloud Com)
+* Non-CAP
+* wei-Chih-CAP (Replication and Voting, this paper)
+* Wei-Shian-CAP ([Instant Auditing of Cloud Storage Access by Cache Partial Merkle tree](http://handle.ncl.edu.tw/11296/ndltd/22505799904029871228))
 
 系統主要有四大部分：
 
@@ -68,9 +68,9 @@ Author: Wei-Chih Chien
 
 簡單來說就是伺服器，啟動的時候會開啟以下`SocketServer`，監聽不同的 port：
 
-1. NonPOVHandler
-2. VotingHandler (由 `VotingSyncServer.SERVER_PORTS` 決定數量)
-3. VotingSyncServer
+1. NonCAPHandler
+2. WeiChihHandler (由 `WeiChihSyncServer.SERVER_PORTS` 決定數量)
+3. WeiChihSyncServer
 4. WeiShianHandler
 5. WeiShianSyncServer
 
@@ -94,7 +94,7 @@ for (int i = 0; i < runTimes; i++) {
 
 以 [SOAP](https://en.wikipedia.org/wiki/SOAP) 格式為主，使用 `javax.xml.soap.MessageFactory` 產生，另外還附有電子簽章，全部實作可以在 `wei_chih.message` 找到。
 
-`Non CAP (Non POV)`, `Voting`, `Wei-shian` 提供：
+`Non CAP`, `Wei-chih`, `Wei-shian` 提供：
 
 * Request
 * Acknowledgement
