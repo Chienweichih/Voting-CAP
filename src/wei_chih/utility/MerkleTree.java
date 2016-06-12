@@ -13,6 +13,7 @@ import java.util.Queue;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
+
 import wei_chih.service.Config;
 
 /**
@@ -20,7 +21,9 @@ import wei_chih.service.Config;
  * @author Chienweichih
  */
 public class MerkleTree implements Serializable {
+
     private static class Node implements Serializable {
+
         private final String fname;
         private String digest;
         private final Node parent;
@@ -32,7 +35,7 @@ public class MerkleTree implements Serializable {
             this.parent = parent;
             this.children = children;
         }
-        
+
         private Node(Node node, Node parent) {
             this.fname = node.fname;
             this.digest = node.digest;
@@ -46,13 +49,14 @@ public class MerkleTree implements Serializable {
                 }
             }
         }
-                   
+
         private boolean isDirectory() {
             return children != null;
         }
-        
+
         /**
-         * parameter path is substring of file path after root and start with PATH_SEPARATOR
+         * parameter path is substring of file path after root and start with
+         * PATH_SEPARATOR
          */
         private static Node getNode(String path, Node root) {
             String pattern = Pattern.quote(Config.PATH_SEPARATOR);
@@ -75,14 +79,14 @@ public class MerkleTree implements Serializable {
             for (int index = 1; index < splittedFileNames.length; ++index) {
                 boolean isTokenMatch = false;
                 for (Node node : target.children) {
-                    if (node.fname.equals(splittedFileNames[index])) {
+                    if (0 == node.fname.compareTo(splittedFileNames[index])) {
                         isAllMatch = true;
                         isTokenMatch = true;
                         target = node;
                         break;
                     }
                 }
-                
+
                 if (isAllMatch && isTokenMatch == false) {
                     try {
                         throw new java.lang.IllegalAccessException("PATH NOT MATCH");
@@ -95,72 +99,72 @@ public class MerkleTree implements Serializable {
             return target;
         }
     }
-    
+
     private final Node root;
-    
+
     public MerkleTree(MerkleTree merkleTree) {
         this.root = new Node(merkleTree.root, null);
     }
-    
+
     public MerkleTree(File rootPath) {
         String filePath = rootPath.getAbsolutePath();
         char lastWord = filePath.toUpperCase().charAt(filePath.length() - 1);
         String dataDirPath = "merkletree" + File.separator + lastWord + ".merkletree";
-        
+
         if (new File(dataDirPath).exists()) {
-            MerkleTree merkleTree = (MerkleTree)Utils.Deserialize(dataDirPath);
+            MerkleTree merkleTree = (MerkleTree) Utils.Deserialize(dataDirPath);
             this.root = new Node(merkleTree.root, null);
         } else {
             this.root = create(rootPath, null);
         }
     }
-    
+
     private Node create(File file, Node parent) {
         Node node = new Node(file.getName(), null, parent, null);
-                
+
         if (file.isFile()) {
-            node.digest = Utils.digest(file);
+            node.digest = Utils.digest(file, Config.DIGEST_ALGORITHM);
         } else {
             node.children = new ArrayList<>();
             String folderDigest = "";
-            
+
             for (File f : sortedFiles(file.listFiles())) {
                 Node newNode = create(f, node);
                 node.children.add(newNode);
                 folderDigest += newNode.digest;
             }
-            node.digest = Utils.digest(Utils.Str2Hex(folderDigest));
+            node.digest = Utils.digest(Utils.Str2Hex(folderDigest), Config.DIGEST_ALGORITHM);
         }
-        
+
         return node;
     }
-    
+
     public void update(String fname, String digest) {
         update(Node.getNode(fname, root), digest);
     }
-    
+
     private void update(Node node, String digest) {
         node.digest = digest;
-        
+
         while (node.parent != null) {
             node = node.parent;
             String newDigest = "";
-            
+
             for (Node n : node.children) {
                 newDigest += n.digest;
             }
-            node.digest = Utils.digest(Utils.Str2Hex(newDigest));
+            node.digest = Utils.digest(Utils.Str2Hex(newDigest), Config.DIGEST_ALGORITHM);
         }
     }
-    
+
     public void delete(String fname) {
         Node node = Node.getNode(fname, root);
         fname = node.fname;
         node = node.parent;
-        
+
         int index = 0;
         for (Node n : node.children) {
-            if (n.fname.equals(fname)) {
+            if (0 == n.fname.compareTo(fname)) {
                 break;
             }
             ++index;
@@ -168,15 +172,15 @@ public class MerkleTree implements Serializable {
         node.children.remove(index);
         update(node.children.get(0), node.children.get(0).digest);
     }
-    
+
     public String getRootHash() {
         return root.digest;
     }
-    
+
     public String getDigest(String path) {
         return Node.getNode(path, root).digest;
     }
-    
+
     private static List<File> sortedFiles(File[] unSortedFiles) {
         if (unSortedFiles == null) {
             throw new java.lang.NullPointerException();
@@ -187,7 +191,7 @@ public class MerkleTree implements Serializable {
         });
         return files;
     }
-    
+
     private void print() {
         Queue<Node> queue = new LinkedList<>();
         queue.add(root);
@@ -201,10 +205,10 @@ public class MerkleTree implements Serializable {
             }
         }
     }
-    
+
     private static String getRoothashFromHashedFiles(Node rootNode) {
         String rootHash = "";
-        
+
         for (Node n : rootNode.children) {
             if (n.isDirectory()) {
                 rootHash += getRoothashFromHashedFiles(n);
@@ -212,42 +216,42 @@ public class MerkleTree implements Serializable {
                 rootHash += n.digest;
             }
         }
-        
-        return Utils.digest(Utils.Str2Hex(rootHash));
+
+        return Utils.digest(Utils.Str2Hex(rootHash), Config.DIGEST_ALGORITHM);
     }
-    
+
     public static void main(String[] args) {
-        
-        String pathPrefix = (args[0].equals("client"))? Config.CLIENT_ACCOUNT_PATH
-                                                      : Config.SERVER_ACCOUNT_PATH;
-        
+
+        String pathPrefix = (0 == args[0].compareTo("client")) ? Config.CLIENT_ACCOUNT_PATH
+                : Config.SERVER_ACCOUNT_PATH;
+
         HashMap<String, String> filePath = new HashMap<>();
         filePath.put("A", pathPrefix + "Account A");
         filePath.put("B", pathPrefix + "Account B");
         filePath.put("C", pathPrefix + "Account C");
-        
+
         for (Entry<String, String> entry : filePath.entrySet()) {
             long time = System.nanoTime();
             MerkleTree merkleTree = new MerkleTree(new File(entry.getValue()));
             time = System.nanoTime() - time;
-            System.out.printf("Generate Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
+            System.out.printf("Generate Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time / 1e9);
 
             for (int i = 0; i < 5; ++i) {
                 time = System.nanoTime();
                 getRoothashFromHashedFiles(merkleTree.root);
                 time = System.nanoTime() - time;
-                System.out.printf("Get Roothash From Merkle Tree %s Hashed Files Cost: %.5f s\n", entry.getKey(), time/1e9);
+                System.out.printf("Get Roothash From Merkle Tree %s Hashed Files Cost: %.5f s\n", entry.getKey(), time / 1e9);
             }
-            
+
             time = System.nanoTime();
             Utils.Serialize(new File(entry.getKey() + ".merkletree"), merkleTree);
             time = System.nanoTime() - time;
-            System.out.printf("Serialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
-        
+            System.out.printf("Serialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time / 1e9);
+
             time = System.nanoTime();
             Utils.Deserialize(entry.getKey() + ".merkletree");
             time = System.nanoTime() - time;
-            System.out.printf("Deserialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time/1e9);
+            System.out.printf("Deserialize Merkle Tree %s Cost: %.5f s\n", entry.getKey(), time / 1e9);
         }
     }
 }

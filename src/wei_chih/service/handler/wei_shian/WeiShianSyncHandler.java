@@ -1,4 +1,4 @@
-package wei_chih.service.handler;
+package wei_chih.service.handler.wei_shian;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -16,7 +16,7 @@ import message.OperationType;
 import service.Key;
 import service.KeyManager;
 import service.handler.ConnectionHandler;
-import wei_chih.message.weishian.Request;
+import wei_chih.message.wei_shian.Request;
 import wei_chih.service.Config;
 import wei_chih.service.SocketServer;
 import wei_chih.utility.Utils;
@@ -27,18 +27,19 @@ import wei_chih.utility.MerkleTree;
  * @author chienweichih
  */
 public class WeiShianSyncHandler extends ConnectionHandler {
+
     private static final ReentrantLock LOCK;
-    
+
     private static String roothash;
     private static String lastAck;
 
     static {
         LOCK = new ReentrantLock();
-        
+
         roothash = new MerkleTree(new File(SocketServer.dataDirPath)).getRootHash();
         lastAck = Utils.digest(Config.INITIAL_HASH, Config.DIGEST_ALGORITHM);
     }
-    
+
     public WeiShianSyncHandler(Socket socket, KeyPair keyPair) {
         super(socket, keyPair);
     }
@@ -46,38 +47,37 @@ public class WeiShianSyncHandler extends ConnectionHandler {
     @Override
     protected void handle(DataOutputStream out, DataInputStream in) throws SignatureException, IllegalAccessException {
         PublicKey clientPubKey = KeyManager.getInstance().getPublicKey(Key.CLIENT);
-        
+
         try {
             Request req = Request.parse(Utils.receive(in));
-            
+
             LOCK.lock();
-            
+
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
             }
-            
+
             if (req.getOperation().getType() != OperationType.DOWNLOAD) {
                 return;
             }
-            
+
             Utils.send(out, roothash);
             Utils.send(out, lastAck);
-            
+
             // wait until client finish
-            
             req = Request.parse(Utils.receive(in));
-            
+
             if (!req.validate(clientPubKey)) {
                 throw new SignatureException("REQ validation failure");
             }
-            
+
             if (req.getOperation().getType() != OperationType.UPLOAD) {
                 return;
             }
-            
+
             roothash = Utils.receive(in);
             lastAck = Utils.receive(in);
-            
+
             socket.close();
         } catch (IOException | SignatureException ex) {
             Logger.getLogger(WeiShianSyncHandler.class.getName()).log(Level.SEVERE, null, ex);
