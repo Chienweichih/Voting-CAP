@@ -1,40 +1,24 @@
-\documentclass{beamer}
+\documentclass[utf8]{beamer}
 
-% There are many different themes available for Beamer. A comprehensive
-% list with examples is given here:
-% http://deic.uab.es/~iblanes/beamer_gallery/index_by_theme.html
-% You can uncomment the themes below if you would like to use a different
-% one:
-%\usetheme{AnnArbor}
-%\usetheme{Antibes}
-%\usetheme{Bergen}
-%\usetheme{Berkeley}
-%\usetheme{Berlin}
-%\usetheme{Boadilla}
-%\usetheme{boxes}
-%\usetheme{CambridgeUS}
-%\usetheme{Copenhagen}
-%\usetheme{Darmstadt}
-%\usetheme{default}
+% Document info.
+\title[Oral Presentation]{利用備份與投票技術實作雲端儲存之\\ 即時行為違反證明技術}
+\subtitle{~\\ Implementing Real-time POV for Cloud Storage by\\ Replication and Voting}
+\author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang \texorpdfstring{\\ Student : Wei-Chih Chien}{}}
+\institute[NTNU CSIE CCLAB]{NTNU CSIE CCLAB}
+\date{2016.07}
+
+% Theme
 \usetheme{Frankfurt}
-%\usetheme{Goettingen}
-%\usetheme{Hannover}
-%\usetheme{Ilmenau}
-%\usetheme{JuanLesPins}
-%\usetheme{Luebeck}
-%\usetheme{Madrid}
-%\usetheme{Malmoe}
-%\usetheme{Marburg}
-%\usetheme{Montpellier}
-%\usetheme{PaloAlto}
-%\usetheme{Pittsburgh}
-%\usetheme{Rochester}
-%\usetheme{Singapore}
-%\usetheme{Szeged}
-%\usetheme{Warsaw}
+
+% Figure directory
+\graphicspath{{fig/}{fig/scenario/}{fig/schemes/}{fig/protocol/}{fig/experiment/}}
 
 % Chinese display
-\usepackage{CJKutf8}
+\usepackage{xeCJK}
+\usepackage{fontspec}
+\setCJKmainfont{AR PL UMing TW}
+\XeTeXlinebreaklocale "zh"
+\XeTeXlinebreakskip = 0pt plus 1pt
 
 % English? (cause Overleaf)
 \usepackage[english]{babel}
@@ -58,12 +42,10 @@
 % Tab
 \newcommand{\tab}[1]{\hspace{.1\textwidth}\rlap{#1}}
 
-% Divider
-\newcommand{\divider}[1]{\noindent\rule{.9\textwidth}{1pt}}
-
-% Set caption with tiny size
+% Set table caption with tiny size
 \setbeamerfont{caption}{size=\tiny}
 
+% Page number
 \addtobeamertemplate{navigation symbols}{}{%
     \usebeamerfont{footline}%
     \usebeamercolor[fg]{footline}%
@@ -73,19 +55,8 @@
 \setbeamercolor{footline}{fg=blue}
 \setbeamerfont{footline}{series=\bfseries}
 
-% Figure directory
-\graphicspath{{fig/}{fig/scenario/}{fig/schemes/}{fig/protocol/}{fig/experiment/}}
-
-% First page
-\title[Oral Presentation]{Implementing Real-time POV for Cloud Storage by Replication and Voting}
-\author[Wei-Chih Chien]{Advicer : Gwan-Hwan Hwang \texorpdfstring{\\ Student : Wei-Chih Chien}{}}
-\institute[NTNU CSIE CCLAB]{NTNU CSIE CCLAB}
-\date{2016.07}
-
 % Start content
 \begin{document}
-% Chinese display
-\begin{CJK}{UTF8}{bsmi}
 
 \begin{frame}
   \titlepage
@@ -96,10 +67,9 @@
 \end{frame}
 
 \input{scenario}
-\input{schemes}
-\input{protocol}
+\input{introduction}
+\input{my_method}
 \input{experiment}
 \input{conclusion}
 
-\end{CJK}
 \end{document}

@@ -1,9 +1,36 @@
-\section{Protocol Detail}
+\section{A New Real-time POV}
+
+\subsection{System Architecture}
+\begin{frame}{System Architecture}
+	\textcolor{blue}{Assumption: $\text{同時有 k 個 server 回傳錯誤結果的機率} \approx 0$}
+	\begin{center}
+		\alert{Service Providers are Independent Cloud}
+		\includegraphics[height=.7\textheight]{wei_chih}
+	\end{center}
+\end{frame}
+
+\begin{frame}{Comparison}
+	\begin{itemize}
+		\item \textcolor{blue}{Pros}
+			\begin{enumerate}
+				\item Device 節省了儲存 Merkle tree 的空間
+                \item Device 不需要計算新的 Roothash 將會節省時間
+				\item 每一次更新資料都會即時的備份
+				\item 不會有之前的 Worst-case
+			\end{enumerate}
+		~\\
+		\item \textcolor{red}{Cons}
+			\begin{enumerate}
+				\item 需要傳送多份 Request, 處理多份 Response
+                \item 需要使用較多的 Service Provider
+			\end{enumerate}
+	\end{itemize}
+\end{frame}
 
 \subsection{Flowchart}
 \begin{frame}{Flowchart}
 	\begin{center}
-		\resizebox{!}{.6\textwidth}
+		\resizebox{!}{.7\textwidth}
 		{%
 			\begin{tikzpicture}[node distance=2cm]
 				% Define flow charts' component
@@ -44,7 +71,7 @@
 	~\\
 	~\\
 	\begin{minipage}{.45\textwidth}
-        \includegraphics[width=1\textwidth]{2_step_handshake}
+		\includegraphics[width=\textwidth]{2_step_handshake}
     \end{minipage}%
 	\begin{minipage}{.55\textwidth}
     	\footnotesize
@@ -56,7 +83,7 @@
                         SN\ & =\ Sequence\ Number
                 \end{split}
         \end{equation*}
-        \divider{}\\
+        \hrule{}
         \begin{equation*} \label{eq2}
                 \begin{split}
                         \textcolor{red}{ACK}\ & =\ (RESULT,\ REQ,\\
@@ -70,25 +97,22 @@
 
 \begin{frame}{if Operation is UPLOAD}
 	\centering
-	\textcolor{blue}{\textbf{Server Update Merkle tree}}\\
-	~\\
+    ~\\
+	\textcolor{blue}{\textbf{Servers Update Merkle tree}}\\
 	~\\
 	\begin{center}
-		\includegraphics[width=.65\textwidth]{update_merkle_tree}
+		\includegraphics[height=.7\textheight]{update_merkle_tree}
 	\end{center}
 \end{frame}
 
 \begin{frame}{File Transmit}
 	\begin{center}
-		\includegraphics[width=.65\textwidth]{file_transmit}
+		\includegraphics[width=.9\textwidth]{file_transmit}
 	\end{center}
 \end{frame}
 
 \subsection{Audit}
 \begin{frame}{Audit}
-	\textcolor{blue}{$\because$ ACK 中有 roothash\\
-	$\therefore$ 新的 request 之前，所有的檔案都經過檢查，沒有問題}\\
-	~\\	
 	\begin{block}{}
 		\centering
 		device request $OP_i$，收到回傳的 $ACK_i$\\
@@ -97,9 +121,12 @@
 		device 向 $Server_p$ 索取 $MT_{i-1}$\\
 		($MT_{i-1}$ 為執行 $OP_i$ 之前的 Merkle tree)
 	\end{block}
-	\begin{alertblock}{\encircle{1}\encircle{2} 兩點有一個出錯就能確定 $Server_p$ 出錯}
-		\encircle{1} device 檢查 $MT_{i-1}$ 的 roothash 應和 $ACK_{i-1}$ 中的 roothash 一樣\\
+	\begin{alertblock}{\encircle{1}\encircle{2} 兩點有一個出錯就能證明 $Server_p$ 出錯}
+    	\alert{[證明 i 之前的動作都沒問題]}\\
+		\encircle{1} device 檢查 $MT_{i-1}$ 的 roothash，應和 $ACK_{i-1}$ 中紀錄的相同\\
+		~\\                   
+        \alert{[證明第 i 個動作沒問題]}\\             
 		\encircle{2} device 以 $OP_i$ 中的 hash value 來更新 $MT_{i-1}$，\\
-		\tab{}更新後的 roothash 應和 $Server_p$ 現在的 roothash 相同
+					 \tab{}更新後的 roothash 應和 $Server_p$ 現在的 roothash 相同
 	\end{alertblock}	
 \end{frame}
