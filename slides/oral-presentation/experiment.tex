@@ -17,8 +17,8 @@
 		\begin{tabular}{|c|c|c|r|}
 			\hline
               & Non Hashed & Pre Hashed & Merkle tree Size \\ \hline
-            A & 9.40653    & 0.00132    & 5.4 KB           \\ \hline
-            B & 55.14738   & 4.2467     & 5.08 MB          \\ \hline
+            A & 9.40653    & 0.00333    & 5.4 KB           \\ \hline
+            B & 55.14738   & 2.70313    & 5.08 MB          \\ \hline
             C & 339.18192  & 0.3342     & 4.37 MB          \\ \hline
 		\end{tabular}
         
@@ -113,7 +113,7 @@
     \centering
     \caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
+                         & sync 2   & sync 10  & sync 50  & sync 100 & sync 500 \\ \hline
         \textless 10 KB  & 0.146783 & 0.184138 & 0.332988 & 0.486858 & 2.139086  \\ \hline
         \textless 100 KB & 0.194642 & 0.209044 & 0.341408 & 0.562457 & 2.147664  \\ \hline
         \textless 1 MB   & 0.331595 & 0.385494 & 0.403481 & 0.580193 & 2.251284  \\ \hline
@@ -132,7 +132,7 @@
     \centering
     \caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
+                         & sync 2   & sync 10  & sync 50  & sync 100 & sync 500  \\ \hline
         \textless 10 KB  & 0.121268 & 0.249803 & 0.331339 & 0.937337 & 4.175263  \\ \hline
         \textless 100 KB & 0.134563 & 0.258717 & 0.338794 & 0.963107 & 4.211038  \\ \hline
         \textless 1 MB   & 0.279563 & 0.302230 & 0.440841 & 1.174882 & 4.294038  \\ \hline
@@ -152,55 +152,6 @@
 \begin{frame}{Experimental Results}
 {The client device and SP are in the same network segment - DOWNLOAD operation}
 	\includegraphics[width=\textwidth]{all_download_same}
-\end{frame}
-
-%OVERHEAD
-\begin{frame}{Experimental Results}
-{The client device and SP are in the same network segment - UPLOAD Overhead}
-	\scriptsize
-    \begin{table}[]
-    \centering
-    \caption{My Method - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lcccc}
-     					 & 3 Server & 5 Server & 7 Server & 9 Server \\ \hline
-        \textless 10 KB  & 0.035532 & 0.057315 & 0.091068 & 0.098088 \\ \hline
-        \textless 100 KB & 0.056346 & 0.069170 & 0.098502 & 0.130656 \\ \hline
-        \textless 1 MB   & 0.063382 & 0.075848 & 0.109612 & 0.113430 \\ \hline
-        \textless 10 MB  & 0.062948 & 0.145890 & 0.316677 & 0.326270 \\ \hline
-    \end{tabular}
-    \caption{2014 Cloud Com - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lccccl}
-       					 & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
-        \textless 10 KB  & 0.136175 & 0.173530 & 0.322380 & 0.476250 & 2.128478  \\ \hline
-        \textless 100 KB & 0.180249 & 0.194651 & 0.327016 & 0.548064 & 2.133271  \\ \hline
-        \textless 1 MB   & 0.241154 & 0.295053 & 0.313041 & 0.489752 & 2.160844  \\ \hline
-        \textless 10 MB  & 0.133703 & 0.150846 & 0.208414 & 0.451186 & 2.041146  \\ \hline
-    \end{tabular}
-    \end{table}
-\end{frame}
-
-\begin{frame}{Experimental Results}
-{The client device and SP are in the same network segment - DOWNLOAD Overhead}
-	\scriptsize
-    \begin{table}[]
-    \centering
-    \caption{My Method - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lcccc}
-       					 & 3 Server & 5 Server & 7 Server & 9 Server \\ \hline
-        \textless 10 KB  & 0.034450 & 0.046418 & 0.056526 & 0.071027 \\ \hline
-        \textless 100 KB & 0.039892 & 0.041751 & 0.070270 & 0.083816 \\ \hline
-        \textless 1 MB   & 0.057451 & 0.071299 & 0.107247 & 0.113643 \\ \hline
-        \textless 10 MB  & 0.037156 & 0.121335 & 0.267749 & 0.270583 \\ \hline
-    \end{tabular}
-    \caption{2014 Cloud Com - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lccccl}
-       					 & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
-        \textless 10 KB  & 0.113424 & 0.241959 & 0.323494 & 0.929492 & 4.167419  \\ \hline
-        \textless 100 KB & 0.120872 & 0.245026 & 0.325103 & 0.949416 & 4.197347  \\ \hline
-        \textless 1 MB   & 0.190993 & 0.213660 & 0.352271 & 1.086312 & 4.205468  \\ \hline
-        \textless 10 MB  & 0.107761 & 0.184722 & 0.240224 & 0.892359 & 4.005623  \\ \hline
-    \end{tabular}
-    \end{table}
 \end{frame}
 
 %TIMES
@@ -288,7 +239,7 @@
     \caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lcccc}
                          & 3 Server & 5 Server & 7 Server & 9 Server \\ \hline
-        \textless 10 KB  & 0.263332 & 0.358435 & 0.590343 & 0.606110 \\ \hline
+        \textless 10 KB  & 0.263332 & 0.358435 & 0.490343 & 0.556110 \\ \hline
         \textless 100 KB & 0.270404 & 0.396497 & 0.567059 & 0.597088 \\ \hline
         \textless 1 MB   & 0.382264 & 0.590987 & 0.694622 & 0.846141 \\ \hline
         \textless 10 MB  & 0.823476 & 1.086515 & 1.208293 & 1.278169 \\ \hline
@@ -306,11 +257,11 @@
     \centering
     \caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
-        \textless 10 KB  & 0.362766 & 0.411929 & 0.486570 & 0.862048 & 2.363091  \\ \hline
-        \textless 100 KB & 0.377788 & 0.416367 & 0.508769 & 0.870478 & 2.453335  \\ \hline
-        \textless 1 MB   & 0.556890 & 0.619318 & 0.698361 & 1.024154 & 2.665164  \\ \hline
-        \textless 10 MB  & 1.525459 & 1.882746 & 1.929606 & 2.064955 & 3.566919  \\ \hline
+                         & sync 2   & sync 10  & sync 50  & sync 100 & sync 500  \\ \hline
+        \textless 10 KB  & 0.362766 & 0.411929 & 0.486570 & 0.500776 & 1.227709  \\ \hline
+        \textless 100 KB & 0.377788 & 0.416367 & 0.508769 & 0.563544 & 1.375298  \\ \hline
+        \textless 1 MB   & 0.556890 & 0.619318 & 0.698361 & 0.812837 & 1.630702  \\ \hline
+        \textless 10 MB  & 1.525459 & 1.882746 & 1.929606 & 1.962343 & 2.753549  \\ \hline
     \end{tabular}
     \end{table}
     \begin{center}
@@ -325,11 +276,11 @@
     \centering
     \caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
-        \textless 10 KB  & 0.388520 & 0.374224 & 0.524074 & 1.202312 & 4.569076  \\ \hline
-        \textless 100 KB & 0.427226 & 0.440348 & 0.584122 & 1.300710 & 4.590791  \\ \hline
-        \textless 1 MB   & 0.574539 & 0.687956 & 0.772134 & 1.399860 & 4.684576  \\ \hline
-        \textless 10 MB  & 0.933868 & 1.024385 & 1.145598 & 1.759997 & 4.945930  \\ \hline
+                         & sync 2   & sync 10  & sync 50  & sync 100 & sync 500  \\ \hline
+        \textless 10 KB  & 0.388520 & 0.374224 & 0.524074 & 0.646150 & 2.269309  \\ \hline
+        \textless 100 KB & 0.427226 & 0.440348 & 0.584122 & 0.735439 & 2.302957  \\ \hline
+        \textless 1 MB   & 0.574539 & 0.687956 & 0.772134 & 0.914938 & 2.519163  \\ \hline
+        \textless 10 MB  & 0.933868 & 1.024385 & 1.145598 & 1.414567 & 2.884841  \\ \hline
     \end{tabular}
     \end{table}
     \begin{center}
@@ -345,55 +296,6 @@
 \begin{frame}{Experimental Results}
 {The client device and SP are \alert{not} in the same network segment - DOWNLOAD operation}
 	\includegraphics[width=\textwidth]{all_download_not_same}
-\end{frame}
-
-%OVERHEAD
-\begin{frame}{Experimental Results}
-{The client device and SP are \alert{not} in the same network segment - UPLOAD Overhead}
-	\scriptsize
-    \begin{table}[]
-    \centering
-    \caption{My Method - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lcccc}
-                         & 3 Server & 5 Server & 7 Server & 9 Server \\ \hline
-        \textless 10 KB  & 0.148290 & 0.262068 & 0.397382 & 0.501187 \\ \hline
-        \textless 100 KB & 0.124676 & 0.289081 & 0.358134 & 0.539085 \\ \hline
-        \textless 1 MB   & 0.089754 & 0.250948 & 0.297013 & 0.443104 \\ \hline
-        \textless 10 MB  & 0.260857 & 0.596518 & 0.635884 & 0.788242 \\ \hline
-    \end{tabular}
-    \caption{2014 Cloud Com - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
-        \textless 10 KB  & 0.293493 & 0.342657 & 0.417297 & 0.792775 & 2.293818  \\ \hline
-        \textless 100 KB & 0.256695 & 0.295274 & 0.387676 & 0.749385 & 2.332242  \\ \hline
-        \textless 1 MB   & 0.213306 & 0.275733 & 0.354776 & 0.680570 & 2.321579  \\ \hline
-        \textless 10 MB  & 0.149843 & 0.507130 & 0.553990 & 0.689340 & 2.191303  \\ \hline
-    \end{tabular}
-    \end{table}
-\end{frame}
-
-\begin{frame}{Experimental Results}
-{The client device and SP are \alert{not} in the same network segment - DOWNLOAD Overhead}
-	\scriptsize
-    \begin{table}[]
-    \centering
-    \caption{My Method - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lcccc}
-                         & 3 Server & 5 Server & 7 Server & 9 Server \\ \hline
-        \textless 10 KB  & 0.206703 & 0.301806 & 0.533714 & 0.549481 \\ \hline
-        \textless 100 KB & 0.183053 & 0.309147 & 0.479708 & 0.509738 \\ \hline
-        \textless 1 MB   & 0.156698 & 0.365421 & 0.469057 & 0.620576 \\ \hline
-        \textless 10 MB  & 0.123952 & 0.386991 & 0.508769 & 0.578646 \\ \hline
-    \end{tabular}
-    \caption{2014 Cloud Com - Non POV (IN SEC.) (Account C)}
-    \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250 & sync 1250 \\ \hline
-        \textless 10 KB  & 0.331891 & 0.317594 & 0.467445 & 1.145683 & 4.512446  \\ \hline
-        \textless 100 KB & 0.339875 & 0.352998 & 0.496772 & 1.213359 & 4.503441  \\ \hline
-        \textless 1 MB   & 0.348973 & 0.462390 & 0.546568 & 1.174294 & 4.459011  \\ \hline
-        \textless 10 MB  & 0.234344 & 0.324861 & 0.446074 & 1.060473 & 4.246406  \\ \hline
-    \end{tabular}
-    \end{table}
 \end{frame}
 
 %TIMES
@@ -412,16 +314,16 @@
     \end{tabular}
     \caption{2014 Cloud Com / Non POV (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250  & sync 1250 \\ \hline
-        \textless 10 KB  & 5.236767 & 5.946479 & 7.023971 & 12.444239 & 34.112817 \\ \hline
-        \textless 100 KB & 3.119815 & 3.438406 & 4.201470 & 7.188500  & 20.259902 \\ \hline
-        \textless 1 MB   & 1.620825 & 1.802520 & 2.032574 & 2.980794  & 7.756942  \\ \hline
-        \textless 10 MB  & 1.108928 & 1.368657 & 1.402722 & 1.501113  & 2.592962  \\ \hline
+                         & sync 2   & sync 10  & sync 50  & sync 100 & sync 500 \\ \hline
+        \textless 10 KB  & 5.236767 & 5.946479 & 7.023971 & 7.2290   & 17.7228  \\ \hline
+        \textless 100 KB & 3.119815 & 3.438406 & 4.201470 & 4.6538   & 11.3574  \\ \hline
+        \textless 1 MB   & 1.620825 & 1.802520 & 2.032574 & 2.3658   & 4.7461   \\ \hline
+        \textless 10 MB  & 1.108928 & 1.368657 & 1.402722 & 1.4265   & 2.0017   \\ \hline
     \end{tabular}
     ~\\
     ~\\
     ~\\
-    \alert{Avg: 2.01 times, Max: 4.14 times}
+    \alert{Avg: 1.42 times, Max: 2.15 times}
     \end{table}
 \end{frame}
 
@@ -432,23 +334,23 @@
     \centering
     \caption{My Method / Non POV (IN SEC.) (Account C)}
     \begin{tabular}{lcccc}
-                         & 3 Server & 5 Server & 7 Server  & 9 Server  \\ \hline
-        \textless 10 KB  & 4.650108 & 6.329503 & 10.424700 & 10.703127 \\ \hline
-        \textless 100 KB & 3.095611 & 4.539142 & 6.491742  & 6.835527  \\ \hline
-        \textless 1 MB   & 1.694689 & 2.620022 & 3.079470  & 3.751199  \\ \hline
-        \textless 10 MB  & 1.177195 & 1.553220 & 1.727308  & 1.827199  \\ \hline
+                         & 3 Server & 5 Server & 7 Server & 9 Server \\ \hline
+        \textless 10 KB  & 4.650108 & 6.329503 & 8.658827 & 9.820191 \\ \hline
+        \textless 100 KB & 3.095611 & 4.539142 & 6.491742 & 6.835527 \\ \hline
+        \textless 1 MB   & 1.694689 & 2.620022 & 3.079470 & 3.751199 \\ \hline
+        \textless 10 MB  & 1.177195 & 1.553220 & 1.727308 & 1.827199 \\ \hline
     \end{tabular}
     \caption{2014 Cloud Com / Non POV (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2   & sync 10  & sync 50  & sync 250  & sync 1250 \\ \hline
-        \textless 10 KB  & 6.860769 & 6.608313 & 9.254478 & 21.231303 & 80.684047 \\ \hline
-        \textless 100 KB & 4.890921 & 5.041151 & 6.687090 & 14.890653 & 52.555829 \\ \hline
-        \textless 1 MB   & 2.547104 & 3.049914 & 3.423100 & 6.205999  & 20.768135 \\ \hline
-        \textless 10 MB  & 1.335005 & 1.464403 & 1.637682 & 2.515992  & 7.070423  \\ \hline
+                         & sync 2   & sync 10  & sync 50  & sync 100 & sync 500 \\ \hline
+        \textless 10 KB  & 6.860769 & 6.608313 & 9.254478 & 11.4102  & 40.0731  \\ \hline
+        \textless 100 KB & 4.890921 & 5.041151 & 6.687090 & 8.4194   & 26.3645  \\ \hline
+        \textless 1 MB   & 2.547104 & 3.049914 & 3.423100 & 4.0562   & 11.1682  \\ \hline
+        \textless 10 MB  & 1.335005 & 1.464403 & 1.637682 & 2.0222   & 4.1240   \\ \hline
     \end{tabular}
     ~\\
     ~\\
     ~\\
-    \alert{Avg: 2.93 times, Max: 7.53 times}
+    \alert{Avg: 1.88 times, Max: 4.08 times}
     \end{table}
 \end{frame}
