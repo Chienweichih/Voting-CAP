@@ -1,6 +1,11 @@
 \section{Experimental Results}
 
 \subsection{Generate Merkle tree}
+\begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsubsection]
+\end{frame}
+
 \begin{frame}{Experimental Results}
 	\begin{table}[]
 		\scriptsize
@@ -34,12 +39,17 @@
 \end{frame}
 
 \subsection{Non POV}
+\begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsubsection]
+\end{frame}
+
 \begin{frame}{Experimental Results}{Non POV}
 	\tiny
     \begin{table}[]
         \centering
         \begin{minipage}[c]{0.5\textwidth}
-            \caption{The client device and SP are \newline in the same network segment}
+            \caption{The client device and SP are in the \newline same network segment}
             \begin{tabular}{lcc}
                                  & Upload (sec.) & Download (sec.) \\ \hline
                 \textless 10 KB  & 0.010608      & 0.007845        \\ \hline
@@ -52,7 +62,7 @@
             \end{center}
         \end{minipage}%
         \begin{minipage}[c]{0.5\textwidth}
-            \caption{The client device and SP are \newline \alert{not} in the same network segment}
+            \caption{The client device and SP are \alert{not} in the \newline same network segment}
             \begin{tabular}{lcc}
                                  & Upload (sec.) & Download (sec.) \\ \hline
                 \textless 10 KB  & 0.069273      & 0.056629        \\ \hline
@@ -68,6 +78,11 @@
 \end{frame}
 
 \subsection{Same Network Segment}
+\begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsubsection]
+\end{frame}
+
 \begin{frame}{Experimental Results}
 {The client device and SP are in the same network segment - My Method}
 	\scriptsize
@@ -114,10 +129,10 @@
     \caption{THE EXECUTION TIME OF \alert{UPLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
                          & sync 2   & sync 10  & sync 50  & sync 100 & sync 500 \\ \hline
-        \textless 10 KB  & 0.146783 & 0.184138 & 0.332988 & 0.486858 & 2.139086  \\ \hline
-        \textless 100 KB & 0.194642 & 0.209044 & 0.341408 & 0.562457 & 2.147664  \\ \hline
-        \textless 1 MB   & 0.331595 & 0.385494 & 0.403481 & 0.580193 & 2.251284  \\ \hline
-        \textless 10 MB  & 0.501692 & 0.518835 & 0.576403 & 0.819175 & 2.409135  \\ \hline
+        \textless 10 KB  & 0.146783 & 0.184138 & 0.332988 & 0.409002 & 0.760821  \\ \hline
+        \textless 100 KB & 0.194642 & 0.209044 & 0.341408 & 0.491967 & 0.932075  \\ \hline
+        \textless 1 MB   & 0.331595 & 0.385494 & 0.403481 & 0.537866 & 1.198097  \\ \hline
+        \textless 10 MB  & 0.501692 & 0.518835 & 0.576403 & 0.819893 & 1.242104  \\ \hline
     \end{tabular}
     \end{table}
     \begin{center}
@@ -133,10 +148,10 @@
     \caption{THE EXECUTION TIME OF \alert{DOWNLOAD} OPERATIONS (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
                          & sync 2   & sync 10  & sync 50  & sync 100 & sync 500  \\ \hline
-        \textless 10 KB  & 0.121268 & 0.249803 & 0.331339 & 0.937337 & 4.175263  \\ \hline
-        \textless 100 KB & 0.134563 & 0.258717 & 0.338794 & 0.963107 & 4.211038  \\ \hline
-        \textless 1 MB   & 0.279563 & 0.302230 & 0.440841 & 1.174882 & 4.294038  \\ \hline
-        \textless 10 MB  & 0.462677 & 0.539638 & 0.595140 & 1.247275 & 4.360539  \\ \hline
+        \textless 10 KB  & 0.121268 & 0.249803 & 0.331339 & 0.515956 & 1.675274  \\ \hline
+        \textless 100 KB & 0.134563 & 0.258717 & 0.338794 & 0.564519 & 1.796222  \\ \hline
+        \textless 1 MB   & 0.279563 & 0.302230 & 0.440841 & 0.588905 & 1.994046  \\ \hline
+        \textless 10 MB  & 0.462677 & 0.539638 & 0.595140 & 1.171150 & 2.241951  \\ \hline
     \end{tabular}
     \end{table}
     \begin{center}
@@ -170,16 +185,16 @@
     \end{tabular}
     \caption{2014 Cloud Com / Non POV (IN SEC.) (Account C)}
     \begin{tabular}{lccccl}
-                         & sync 2    & sync 10   & sync 50   & sync 250  & sync 1250  \\ \hline
-        \textless 10 KB  & 13.837201 & 17.358624 & 31.390677 & 45.895962 & 201.651193 \\ \hline
-        \textless 100 KB & 13.523544 & 14.524231 & 23.720780 & 39.079062 & 149.217959 \\ \hline
-        \textless 1 MB   & 3.666447  & 4.262410  & 4.461293  & 6.415199  & 24.892477  \\ \hline
-        \textless 10 MB  & 1.363336  & 1.409920  & 1.566359  & 2.226087  & 6.546762   \\ \hline
+                         & sync 2    & sync 10   & sync 50   & sync 100 & sync 500 \\ \hline
+        \textless 10 KB  & 13.837201 & 17.358624 & 31.390677 & 38.5566  & 71.7224  \\ \hline
+        \textless 100 KB & 13.523544 & 14.524231 & 23.720780 & 34.1815  & 64.7598  \\ \hline
+        \textless 1 MB   & 3.666447  & 4.262410  & 4.461293  & 5.9472   & 13.2474  \\ \hline
+        \textless 10 MB  & 1.363336  & 1.409920  & 1.566359  & 2.2280   & 3.3754   \\ \hline
     \end{tabular}
     ~\\
     ~\\
     ~\\
-    \alert{Avg: 6.61 times, Max: 19.67 times}
+    \alert{Avg: 3.97 times, Max: 6.99 times}
     \end{table}
 \end{frame}
 
@@ -207,11 +222,16 @@
     ~\\
     ~\\
     ~\\
-    \alert{Avg: 15.41 times, Max: 52.93 times}
+    \alert{Avg: 7.91 times, Max: 21.24 times}
     \end{table}
 \end{frame}
 
 \subsection{Not Same Network Segment}
+\begin{frame}<beamer>
+    \frametitle{Outline}
+    \tableofcontents[currentsubsection]
+\end{frame}
+
 \begin{frame}{Experimental Results}
 {The client device and SP are \alert{not} in the same network segment - My Method}
 	\scriptsize
