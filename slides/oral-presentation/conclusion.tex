@@ -1,21 +1,22 @@
 \section{Conclusion and Future Work}
 
 \begin{frame}{Conclusion}
-	我們提出了一個應用於雲端儲存的 Real-time POV 技術，利用投票的方式快速檢查 Data Integrity，也即時的將資料備份到多個 Server 上\\
+	我們提出了一個應用於雲端儲存的 Real-time POV 技術，利用投票的方式快速檢查 Data Integrity，也即時的將資料備份到多個 Server 上。\\
     ~\\
     ~\\
     實驗結果顯示，相較於之前的 Real-time POV 技術，平均能夠節省 8 倍的時間，Worst-case 時更能夠節省超過 20 倍的時間。\\
     ~\\
     ~\\
-    雲端儲存系統可以使用本論文提出的方法，提供雙方不可否認的保證於他們的服務層級協議(SLA)中
+    雲端儲存系統可以使用本論文提出的方法，提供雙方不可否認的保證於他們的服務層級協議(Service Level Agreement)中。
 \end{frame}
 
 \begin{frame}{Future Work}
 	\begin{enumerate}
-		\item 我們希望能將 FBH 樹套用到本論文的方法中，藉由實驗觀察能否增快 Merkle tree 在更新檔案時的速度。\\
+		\item 我們希望能將 FBHTree\footnotemark 套用到本論文的方法中，藉由實驗觀察能否增快 Merkle tree 在更新檔案時的速度。\\
         ~\\
         \item 在本論文中使用同步伺服器來維護 Write Serializability，若有新的演算法能夠不需依賴同步伺服器又能維護 Write Serializability，將能讓我們的架構更加彈性且使用更少的硬體。
 	\end{enumerate}
+    \footnotetext{G.-H. Hwang and H.-F. Chen, "Efficient Real-time Auditing and Proof of Violation for Cloud Storage Systems," in 9th IEEE International Conference on Cloud Computing, San Francisco, USA, 2016.}
 \end{frame}
 
 \begin{frame}{Thanks for Your Listening}

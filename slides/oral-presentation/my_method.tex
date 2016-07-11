@@ -2,7 +2,7 @@
 
 \subsection{System Architecture}
 \begin{frame}{System Architecture}
-	\textcolor{blue}{Assumption: $\text{同時有 k 個 server 回傳錯誤結果的機率} \approx 0$}
+	\textcolor{blue}{Assumption:\\ \tab{} $\text{同時 k 個 server，同時回傳相同錯誤結果的機率} \approx 0$}
 	\begin{center}
 		\alert{Service Providers are Independent Cloud}
 		\includegraphics[height=.7\textheight]{wei_chih}
@@ -42,7 +42,7 @@
 				\node (voting) [decision, below of=twostep] {Voting};
 				\node (store) [process, below of=voting, yshift=-0.5cm] {Store ACK};
 				\node (update) [io, below of=store, align=center] {File \\ Transmit};
-				\node (auditing) [process, right of=update, xshift=2.5cm] {Auditing};
+				\node (auditing) [process, right of=store, xshift=2.5cm] {Auditing};
 				\node (unlock) [process, left of=store, xshift=-4cm] {Unlock};
 
 				% Define flow charts' link
@@ -78,8 +78,8 @@
 		\centering
 		\begin{equation*} \label{eq1}
                 \begin{split}
-                        \textcolor{blue}{REQ}\ & =\ (OP,\ [OP]_{pri(D)}) \\
-                        OP\ & =\ (TYPE,\ PATH,\ HASH,\ SN) \\
+                        \textcolor{blue}{REQ}\ & =\ (OP,\ SN,\ [OP,\ SN]_{pri(D)}) \\
+                        OP\ & =\ (TYPE,\ PATH,\ HASH) \\
                         SN\ & =\ Sequence\ Number
                 \end{split}
         \end{equation*}
