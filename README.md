@@ -1,6 +1,18 @@
 # Implementing Real-time POV for Cloud Storage by Replication and Voting
 Author: Wei-Chih Chien
 
+---
+
+這是我的碩士論文 《利用備份與投票技術實作雲端儲存之即時行為違反證明技術》
+
+以 Java 實作 Socket 來模擬雲端儲存系統的環境，透過 Java 的 API 實作基於密碼學的通訊協定。
+
+使用者的客戶端不需要保留任何檔案的雜湊值，就能達到 proof of violation 和 real-time auditing。
+
+最終利用這個專案得到各種實驗的數據，以證明本篇論文的可行性。
+
+---
+
 (This README reference from [Malthael's CAP-for-SOA-Systems README.md](https://github.com/CloudComLab/CAP-for-SOA-Systems/blob/master/README.md))
 
 ## 如何開始
